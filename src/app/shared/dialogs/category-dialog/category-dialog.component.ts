@@ -1,0 +1,246 @@
+import { Component, OnInit, Inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
+
+import { StorageService } from '../../../services/storage.service';
+import { Category, CategoryType, CreateCategoryRequest, UpdateCategoryRequest } from '../../../models';
+import { IconSelectorComponent } from '../../icon-selector/icon-selector.component';
+import { DialogResult } from '../../dialog/dialog-result.interface';
+
+@Component({
+  selector: 'app-category-dialog',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, IconSelectorComponent],
+  template: `
+    <div class="dialog-header">
+      <h3 class="dialog-title">{{ isEditMode ? 'Edit Category' : 'Add Category' }}</h3>
+      <button type="button" class="dialog-close-btn" (click)="onCancel()">✕</button>
+    </div>
+
+    <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" class="category-dialog-form">
+      <div class="form-group">
+        <label class="label">Category Type *</label>
+        <div class="radio-group">
+          <label class="radio-option">
+            <input
+              type="radio"
+              formControlName="type"
+              [value]="CategoryType.INCOME"
+              class="radio-input"
+            />
+            <span class="radio-label">
+              <span class="radio-icon">💰</span>
+              Income
+            </span>
+          </label>
+          <label class="radio-option">
+            <input
+              type="radio"
+              formControlName="type"
+              [value]="CategoryType.EXPENSE"
+              class="radio-input"
+            />
+            <span class="radio-label">
+              <span class="radio-icon">💸</span>
+              Expense
+            </span>
+          </label>
+        </div>
+        @if (categoryForm.get('type')?.hasError('required') && categoryForm.get('type')?.touched) {
+          <span class="error-message">Please select a category type</span>
+        }
+      </div>
+
+      <div class="form-group">
+        <label for="name" class="label">Category Name *</label>
+        <input
+          type="text"
+          id="name"
+          formControlName="name"
+          class="form-input"
+          placeholder="Enter category name"
+          [class.error]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched"
+        />
+        @if (categoryForm.get('name')?.hasError('required') && categoryForm.get('name')?.touched) {
+          <span class="error-message">Category name is required</span>
+        }
+      </div>
+
+      @if (categoryForm.get('type')?.value === CategoryType.EXPENSE) {
+        <div class="form-group">
+          <label for="budgetLimit" class="label">Budget Limit (Optional)</label>
+          <input
+            type="number"
+            id="budgetLimit"
+            formControlName="budgetLimit"
+            class="form-input"
+            placeholder="0.00"
+            step="0.01"
+            [class.error]="categoryForm.get('budgetLimit')?.invalid && categoryForm.get('budgetLimit')?.touched"
+          />
+          @if (categoryForm.get('budgetLimit')?.hasError('min') && categoryForm.get('budgetLimit')?.touched) {
+            <span class="error-message">Budget limit must be at least 0</span>
+          }
+          <small class="help-text">Set a monthly spending limit for this category</small>
+        </div>
+      }
+
+      <app-icon-selector
+        formControlName="icon"
+        label="Category Icon *"
+        inputId="category-icon"
+      />
+
+      @if (categoryForm.get('icon')?.hasError('required') && categoryForm.get('icon')?.touched) {
+        <span class="error-message">Please select an icon</span>
+      }
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="categoryForm.invalid || isSubmitting">
+          @if (isSubmitting) {
+            <span>Saving...</span>
+          } @else {
+            <span>{{ isEditMode ? 'Update' : 'Create' }} Category</span>
+          }
+        </button>
+      </div>
+    </form>
+  `,
+  styles: [`
+    .category-dialog-form {
+      .radio-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-bottom: 1rem;
+
+        .radio-option {
+          display: flex;
+          cursor: pointer;
+
+          .radio-input {
+            display: none;
+
+            &:checked + .radio-label {
+              background-color: #dbeafe;
+              border-color: #3b82f6;
+              color: #1e40af;
+            }
+          }
+
+          .radio-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            width: 100%;
+
+            &:hover {
+              border-color: #3b82f6;
+            }
+
+            .radio-icon {
+              font-size: 1.25rem;
+            }
+          }
+        }
+      }
+    }
+  `]
+})
+export class CategoryDialogComponent implements OnInit {
+  categoryForm: FormGroup;
+  isEditMode = false;
+  isSubmitting = false;
+  category?: Category;
+  CategoryType = CategoryType;
+
+  constructor(
+    private fb: FormBuilder,
+    private storageService: StorageService,
+    private dialogRef: DialogRef,
+    @Inject(DIALOG_DATA) public data: any
+  ) {
+    this.categoryForm = this.createForm();
+  }
+
+  ngOnInit(): void {
+    if (this.data?.categoryId) {
+      this.isEditMode = true;
+      this.loadCategory(this.data.categoryId);
+    }
+
+    this.categoryForm.get('type')?.valueChanges.subscribe(type => {
+      if (type === CategoryType.INCOME) {
+        this.categoryForm.get('budgetLimit')?.setValue(null);
+      }
+    });
+  }
+
+  private createForm(): FormGroup {
+    return this.fb.group({
+      type: ['', Validators.required],
+      name: ['', [Validators.required, Validators.minLength(2)]],
+      budgetLimit: [null, [Validators.min(0)]],
+      icon: ['', Validators.required]
+    });
+  }
+
+  private loadCategory(id: string): void {
+    const categories = this.storageService.getCategories();
+    const category = categories.find(c => c.id === id);
+
+    if (category) {
+      this.category = category;
+      this.categoryForm.patchValue({
+        type: category.type,
+        name: category.name,
+        budgetLimit: category.budgetLimit,
+        icon: category.icon
+      });
+    }
+  }
+
+  onSubmit(): void {
+    if (this.categoryForm.valid && !this.isSubmitting) {
+      this.isSubmitting = true;
+      const formValue = this.categoryForm.value;
+
+      if (this.isEditMode && this.data?.categoryId && this.category) {
+        const updatedCategory: Category = {
+          ...this.category,
+          type: formValue.type,
+          name: formValue.name,
+          budgetLimit: formValue.type === CategoryType.EXPENSE ? formValue.budgetLimit : undefined,
+          icon: formValue.icon,
+          updatedAt: new Date()
+        };
+        this.storageService.saveCategory(updatedCategory);
+      } else {
+        const newCategory: Category = {
+          id: this.storageService.generateId(),
+          type: formValue.type,
+          name: formValue.name,
+          budgetLimit: formValue.type === CategoryType.EXPENSE ? formValue.budgetLimit : undefined,
+          icon: formValue.icon,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        this.storageService.saveCategory(newCategory);
+      }
+
+      this.dialogRef.close({ success: true } as DialogResult);
+    }
+  }
+
+  onCancel(): void {
+    this.dialogRef.close();
+  }
+}

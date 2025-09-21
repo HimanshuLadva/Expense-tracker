@@ -1,0 +1,98 @@
+import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+
+@Component({
+  selector: 'app-page-header',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  template: `
+    <div class="page-header">
+      <div class="header-content">
+        <h1 class="page-title">{{ title }}</h1>
+        @if (subtitle) {
+          <p class="page-subtitle">{{ subtitle }}</p>
+        }
+      </div>
+      @if (showAddButton) {
+        <button type="button" class="add-button" (click)="onAddClick()">
+          <span class="plus-icon">+</span>
+          Add {{ addButtonText }}
+        </button>
+      }
+    </div>
+  `,
+  styles: [`
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #e5e7eb;
+
+      .header-content {
+        .page-title {
+          margin: 0 0 0.5rem 0;
+          font-size: 2rem;
+          font-weight: 700;
+          color: #111827;
+        }
+
+        .page-subtitle {
+          margin: 0;
+          color: #6b7280;
+          font-size: 1rem;
+        }
+      }
+
+      .add-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background-color: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 1.125rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: #2563eb;
+        }
+
+        .plus-icon {
+          font-size: 1.375rem;
+          font-weight: bold;
+        }
+      }
+    }
+
+    @media (max-width: 768px) {
+      .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch;
+
+        .add-button {
+          justify-content: center;
+        }
+      }
+    }
+  `]
+})
+export class PageHeaderComponent {
+  @Input() title = '';
+  @Input() subtitle = '';
+  @Input() showAddButton = false;
+  @Input() addRoute = '';
+  @Input() addButtonText = 'New';
+  @Output() addClick = new EventEmitter<void>();
+
+  onAddClick(): void {
+    this.addClick.emit();
+  }
+}
