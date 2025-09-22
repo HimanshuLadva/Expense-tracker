@@ -25,14 +25,14 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
       />
 
       <div class="reminders-stats">
-        <div class="stat-card">
+        <div class="stat-card total">
           <div class="stat-icon">🔔</div>
           <div class="stat-content">
             <div class="stat-label">Total Reminders</div>
             <div class="stat-value">{{ reminders.length }}</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card active">
           <div class="stat-icon">✅</div>
           <div class="stat-content">
             <div class="stat-label">Active Reminders</div>
@@ -68,6 +68,14 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
           display: flex;
           align-items: center;
           gap: 0.75rem;
+
+          &.total {
+            border-left: 4px solid #f59e0b;
+          }
+
+          &.active {
+            border-left: 4px solid #10b981;
+          }
 
           .stat-icon {
             font-size: 2rem;

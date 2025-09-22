@@ -24,21 +24,21 @@ import { CategoryDialogComponent } from '../../shared/dialogs/category-dialog/ca
       />
 
       <div class="categories-stats">
-        <div class="stat-card">
+        <div class="stat-card total">
           <div class="stat-icon">📁</div>
           <div class="stat-content">
             <div class="stat-label">Total Categories</div>
             <div class="stat-value">{{ categories.length }}</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card income">
           <div class="stat-icon">💰</div>
           <div class="stat-content">
             <div class="stat-label">Income Categories</div>
             <div class="stat-value">{{ incomeCategories.length }}</div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card expense">
           <div class="stat-icon">💸</div>
           <div class="stat-content">
             <div class="stat-label">Expense Categories</div>
@@ -98,6 +98,18 @@ import { CategoryDialogComponent } from '../../shared/dialogs/category-dialog/ca
           display: flex;
           align-items: center;
           gap: 0.75rem;
+
+          &.total {
+            border-left: 4px solid #6366f1;
+          }
+
+          &.income {
+            border-left: 4px solid #10b981;
+          }
+
+          &.expense {
+            border-left: 4px solid #ef4444;
+          }
 
           .stat-icon {
             font-size: 2rem;
