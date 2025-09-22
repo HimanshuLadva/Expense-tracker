@@ -62,17 +62,17 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
 
         .stat-card {
           background: white;
-          padding: 1.5rem;
+          padding: 1rem;
           border-radius: 0.5rem;
           box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
           display: flex;
           align-items: center;
-          gap: 1rem;
+          gap: 0.75rem;
 
           .stat-icon {
-            font-size: 2.5rem;
+            font-size: 2rem;
             background: #f3f4f6;
-            padding: 1rem;
+            padding: 0.75rem;
             border-radius: 0.5rem;
           }
 
@@ -108,7 +108,7 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
           gap: 1rem;
 
           .stat-card {
-            padding: 1.25rem;
+            padding: 1rem;
 
             .stat-content .stat-value {
               font-size: 1.25rem;
@@ -125,14 +125,14 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
           gap: 0.75rem;
 
           .stat-card {
-            padding: 1rem;
+            padding: 0.875rem;
             flex-direction: column;
             text-align: center;
             gap: 0.75rem;
 
             .stat-icon {
               font-size: 2rem;
-              padding: 0.75rem;
+              padding: 0.625rem;
             }
 
             .stat-content {
@@ -158,11 +158,11 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
           gap: 0.5rem;
 
           .stat-card {
-            padding: 0.875rem;
+            padding: 0.75rem;
 
             .stat-icon {
               font-size: 1.75rem;
-              padding: 0.625rem;
+              padding: 0.5rem;
             }
 
             .stat-content .stat-value {

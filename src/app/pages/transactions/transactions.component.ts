@@ -108,12 +108,12 @@ interface EnrichedTransaction extends Transaction {
 
         .stat-card {
           background: white;
-          padding: 1.5rem;
+          padding: 1rem;
           border-radius: 0.5rem;
           box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
           display: flex;
           align-items: center;
-          gap: 1rem;
+          gap: 0.75rem;
 
           &.income {
             border-left: 4px solid #10b981;
@@ -124,9 +124,9 @@ interface EnrichedTransaction extends Transaction {
           }
 
           .stat-icon {
-            font-size: 2.5rem;
+            font-size: 2rem;
             background: #f3f4f6;
-            padding: 1rem;
+            padding: 0.75rem;
             border-radius: 0.5rem;
           }
 
@@ -158,7 +158,7 @@ interface EnrichedTransaction extends Transaction {
           box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
 
           .tab-button {
-            padding: 0.75rem 1.5rem;
+            padding: 0.625rem 1.25rem;
             border: none;
             background: transparent;
             color: #6b7280;

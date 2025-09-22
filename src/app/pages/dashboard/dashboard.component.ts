@@ -165,12 +165,12 @@ interface DashboardStats {
 
         .stat-card {
           background: white;
-          padding: 1.5rem;
+          padding: 1rem;
           border-radius: 0.75rem;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
           display: flex;
           align-items: center;
-          gap: 1rem;
+          gap: 0.75rem;
           transition: transform 0.2s ease;
 
           &:hover {
@@ -190,9 +190,9 @@ interface DashboardStats {
           }
 
           .stat-icon {
-            font-size: 2.5rem;
+            font-size: 2rem;
             background: #f3f4f6;
-            padding: 1rem;
+            padding: 0.75rem;
             border-radius: 0.5rem;
           }
 
@@ -234,7 +234,7 @@ interface DashboardStats {
           background: white;
           border-radius: 0.75rem;
           box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-          padding: 1.5rem;
+          padding: 1rem;
 
           &.wide {
             grid-column: span 2;
@@ -275,7 +275,7 @@ interface DashboardStats {
         background: white;
         border-radius: 0.75rem;
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-        padding: 1.5rem;
+        padding: 1rem;
 
         h3 {
           margin: 0 0 1rem 0;
