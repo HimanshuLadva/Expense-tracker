@@ -42,14 +42,14 @@ interface EnrichedTransaction extends Transaction {
           <div class="stat-icon">💰</div>
           <div class="stat-content">
             <div class="stat-label">Total Income</div>
-            <div class="stat-value">{{ formatCurrency(totalIncome) }}</div>
+            <div class="stat-value">{{ formatCompactCurrency(totalIncome) }}</div>
           </div>
         </div>
         <div class="stat-card expense">
           <div class="stat-icon">💸</div>
           <div class="stat-content">
             <div class="stat-label">Total Expenses</div>
-            <div class="stat-value">{{ formatCurrency(totalExpenses) }}</div>
+            <div class="stat-value">{{ formatCompactCurrency(totalExpenses) }}</div>
           </div>
         </div>
       </div>
@@ -183,15 +183,23 @@ interface EnrichedTransaction extends Transaction {
 
     @media (max-width: 768px) {
       .transactions-page {
-        .filter-tabs {
-          gap: 0.375rem;
+        .transaction-filters {
+          margin-bottom: 1.5rem;
 
-          .tab-button {
-            flex: 1;
-            padding: 0.625rem 0.5rem;
-            font-size: 0.8rem;
-            text-align: center;
-            white-space: nowrap;
+          .filter-tabs {
+            gap: 0.25rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0.5rem;
+
+            .tab-button {
+              flex: 1;
+              min-width: 80px;
+              padding: 0.625rem 0.5rem;
+              font-size: 0.75rem;
+              text-align: center;
+              white-space: nowrap;
+            }
           }
         }
       }
@@ -199,10 +207,16 @@ interface EnrichedTransaction extends Transaction {
 
     @media (max-width: 480px) {
       .transactions-page {
-        .filter-tabs {
-          .tab-button {
-            padding: 0.5rem 0.25rem;
-            font-size: 0.75rem;
+        .transaction-filters {
+          .filter-tabs {
+            gap: 0.125rem;
+            padding: 0.375rem;
+
+            .tab-button {
+              min-width: 70px;
+              padding: 0.5rem 0.25rem;
+              font-size: 0.7rem;
+            }
           }
         }
       }
@@ -325,10 +339,26 @@ export class TransactionsComponent implements OnInit, OnDestroy {
     }).format(value);
   }
 
+  formatCompactCurrency(value: number): string {
+    const absValue = Math.abs(value);
+    const sign = value < 0 ? '-' : '';
+
+    if (absValue >= 1e9) {
+      return `${sign}₹${(absValue / 1e9).toFixed(1)}B`;
+    } else if (absValue >= 1e6) {
+      return `${sign}₹${(absValue / 1e6).toFixed(1)}M`;
+    } else if (absValue >= 1e3) {
+      return `${sign}₹${(absValue / 1e3).toFixed(1)}K`;
+    } else {
+      return `${sign}₹${absValue.toFixed(0)}`;
+    }
+  }
+
   openAddDialog(): void {
     const dialogRef = this.dialogService.open(TransactionDialogComponent, {
       title: 'Add Transaction',
-      width: '600px'
+      width: '650px',
+      maxHeight: '85vh'
     });
 
     dialogRef.closed.subscribe((result) => {
@@ -342,7 +372,8 @@ export class TransactionsComponent implements OnInit, OnDestroy {
   editTransaction(transaction: Transaction): void {
     const dialogRef = this.dialogService.open(TransactionDialogComponent, {
       title: 'Edit Transaction',
-      width: '600px',
+      width: '650px',
+      maxHeight: '85vh',
       data: { transactionId: transaction.id }
     });
 

@@ -1,12 +1,14 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
 import { StorageService } from '../../services/storage.service';
 import { Reminder } from '../../models';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { DataTableComponent, TableColumn } from '../../shared/data-table/data-table.component';
+import { DialogService } from '../../shared/dialog/dialog.service';
+import { ReminderDialogComponent } from '../../shared/dialogs/reminder-dialog/reminder-dialog.component';
+import { DialogResult } from '../../shared/dialog/dialog-result.interface';
 
 @Component({
   selector: 'app-reminders',
@@ -18,7 +20,7 @@ import { DataTableComponent, TableColumn } from '../../shared/data-table/data-ta
         title="Reminders"
         subtitle="Set up reminders for important financial events"
         [showAddButton]="true"
-        addRoute="/reminders/add"
+        (addClick)="openAddDialog()"
         addButtonText="Reminder"
       />
 
@@ -116,7 +118,7 @@ export class RemindersComponent implements OnInit, OnDestroy {
 
   constructor(
     private storageService: StorageService,
-    private router: Router
+    private dialogService: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -135,8 +137,33 @@ export class RemindersComponent implements OnInit, OnDestroy {
     this.subscription.unsubscribe();
   }
 
+  openAddDialog(): void {
+    const dialogRef = this.dialogService.open(ReminderDialogComponent, {
+      title: 'Add Reminder',
+      width: '600px'
+    });
+
+    dialogRef.closed.subscribe((result) => {
+      const dialogResult = result as DialogResult | undefined;
+      if (dialogResult?.success) {
+        // Reminder was successfully created
+      }
+    });
+  }
+
   editReminder(reminder: Reminder): void {
-    this.router.navigate(['/reminders/edit', reminder.id]);
+    const dialogRef = this.dialogService.open(ReminderDialogComponent, {
+      title: 'Edit Reminder',
+      width: '600px',
+      data: { reminderId: reminder.id }
+    });
+
+    dialogRef.closed.subscribe((result) => {
+      const dialogResult = result as DialogResult | undefined;
+      if (dialogResult?.success) {
+        // Reminder was successfully updated
+      }
+    });
   }
 
   deleteReminder(reminder: Reminder): void {

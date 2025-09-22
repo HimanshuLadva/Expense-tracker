@@ -35,7 +35,7 @@ export interface TableColumn {
                     <td [ngClass]="'column-' + column.type">
                       @switch (column.type) {
                         @case ('currency') {
-                          <span class="currency-value">{{ formatCurrency(getNestedValue(item, column.key)) }}</span>
+                          <span class="currency-value">{{ formatCompactCurrency(getNestedValue(item, column.key)) }}</span>
                         }
                         @case ('date') {
                           <span class="date-value">{{ formatDate(getNestedValue(item, column.key)) }}</span>
@@ -435,6 +435,22 @@ export class DataTableComponent {
       style: 'currency',
       currency: 'INR'
     }).format(value);
+  }
+
+  formatCompactCurrency(value: number): string {
+    if (value == null) return '₹0';
+    const absValue = Math.abs(value);
+    const sign = value < 0 ? '-' : '';
+
+    if (absValue >= 1e9) {
+      return `${sign}₹${(absValue / 1e9).toFixed(1)}B`;
+    } else if (absValue >= 1e6) {
+      return `${sign}₹${(absValue / 1e6).toFixed(1)}M`;
+    } else if (absValue >= 1e3) {
+      return `${sign}₹${(absValue / 1e3).toFixed(1)}K`;
+    } else {
+      return `${sign}₹${absValue.toFixed(0)}`;
+    }
   }
 
   formatDate(value: Date | string): string {

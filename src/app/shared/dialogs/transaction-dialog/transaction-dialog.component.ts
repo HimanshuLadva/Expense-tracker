@@ -18,7 +18,9 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       <button type="button" class="dialog-close-btn" (click)="onCancel()">✕</button>
     </div>
 
-    <form [formGroup]="transactionForm" (ngSubmit)="onSubmit()" class="transaction-dialog-form">
+    <div class="dialog-content">
+      <form [formGroup]="transactionForm" (ngSubmit)="onSubmit()" class="transaction-dialog-form">
+        <div class="form-fields">
       <div class="form-group">
         <label class="label">Transaction Type *</label>
         <div class="radio-group">
@@ -169,8 +171,9 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           rows="3"
         ></textarea>
       </div>
+        </div>
 
-      <div class="form-actions">
+        <div class="form-actions">
         <button type="button" class="btn btn-secondary" (click)="onCancel()">
           Cancel
         </button>
@@ -182,15 +185,79 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           }
         </button>
       </div>
-    </form>
+      </form>
+    </div>
   `,
   styles: [`
     .transaction-dialog-form {
-      .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 0;
+
+      .form-fields {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.25rem 0;
+        max-height: calc(85vh - 200px);
+
+        .form-group {
+          margin-bottom: 1.25rem;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+        }
+
+        .form-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 1rem;
+          margin-bottom: 1.25rem;
+        }
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+        margin-top: auto;
+
+        .btn {
+          flex: 1;
+          padding: 0.75rem 1rem;
+          border-radius: 0.5rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: 1px solid;
+
+          &.btn-secondary {
+            background-color: #f3f4f6;
+            border-color: #d1d5db;
+            color: #374151;
+
+            &:hover {
+              background-color: #e5e7eb;
+            }
+          }
+
+          &.btn-primary {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+
+            &:hover:not(:disabled) {
+              background-color: #2563eb;
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+            }
+          }
+        }
       }
 
       .radio-group {
@@ -224,107 +291,64 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             transition: all 0.2s ease;
             width: 100%;
             text-align: center;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
+            font-weight: 500;
 
             &:hover {
               border-color: #3b82f6;
+              background-color: #f8fafc;
             }
 
             .radio-icon {
-              font-size: 1.25rem;
+              font-size: 1.125rem;
             }
           }
         }
       }
 
-      .form-group {
-        margin-bottom: 1.5rem;
+      .label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+      }
 
-        .label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 500;
-          color: #374151;
+      .form-input,
+      .form-select,
+      .form-textarea {
+        width: 100%;
+        padding: 0.625rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: border-color 0.2s ease;
+
+        &:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        .form-input,
-        .form-select,
-        .form-textarea {
-          width: 100%;
-          padding: 0.75rem;
-          border: 1px solid #d1d5db;
-          border-radius: 0.375rem;
-          font-size: 1rem;
-          transition: border-color 0.2s ease;
-
-          &:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
-          }
-
-          &.error {
-            border-color: #ef4444;
-          }
-
-          &::placeholder {
-            color: #9ca3af;
-          }
+        &.error {
+          border-color: #ef4444;
         }
 
-        .form-textarea {
-          resize: vertical;
-          min-height: 80px;
-        }
-
-        .error-message {
-          display: block;
-          margin-top: 0.25rem;
-          font-size: 0.875rem;
-          color: #ef4444;
+        &::placeholder {
+          color: #9ca3af;
         }
       }
 
-      .form-actions {
-        display: flex;
-        gap: 1rem;
-        margin-top: 2rem;
-        padding-top: 1rem;
-        border-top: 1px solid #e5e7eb;
+      .form-textarea {
+        resize: vertical;
+        min-height: 60px;
+      }
 
-        .btn {
-          flex: 1;
-          padding: 0.75rem 1.5rem;
-          border: none;
-          border-radius: 0.375rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-
-          &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-          }
-
-          &.btn-primary {
-            background-color: #3b82f6;
-            color: white;
-
-            &:hover:not(:disabled) {
-              background-color: #2563eb;
-            }
-          }
-
-          &.btn-secondary {
-            background-color: #f3f4f6;
-            color: #374151;
-            border: 1px solid #d1d5db;
-
-            &:hover {
-              background-color: #e5e7eb;
-            }
-          }
-        }
+      .error-message {
+        display: block;
+        color: #ef4444;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
       }
     }
 

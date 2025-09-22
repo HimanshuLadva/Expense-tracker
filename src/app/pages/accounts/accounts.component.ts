@@ -36,7 +36,7 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
           <div class="stat-icon">💰</div>
           <div class="stat-content">
             <div class="stat-label">Total Balance</div>
-            <div class="stat-value">{{ formatCurrency(totalBalance) }}</div>
+            <div class="stat-value">{{ formatCompactCurrency(totalBalance) }}</div>
           </div>
         </div>
       </div>
@@ -77,16 +77,96 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
           }
 
           .stat-content {
+            flex: 1;
+            min-width: 0;
+
             .stat-label {
               color: #6b7280;
               font-size: 0.875rem;
               margin-bottom: 0.25rem;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
 
             .stat-value {
-              font-size: 1.875rem;
+              font-size: 1.5rem;
               font-weight: 700;
               color: #111827;
+              white-space: nowrap;
+              line-height: 1.2;
+            }
+          }
+        }
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .accounts-page {
+        .accounts-stats {
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 1rem;
+
+          .stat-card {
+            padding: 1.25rem;
+
+            .stat-content .stat-value {
+              font-size: 1.25rem;
+            }
+          }
+        }
+      }
+    }
+
+    @media (max-width: 768px) {
+      .accounts-page {
+        .accounts-stats {
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 0.75rem;
+
+          .stat-card {
+            padding: 1rem;
+            flex-direction: column;
+            text-align: center;
+            gap: 0.75rem;
+
+            .stat-icon {
+              font-size: 2rem;
+              padding: 0.75rem;
+            }
+
+            .stat-content {
+              .stat-label {
+                white-space: normal;
+                text-overflow: unset;
+                overflow: visible;
+              }
+
+              .stat-value {
+                font-size: 1.125rem;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    @media (max-width: 480px) {
+      .accounts-page {
+        .accounts-stats {
+          grid-template-columns: 1fr;
+          gap: 0.5rem;
+
+          .stat-card {
+            padding: 0.875rem;
+
+            .stat-icon {
+              font-size: 1.75rem;
+              padding: 0.625rem;
+            }
+
+            .stat-content .stat-value {
+              font-size: 1rem;
             }
           }
         }
@@ -134,6 +214,21 @@ export class AccountsComponent implements OnInit, OnDestroy {
       style: 'currency',
       currency: 'INR'
     }).format(value);
+  }
+
+  formatCompactCurrency(value: number): string {
+    const absValue = Math.abs(value);
+    const sign = value < 0 ? '-' : '';
+
+    if (absValue >= 1e9) {
+      return `${sign}₹${(absValue / 1e9).toFixed(1)}B`;
+    } else if (absValue >= 1e6) {
+      return `${sign}₹${(absValue / 1e6).toFixed(1)}M`;
+    } else if (absValue >= 1e3) {
+      return `${sign}₹${(absValue / 1e3).toFixed(1)}K`;
+    } else {
+      return `${sign}₹${absValue.toFixed(0)}`;
+    }
   }
 
   openAddDialog(): void {

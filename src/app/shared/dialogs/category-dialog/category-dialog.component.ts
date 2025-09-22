@@ -18,105 +18,170 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       <button type="button" class="dialog-close-btn" (click)="onCancel()">✕</button>
     </div>
 
-    <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" class="category-dialog-form">
-      <div class="form-group">
-        <label class="label">Category Type *</label>
-        <div class="radio-group">
-          <label class="radio-option">
-            <input
-              type="radio"
-              formControlName="type"
-              [value]="CategoryType.INCOME"
-              class="radio-input"
-            />
-            <span class="radio-label">
-              <span class="radio-icon">💰</span>
-              Income
-            </span>
-          </label>
-          <label class="radio-option">
-            <input
-              type="radio"
-              formControlName="type"
-              [value]="CategoryType.EXPENSE"
-              class="radio-input"
-            />
-            <span class="radio-label">
-              <span class="radio-icon">💸</span>
-              Expense
-            </span>
-          </label>
-        </div>
-        @if (categoryForm.get('type')?.hasError('required') && categoryForm.get('type')?.touched) {
-          <span class="error-message">Please select a category type</span>
-        }
-      </div>
+    <div class="dialog-content">
+      <form [formGroup]="categoryForm" (ngSubmit)="onSubmit()" class="category-dialog-form">
+        <div class="form-fields">
+          <div class="form-group">
+            <label class="label">Category Type *</label>
+            <div class="radio-group">
+              <label class="radio-option">
+                <input
+                  type="radio"
+                  formControlName="type"
+                  [value]="CategoryType.INCOME"
+                  class="radio-input"
+                />
+                <span class="radio-label">
+                  <span class="radio-icon">💰</span>
+                  Income
+                </span>
+              </label>
+              <label class="radio-option">
+                <input
+                  type="radio"
+                  formControlName="type"
+                  [value]="CategoryType.EXPENSE"
+                  class="radio-input"
+                />
+                <span class="radio-label">
+                  <span class="radio-icon">💸</span>
+                  Expense
+                </span>
+              </label>
+            </div>
+            @if (categoryForm.get('type')?.hasError('required') && categoryForm.get('type')?.touched) {
+              <span class="error-message">Please select a category type</span>
+            }
+          </div>
 
-      <div class="form-group">
-        <label for="name" class="label">Category Name *</label>
-        <input
-          type="text"
-          id="name"
-          formControlName="name"
-          class="form-input"
-          placeholder="Enter category name"
-          [class.error]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched"
-        />
-        @if (categoryForm.get('name')?.hasError('required') && categoryForm.get('name')?.touched) {
-          <span class="error-message">Category name is required</span>
-        }
-      </div>
+          <div class="form-group">
+            <label for="name" class="label">Category Name *</label>
+            <input
+              type="text"
+              id="name"
+              formControlName="name"
+              class="form-input"
+              placeholder="Enter category name"
+              [class.error]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched"
+            />
+            @if (categoryForm.get('name')?.hasError('required') && categoryForm.get('name')?.touched) {
+              <span class="error-message">Category name is required</span>
+            }
+          </div>
 
-      @if (categoryForm.get('type')?.value === CategoryType.EXPENSE) {
-        <div class="form-group">
-          <label for="budgetLimit" class="label">Budget Limit (Optional)</label>
-          <input
-            type="number"
-            id="budgetLimit"
-            formControlName="budgetLimit"
-            class="form-input"
-            placeholder="0.00"
-            step="0.01"
-            [class.error]="categoryForm.get('budgetLimit')?.invalid && categoryForm.get('budgetLimit')?.touched"
+          @if (categoryForm.get('type')?.value === CategoryType.EXPENSE) {
+            <div class="form-group">
+              <label for="budgetLimit" class="label">Budget Limit (Optional)</label>
+              <input
+                type="number"
+                id="budgetLimit"
+                formControlName="budgetLimit"
+                class="form-input"
+                placeholder="0.00"
+                step="0.01"
+                [class.error]="categoryForm.get('budgetLimit')?.invalid && categoryForm.get('budgetLimit')?.touched"
+              />
+              @if (categoryForm.get('budgetLimit')?.hasError('min') && categoryForm.get('budgetLimit')?.touched) {
+                <span class="error-message">Budget limit must be at least 0</span>
+              }
+              <small class="help-text">Set a monthly spending limit for this category</small>
+            </div>
+          }
+
+          <app-icon-selector
+            formControlName="icon"
+            label="Category Icon *"
+            inputId="category-icon"
           />
-          @if (categoryForm.get('budgetLimit')?.hasError('min') && categoryForm.get('budgetLimit')?.touched) {
-            <span class="error-message">Budget limit must be at least 0</span>
+
+          @if (categoryForm.get('icon')?.hasError('required') && categoryForm.get('icon')?.touched) {
+            <span class="error-message">Please select an icon</span>
           }
-          <small class="help-text">Set a monthly spending limit for this category</small>
         </div>
-      }
 
-      <app-icon-selector
-        formControlName="icon"
-        label="Category Icon *"
-        inputId="category-icon"
-      />
-
-      @if (categoryForm.get('icon')?.hasError('required') && categoryForm.get('icon')?.touched) {
-        <span class="error-message">Please select an icon</span>
-      }
-
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" (click)="onCancel()">
-          Cancel
-        </button>
-        <button type="submit" class="btn btn-primary" [disabled]="categoryForm.invalid || isSubmitting">
-          @if (isSubmitting) {
-            <span>Saving...</span>
-          } @else {
-            <span>{{ isEditMode ? 'Update' : 'Create' }} Category</span>
-          }
-        </button>
-      </div>
-    </form>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" (click)="onCancel()">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="categoryForm.invalid || isSubmitting">
+            @if (isSubmitting) {
+              <span>Saving...</span>
+            } @else {
+              <span>{{ isEditMode ? 'Update' : 'Create' }} Category</span>
+            }
+          </button>
+        </div>
+      </form>
+    </div>
   `,
   styles: [`
     .category-dialog-form {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 0;
+
+      .form-fields {
+        flex: 1;
+        overflow-y: auto;
+        padding: 0.5rem 0;
+
+        .form-group {
+          margin-bottom: 1.5rem;
+
+          &:last-child {
+            margin-bottom: 0;
+          }
+        }
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+        margin-top: auto;
+
+        .btn {
+          flex: 1;
+          padding: 0.75rem 1rem;
+          border-radius: 0.5rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: 1px solid;
+
+          &.btn-secondary {
+            background-color: #f3f4f6;
+            border-color: #d1d5db;
+            color: #374151;
+
+            &:hover {
+              background-color: #e5e7eb;
+            }
+          }
+
+          &.btn-primary {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+
+            &:hover:not(:disabled) {
+              background-color: #2563eb;
+            }
+
+            &:disabled {
+              opacity: 0.5;
+              cursor: not-allowed;
+            }
+          }
+        }
+      }
+
       .radio-group {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-        margin-bottom: 1rem;
+        gap: 0.75rem;
 
         .radio-option {
           display: flex;
@@ -136,14 +201,16 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.75rem;
+            padding: 0.875rem;
             border: 2px solid #e5e7eb;
             border-radius: 0.5rem;
             transition: all 0.2s ease;
             width: 100%;
+            font-weight: 500;
 
             &:hover {
               border-color: #3b82f6;
+              background-color: #f8fafc;
             }
 
             .radio-icon {
@@ -151,6 +218,51 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             }
           }
         }
+      }
+
+      .label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        transition: border-color 0.2s ease;
+
+        &:focus {
+          outline: none;
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        &.error {
+          border-color: #ef4444;
+        }
+
+        &::placeholder {
+          color: #9ca3af;
+        }
+      }
+
+      .error-message {
+        display: block;
+        color: #ef4444;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+      }
+
+      .help-text {
+        display: block;
+        color: #6b7280;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
       }
     }
   `]

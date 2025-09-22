@@ -41,21 +41,21 @@ interface DashboardStats {
           <div class="stat-icon">🏦</div>
           <div class="stat-content">
             <div class="stat-label">Total Balance</div>
-            <div class="stat-value">{{ formatCurrency(stats.totalBalance) }}</div>
+            <div class="stat-value">{{ formatCompactCurrency(stats.totalBalance) }}</div>
           </div>
         </div>
         <div class="stat-card income">
           <div class="stat-icon">💰</div>
           <div class="stat-content">
             <div class="stat-label">This Month Income</div>
-            <div class="stat-value">{{ formatCurrency(stats.thisMonthIncome) }}</div>
+            <div class="stat-value">{{ formatCompactCurrency(stats.thisMonthIncome) }}</div>
           </div>
         </div>
         <div class="stat-card expense">
           <div class="stat-icon">💸</div>
           <div class="stat-content">
             <div class="stat-label">This Month Expenses</div>
-            <div class="stat-value">{{ formatCurrency(stats.thisMonthExpenses) }}</div>
+            <div class="stat-value">{{ formatCompactCurrency(stats.thisMonthExpenses) }}</div>
           </div>
         </div>
         <div class="stat-card net">
@@ -63,7 +63,7 @@ interface DashboardStats {
           <div class="stat-content">
             <div class="stat-label">Net Income</div>
             <div class="stat-value" [class.negative]="stats.netIncome < 0">
-              {{ formatCurrency(stats.netIncome) }}
+              {{ formatCompactCurrency(stats.netIncome) }}
             </div>
           </div>
         </div>
@@ -197,16 +197,24 @@ interface DashboardStats {
           }
 
           .stat-content {
+            flex: 1;
+            min-width: 0;
+
             .stat-label {
               color: #6b7280;
               font-size: 0.875rem;
               margin-bottom: 0.25rem;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
             }
 
             .stat-value {
-              font-size: 1.875rem;
+              font-size: 1.5rem;
               font-weight: 700;
               color: #111827;
+              white-space: nowrap;
+              line-height: 1.2;
 
               &.negative {
                 color: #ef4444;
@@ -360,6 +368,19 @@ interface DashboardStats {
 
     @media (max-width: 1024px) {
       .dashboard-page {
+        .stats-grid {
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 1rem;
+
+          .stat-card {
+            padding: 1.25rem;
+
+            .stat-content .stat-value {
+              font-size: 1.25rem;
+            }
+          }
+        }
+
         .charts-grid {
           grid-template-columns: 1fr;
 
@@ -375,6 +396,36 @@ interface DashboardStats {
 
     @media (max-width: 768px) {
       .dashboard-page {
+        .stats-grid {
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 0.75rem;
+
+          .stat-card {
+            padding: 1rem;
+            flex-direction: column;
+            text-align: center;
+            gap: 0.75rem;
+
+            .stat-icon {
+              font-size: 2rem;
+              padding: 0.75rem;
+            }
+
+            .stat-content {
+              .stat-label {
+                white-space: normal;
+                text-overflow: unset;
+                overflow: visible;
+              }
+
+              .stat-value {
+                font-size: 1.125rem;
+                white-space: nowrap;
+              }
+            }
+          }
+        }
+
         .breakdown-row {
           grid-template-columns: 1fr !important;
           gap: 0.5rem !important;
@@ -383,6 +434,28 @@ interface DashboardStats {
           .category-amount,
           .category-percentage {
             text-align: left !important;
+          }
+        }
+      }
+    }
+
+    @media (max-width: 480px) {
+      .dashboard-page {
+        .stats-grid {
+          grid-template-columns: 1fr;
+          gap: 0.5rem;
+
+          .stat-card {
+            padding: 0.875rem;
+
+            .stat-icon {
+              font-size: 1.75rem;
+              padding: 0.625rem;
+            }
+
+            .stat-content .stat-value {
+              font-size: 1rem;
+            }
           }
         }
       }
@@ -746,5 +819,20 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       style: 'currency',
       currency: 'INR'
     }).format(value);
+  }
+
+  formatCompactCurrency(value: number): string {
+    const absValue = Math.abs(value);
+    const sign = value < 0 ? '-' : '';
+
+    if (absValue >= 1e9) {
+      return `${sign}₹${(absValue / 1e9).toFixed(1)}B`;
+    } else if (absValue >= 1e6) {
+      return `${sign}₹${(absValue / 1e6).toFixed(1)}M`;
+    } else if (absValue >= 1e3) {
+      return `${sign}₹${(absValue / 1e3).toFixed(1)}K`;
+    } else {
+      return `${sign}₹${absValue.toFixed(0)}`;
+    }
   }
 }
