@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { ScrollingModule, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 
 export interface TableColumn {
   key: string;
@@ -12,80 +13,160 @@ export interface TableColumn {
 @Component({
   selector: 'app-data-table',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, ScrollingModule],
   template: `
     <div class="data-table-container">
       @if (data.length > 0) {
         <div class="table-wrapper">
-          <table class="data-table">
-            <thead>
-              <tr>
-                @for (column of columns; track column.key) {
-                  <th>{{ column.label }}</th>
-                }
-                @if (showActions) {
-                  <th class="actions-column">Actions</th>
-                }
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of data; track trackByFn(item)) {
+          @if (enableVirtualization) {
+            <!-- Virtual Scroll Viewport for large datasets -->
+            <cdk-virtual-scroll-viewport
+              [itemSize]="itemHeight"
+              class="virtual-viewport"
+              (scrolledIndexChange)="onScrollIndexChange($event)">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    @for (column of columns; track column.key) {
+                      <th>{{ column.label }}</th>
+                    }
+                    @if (showActions) {
+                      <th class="actions-column">Actions</th>
+                    }
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of displayedData; track trackByFn(item); let i = $index) {
+                    <tr>
+                      @for (column of columns; track column.key) {
+                        <td [ngClass]="'column-' + column.type">
+                          @switch (column.type) {
+                            @case ('currency') {
+                              <span class="currency-value">{{ formatCompactCurrency(getNestedValue(item, column.key)) }}</span>
+                            }
+                            @case ('date') {
+                              <span class="date-value">{{ formatDate(getNestedValue(item, column.key)) }}</span>
+                            }
+                            @case ('badge') {
+                              <span
+                                class="badge"
+                                [style.background-color]="getBadgeColor(column, getNestedValue(item, column.key))"
+                              >
+                                {{ getNestedValue(item, column.key) }}
+                              </span>
+                            }
+                            @default {
+                              <span>{{ getNestedValue(item, column.key) }}</span>
+                            }
+                          }
+                        </td>
+                      }
+                      @if (showActions) {
+                        <td class="actions-column">
+                          <div class="action-buttons">
+                            <button
+                              type="button"
+                              class="action-btn edit-btn"
+                              (click)="onEdit(item)"
+                              title="Edit"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              type="button"
+                              class="action-btn delete-btn"
+                              (click)="onDelete(item)"
+                              title="Delete"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      }
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </cdk-virtual-scroll-viewport>
+          } @else {
+            <!-- Original Table Design -->
+            <table class="data-table">
+              <thead>
                 <tr>
                   @for (column of columns; track column.key) {
-                    <td [ngClass]="'column-' + column.type">
-                      @switch (column.type) {
-                        @case ('currency') {
-                          <span class="currency-value">{{ formatCompactCurrency(getNestedValue(item, column.key)) }}</span>
-                        }
-                        @case ('date') {
-                          <span class="date-value">{{ formatDate(getNestedValue(item, column.key)) }}</span>
-                        }
-                        @case ('badge') {
-                          <span
-                            class="badge"
-                            [style.background-color]="getBadgeColor(column, getNestedValue(item, column.key))"
-                          >
-                            {{ getNestedValue(item, column.key) }}
-                          </span>
-                        }
-                        @default {
-                          <span>{{ getNestedValue(item, column.key) }}</span>
-                        }
-                      }
-                    </td>
+                    <th>{{ column.label }}</th>
                   }
                   @if (showActions) {
-                    <td class="actions-column">
-                      <div class="action-buttons">
-                        <button
-                          type="button"
-                          class="action-btn edit-btn"
-                          (click)="onEdit(item)"
-                          title="Edit"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          type="button"
-                          class="action-btn delete-btn"
-                          (click)="onDelete(item)"
-                          title="Delete"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
+                    <th class="actions-column">Actions</th>
                   }
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (item of displayedData; track trackByFn(item)) {
+                  <tr>
+                    @for (column of columns; track column.key) {
+                      <td [ngClass]="'column-' + column.type">
+                        @switch (column.type) {
+                          @case ('currency') {
+                            <span class="currency-value">{{ formatCompactCurrency(getNestedValue(item, column.key)) }}</span>
+                          }
+                          @case ('date') {
+                            <span class="date-value">{{ formatDate(getNestedValue(item, column.key)) }}</span>
+                          }
+                          @case ('badge') {
+                            <span
+                              class="badge"
+                              [style.background-color]="getBadgeColor(column, getNestedValue(item, column.key))"
+                            >
+                              {{ getNestedValue(item, column.key) }}
+                            </span>
+                          }
+                          @default {
+                            <span>{{ getNestedValue(item, column.key) }}</span>
+                          }
+                        }
+                      </td>
+                    }
+                    @if (showActions) {
+                      <td class="actions-column">
+                        <div class="action-buttons">
+                          <button
+                            type="button"
+                            class="action-btn edit-btn"
+                            (click)="onEdit(item)"
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            type="button"
+                            class="action-btn delete-btn"
+                            (click)="onDelete(item)"
+                            title="Delete"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
         </div>
       } @else {
         <div class="empty-state">
           <div class="empty-icon">📋</div>
           <h3>{{ emptyTitle }}</h3>
           <p>{{ emptyMessage }}</p>
+        </div>
+      }
+
+      <!-- Loading Overlay -->
+      @if (isLoading) {
+        <div class="loading-overlay">
+          <div class="loading-popup">Loading...</div>
         </div>
       }
     </div>
@@ -96,6 +177,7 @@ export interface TableColumn {
       border-radius: 0.5rem;
       box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
       overflow: hidden;
+      position: relative;
 
       .table-wrapper {
         overflow-x: auto;
@@ -272,6 +354,43 @@ export interface TableColumn {
         }
       }
 
+      /* Virtual Scroll specific styles - only when enabled */
+      .virtual-viewport {
+        height: 400px;
+        overflow-y: auto;
+
+        .data-table {
+          thead {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+          }
+        }
+      }
+
+      /* Loading overlay */
+      .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+
+        .loading-popup {
+          background: #3b82f6;
+          color: white;
+          padding: 1rem 2rem;
+          border-radius: 0.5rem;
+          font-weight: 500;
+          font-size: 0.875rem;
+        }
+      }
+
       .empty-state {
         padding: 3rem 2rem;
         text-align: center;
@@ -411,15 +530,81 @@ export interface TableColumn {
     }
   `]
 })
-export class DataTableComponent {
+export class DataTableComponent implements OnInit, OnChanges {
   @Input() data: any[] = [];
   @Input() columns: TableColumn[] = [];
   @Input() showActions = true;
   @Input() emptyTitle = 'No Data';
   @Input() emptyMessage = 'No data available to display.';
+  @Input() enableVirtualization = false;
+  @Input() itemHeight = 60;
+  @Input() pageSize = 50;
 
   @Output() edit = new EventEmitter<any>();
   @Output() delete = new EventEmitter<any>();
+
+  displayedData: any[] = [];
+  allData: any[] = [];
+  currentPage = 0;
+  isLoading = false;
+
+  ngOnInit(): void {
+    this.initializeData();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['data'] && !changes['data'].firstChange) {
+      this.initializeData();
+    }
+  }
+
+  private initializeData(): void {
+    this.allData = [...this.data];
+    this.currentPage = 0;
+
+    if (this.enableVirtualization) {
+      this.displayedData = this.allData.slice(0, this.pageSize);
+    } else {
+      this.displayedData = this.allData;
+    }
+  }
+
+  onScrollIndexChange(index: number): void {
+    if (!this.enableVirtualization || this.isLoading) return;
+
+    const endIndex = index + this.getViewportSize();
+    const threshold = Math.max(10, Math.floor(this.pageSize * 0.8));
+
+    if (endIndex >= this.displayedData.length - threshold && this.shouldLoadMore()) {
+      this.loadMoreData();
+    }
+  }
+
+  private getViewportSize(): number {
+    return Math.ceil(400 / this.itemHeight); // Assuming 400px viewport height
+  }
+
+  private shouldLoadMore(): boolean {
+    return this.displayedData.length < this.allData.length;
+  }
+
+  private loadMoreData(): void {
+    if (this.isLoading || !this.shouldLoadMore()) return;
+
+    this.isLoading = true;
+
+    // Simulate loading delay for better UX
+    setTimeout(() => {
+      const nextPage = this.currentPage + 1;
+      const startIndex = nextPage * this.pageSize;
+      const endIndex = Math.min(startIndex + this.pageSize, this.allData.length);
+      const newData = this.allData.slice(startIndex, endIndex);
+
+      this.displayedData = [...this.displayedData, ...newData];
+      this.currentPage = nextPage;
+      this.isLoading = false;
+    }, 300);
+  }
 
   trackByFn(item: any): any {
     return item.id || item;
