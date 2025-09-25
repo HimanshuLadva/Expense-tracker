@@ -27,14 +27,14 @@ import { RouterModule } from '@angular/router';
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
       border-bottom: 1px solid #e5e7eb;
 
       .header-content {
         .page-title {
-          margin: 0 0 0.5rem 0;
-          font-size: 2rem;
+          margin: 0 0 0.25rem 0;
+          font-size: 1.5rem;
           font-weight: 700;
           color: #111827;
         }
@@ -49,13 +49,13 @@ import { RouterModule } from '@angular/router';
       .add-button {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1.5rem;
+        gap: 0.375rem;
+        padding: 0.5rem 1rem;
         background-color: #3b82f6;
         color: white;
         border: none;
-        border-radius: 0.5rem;
-        font-size: 1.125rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
         font-weight: 500;
         cursor: pointer;
         transition: background-color 0.2s ease;
@@ -65,7 +65,7 @@ import { RouterModule } from '@angular/router';
         }
 
         .plus-icon {
-          font-size: 1.375rem;
+          font-size: 1rem;
           font-weight: bold;
         }
       }

@@ -7,6 +7,16 @@ Analyze this project's codebase and store findings in CLAUDE.md. Please examine:
 
 Add memory entries to CLAUDE.md using # so future sessions remember the project's architecture, coding style, and conventions.
 =============================================================================
+*****for update*****
 Review recent changes in the project and update CLAUDE.md with any new patterns, conventions, or architectural decisions that should be remembered for future sessions.
+Please note: don't add any code snippets
 ==========================================================================
+*****for reading*****
 Read my CLAUDE.md file to understand this project's context, then scan the codebase structure. Summarize what you've learned about the project and confirm you're ready to help with development tasks.
+=============================================================================
+remove code snippets from file and only do memory entry of 
+1. Project structure and architecture patterns
+2. Coding style and naming conventions used in existing files
+3. Tech stack and dependencies from config files
+4. Development patterns and best practices
+Add memory entries to CLAUDE.md using # so future sessions remember the project's architecture, coding style, and conventions.
