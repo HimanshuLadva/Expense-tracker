@@ -206,8 +206,8 @@ export interface TableColumn {
               }
 
               &:first-child {
-                width: 60px;
-                text-align: center;
+                min-width: 120px;
+                text-align: left;
               }
 
               &:nth-child(2) {
@@ -263,11 +263,13 @@ export interface TableColumn {
                 }
 
                 &:first-child {
-                  text-align: center;
-                  font-size: 1.5rem;
-                  white-space: normal;
-                  overflow: visible;
-                  max-width: 60px;
+                  text-align: left;
+                  font-size: inherit;
+                  white-space: nowrap;
+                  overflow: hidden;
+                  text-overflow: ellipsis;
+                  max-width: 200px;
+                  min-width: 120px;
                 }
 
                 &:nth-child(2) {
@@ -438,8 +440,9 @@ export interface TableColumn {
           }
 
           &:first-child {
-            width: 40px;
-            padding: 0.5rem 0.25rem;
+            min-width: 80px;
+            padding: 0.5rem 0.375rem;
+            text-align: left;
           }
         }
 
@@ -466,11 +469,14 @@ export interface TableColumn {
           }
 
           &:first-child {
-            padding: 0.75rem 0.25rem;
-            font-size: 1.25rem;
-            white-space: normal;
-            overflow: visible;
-            max-width: 40px;
+            padding: 0.75rem 0.375rem;
+            font-size: inherit;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+            min-width: 80px;
+            text-align: left;
           }
         }
 

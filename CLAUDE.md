@@ -178,6 +178,13 @@ src/app/
 - **Compact Spacing**: Optimized padding and margins for mobile
 - **Progressive Enhancement**: Desktop features enhance mobile base experience
 
+### Data Table First Column Optimization
+- **Text Content Support**: First column optimized for text content (titles, names) not just icons
+- **Consistent Typography**: First column uses inherit font-size to match other text columns
+- **Proper Alignment**: Left-aligned text with proper text overflow handling (ellipsis)
+- **Responsive Width**: 120px min-width desktop, 80px mobile with appropriate padding
+- **Universal Pattern**: Applied across all table implementations for consistency
+
 
 
 
@@ -208,6 +215,8 @@ src/app/
 - **Dialog Pattern**: Follow header + content + scrollable fields + fixed actions structure
 - **Component Standards**: Ensure all CRUD operations have corresponding dialog components
 - **Mobile Priority**: Implement touch support and horizontal scrolling for overflow scenarios
+- **Table First Column**: Always configure first column for text content with left alignment and inherit font-size
+- **Typography Consistency**: Ensure consistent font sizing across similar UI elements using inheritance patterns
 
 ## Application Summary
 
