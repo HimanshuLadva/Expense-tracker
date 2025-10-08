@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subscription, combineLatest } from 'rxjs';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
@@ -27,13 +28,34 @@ interface DashboardStats {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, PageHeaderComponent],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent],
   template: `
     <div class="dashboard-page">
       <app-page-header
         title="Dashboard"
         subtitle="Overview of your financial activity and analytics"
-      />
+      >
+        <form [formGroup]="dateRangeForm" class="date-range-filter">
+          <div class="date-field-wrapper">
+            <label for="fromDate" class="date-label">From:</label>
+            <input
+              type="date"
+              id="fromDate"
+              formControlName="fromDate"
+              class="date-input"
+            />
+          </div>
+          <div class="date-field-wrapper">
+            <label for="toDate" class="date-label">To:</label>
+            <input
+              type="date"
+              id="toDate"
+              formControlName="toDate"
+              class="date-input"
+            />
+          </div>
+        </form>
+      </app-page-header>
 
       <!-- Summary Cards -->
       <div class="stats-grid">
@@ -157,6 +179,53 @@ interface DashboardStats {
   `,
   styles: [`
     .dashboard-page {
+      .date-range-filter {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+
+        .date-field-wrapper {
+          position: relative;
+          display: inline-block;
+
+          .date-label {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.875rem;
+            font-weight: 500;
+            font-family: Verdana, sans-serif;
+            color: #1a1a1a;
+            pointer-events: none;
+            background: white;
+            padding: 0 0.25rem;
+          }
+
+          .date-input {
+            padding: 0.5rem 0.5rem 0.5rem 3.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: #111827;
+            background: white;
+            width: 195px;
+            outline: none;
+            transition: border-color 0.2s ease;
+
+            &:focus {
+              border-color: #3b82f6;
+              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+            &::-webkit-calendar-picker-indicator {
+              cursor: pointer;
+            }
+          }
+        }
+      }
+
       .stats-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -484,13 +553,36 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   };
 
   categoryBreakdown: any[] = [];
+  dateRangeForm!: FormGroup;
 
   private charts: Chart[] = [];
   private subscription = new Subscription();
 
-  constructor(private storageService: StorageService) {}
+  constructor(
+    private storageService: StorageService,
+    private fb: FormBuilder
+  ) {}
 
   ngOnInit(): void {
+    // Initialize date range form with default values (current month)
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    this.dateRangeForm = this.fb.group({
+      fromDate: [this.formatDateForInput(firstDay)],
+      toDate: [this.formatDateForInput(lastDay)]
+    });
+
+    // Listen to date range changes
+    this.subscription.add(
+      this.dateRangeForm.valueChanges.subscribe(() => {
+        this.calculateStats();
+        this.calculateCategoryBreakdown();
+        setTimeout(() => this.createCharts(), 100);
+      })
+    );
+
     this.subscription.add(
       combineLatest([
         this.storageService.accounts$,
@@ -519,13 +611,20 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private calculateStats(): void {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const { fromDate, toDate } = this.dateRangeForm.value;
+    const startDate = fromDate ? new Date(fromDate) : null;
+    const endDate = toDate ? new Date(toDate) : null;
 
-    const thisMonthTransactions = this.transactions.filter(t => {
+    // Set end date to end of day for inclusive comparison
+    if (endDate) {
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    const filteredTransactions = this.transactions.filter(t => {
       const transactionDate = new Date(t.date);
-      return transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear;
+      const afterStart = !startDate || transactionDate >= startDate;
+      const beforeEnd = !endDate || transactionDate <= endDate;
+      return afterStart && beforeEnd;
     });
 
     this.stats = {
@@ -533,10 +632,10 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       totalCategories: this.categories.length,
       totalTransactions: this.transactions.length,
       totalBalance: this.accounts.reduce((sum, account) => sum + account.currentBalance, 0),
-      thisMonthIncome: thisMonthTransactions
+      thisMonthIncome: filteredTransactions
         .filter(t => t.type === TransactionType.INCOME)
         .reduce((sum, t) => sum + t.amount, 0),
-      thisMonthExpenses: thisMonthTransactions
+      thisMonthExpenses: filteredTransactions
         .filter(t => t.type === TransactionType.EXPENSE)
         .reduce((sum, t) => sum + t.amount, 0),
       netIncome: 0
@@ -546,20 +645,25 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private calculateCategoryBreakdown(): void {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
+    const { fromDate, toDate } = this.dateRangeForm.value;
+    const startDate = fromDate ? new Date(fromDate) : null;
+    const endDate = toDate ? new Date(toDate) : null;
 
-    const thisMonthTransactions = this.transactions.filter(t => {
+    // Set end date to end of day for inclusive comparison
+    if (endDate) {
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    const filteredTransactions = this.transactions.filter(t => {
       const transactionDate = new Date(t.date);
-      return transactionDate.getMonth() === currentMonth &&
-             transactionDate.getFullYear() === currentYear &&
-             t.type !== TransactionType.TRANSFER;
+      const afterStart = !startDate || transactionDate >= startDate;
+      const beforeEnd = !endDate || transactionDate <= endDate;
+      return afterStart && beforeEnd && t.type !== TransactionType.TRANSFER;
     });
 
     const categoryTotals = new Map();
 
-    thisMonthTransactions.forEach(transaction => {
+    filteredTransactions.forEach(transaction => {
       const category = this.categories.find(c => c.id === transaction.categoryId);
       if (category) {
         const current = categoryTotals.get(category.id) || 0;
@@ -740,13 +844,32 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private createAccountBarChart(): void {
+    const { fromDate, toDate } = this.dateRangeForm.value;
+    const startDate = fromDate ? new Date(fromDate) : null;
+    const endDate = toDate ? new Date(toDate) : null;
+
+    // Set end date to end of day for inclusive comparison
+    if (endDate) {
+      endDate.setHours(23, 59, 59, 999);
+    }
+
     const accountData = this.accounts.map(account => {
       const income = this.transactions
-        .filter(t => t.type === TransactionType.INCOME && t.accountId === account.id)
+        .filter(t => {
+          const transactionDate = new Date(t.date);
+          const afterStart = !startDate || transactionDate >= startDate;
+          const beforeEnd = !endDate || transactionDate <= endDate;
+          return t.type === TransactionType.INCOME && t.accountId === account.id && afterStart && beforeEnd;
+        })
         .reduce((sum, t) => sum + t.amount, 0);
 
       const expenses = this.transactions
-        .filter(t => t.type === TransactionType.EXPENSE && t.accountId === account.id)
+        .filter(t => {
+          const transactionDate = new Date(t.date);
+          const afterStart = !startDate || transactionDate >= startDate;
+          const beforeEnd = !endDate || transactionDate <= endDate;
+          return t.type === TransactionType.EXPENSE && t.accountId === account.id && afterStart && beforeEnd;
+        })
         .reduce((sum, t) => sum + t.amount, 0);
 
       return { name: account.name, income, expenses };
@@ -790,6 +913,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private getMonthlyData(type: TransactionType): { labels: string[]; data: number[] } {
+    const { fromDate, toDate } = this.dateRangeForm.value;
+    const startDate = fromDate ? new Date(fromDate) : null;
+    const endDate = toDate ? new Date(toDate) : null;
+
+    // Set end date to end of day for inclusive comparison
+    if (endDate) {
+      endDate.setHours(23, 59, 59, 999);
+    }
+
     const months = [];
     const data = [];
     const now = new Date();
@@ -801,9 +933,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       const monthlyTotal = this.transactions
         .filter(t => {
           const transactionDate = new Date(t.date);
+          const afterStart = !startDate || transactionDate >= startDate;
+          const beforeEnd = !endDate || transactionDate <= endDate;
           return t.type === type &&
                  transactionDate.getMonth() === date.getMonth() &&
-                 transactionDate.getFullYear() === date.getFullYear();
+                 transactionDate.getFullYear() === date.getFullYear() &&
+                 afterStart && beforeEnd;
         })
         .reduce((sum, t) => sum + t.amount, 0);
 
@@ -834,5 +969,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     } else {
       return `${sign}₹${absValue.toFixed(0)}`;
     }
+  }
+
+  private formatDateForInput(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

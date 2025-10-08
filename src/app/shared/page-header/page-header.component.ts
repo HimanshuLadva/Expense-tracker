@@ -14,12 +14,15 @@ import { RouterModule } from '@angular/router';
           <p class="page-subtitle">{{ subtitle }}</p>
         }
       </div>
-      @if (showAddButton) {
-        <button type="button" class="add-button" (click)="onAddClick()">
-          <span class="plus-icon">+</span>
-          Add {{ addButtonText }}
-        </button>
-      }
+      <div class="header-actions">
+        <ng-content></ng-content>
+        @if (showAddButton) {
+          <button type="button" class="add-button" (click)="onAddClick()">
+            <span class="plus-icon">+</span>
+            Add {{ addButtonText }}
+          </button>
+        }
+      </div>
     </div>
   `,
   styles: [`
@@ -44,6 +47,12 @@ import { RouterModule } from '@angular/router';
           color: #6b7280;
           font-size: 1rem;
         }
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
       }
 
       .add-button {
@@ -76,6 +85,10 @@ import { RouterModule } from '@angular/router';
         flex-direction: column;
         gap: 1rem;
         align-items: stretch;
+
+        .header-actions {
+          flex-direction: column;
+        }
 
         .add-button {
           justify-content: center;
