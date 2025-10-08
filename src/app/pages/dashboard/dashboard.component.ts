@@ -37,7 +37,7 @@ interface DashboardStats {
       >
         <form [formGroup]="dateRangeForm" class="date-range-filter">
           <div class="date-field-wrapper">
-            <label for="fromDate" class="date-label">From:</label>
+            <label for="fromDate" class="date-label">Fr:</label>
             <input
               type="date"
               id="fromDate"
@@ -182,7 +182,7 @@ interface DashboardStats {
       .date-range-filter {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
         flex-wrap: wrap;
 
         .date-field-wrapper {
@@ -191,7 +191,7 @@ interface DashboardStats {
 
           .date-label {
             position: absolute;
-            left: 0.75rem;
+            left: 0.625rem;
             top: 50%;
             transform: translateY(-50%);
             font-size: 0.875rem;
@@ -204,13 +204,13 @@ interface DashboardStats {
           }
 
           .date-input {
-            padding: 0.5rem 0.5rem 0.5rem 3.75rem;
+            padding: 0.5rem 0.5rem 0.5rem 3.5rem;
             border: 1px solid #d1d5db;
             border-radius: 0.375rem;
             font-size: 0.875rem;
             color: #111827;
             background: white;
-            width: 195px;
+            width: 182px;
             outline: none;
             transition: border-color 0.2s ease;
 
