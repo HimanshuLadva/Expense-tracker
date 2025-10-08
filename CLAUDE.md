@@ -185,6 +185,20 @@ src/app/
 - **Responsive Width**: 120px min-width desktop, 80px mobile with appropriate padding
 - **Universal Pattern**: Applied across all table implementations for consistency
 
+### Page Header Component Pattern
+- **Content Projection**: Supports ng-content for flexible header actions (filters, buttons, controls)
+- **Actions Container**: header-actions wrapper with flexbox layout for right-aligned content
+- **Responsive Behavior**: Stacks header actions vertically on mobile (below 768px)
+- **Flexible Integration**: Can host date pickers, buttons, or custom controls alongside page title
+
+### Date Range Filter Implementation Pattern
+- **Form Integration**: ReactiveFormsModule with FormBuilder for date range controls
+- **Default Date Range**: Initialize with current month (first to last day) using formatDateForInput helper
+- **Real-time Filtering**: Subscribe to valueChanges for automatic data refresh
+- **Inclusive Date Logic**: Set end date to end of day (23:59:59.999) for proper date comparisons
+- **Comprehensive Filtering**: Apply date filters to all dashboard components (stats, charts, category breakdown)
+- **Filter Propagation**: Pass date range to all data calculation methods for consistent filtering
+
 
 
 
@@ -208,6 +222,8 @@ src/app/
 - **Dialog System**: Created unified dialog architecture with standardized component structure
 - **Component Completeness**: Built missing ReminderDialogComponent with full CRUD functionality
 - **Mobile Optimization**: Enhanced touch targets, horizontal scrolling, and compact spacing
+- **Dashboard Date Filtering**: Implemented date range picker with comprehensive filtering across all dashboard data
+- **Page Header Enhancement**: Extended page-header component with content projection for flexible action placement
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling
@@ -217,6 +233,10 @@ src/app/
 - **Mobile Priority**: Implement touch support and horizontal scrolling for overflow scenarios
 - **Table First Column**: Always configure first column for text content with left alignment and inherit font-size
 - **Typography Consistency**: Ensure consistent font sizing across similar UI elements using inheritance patterns
+- **Date Filter Pattern**: When adding date filtering to pages, use same pattern as dashboard (FormBuilder, valueChanges subscription, inclusive end date logic)
+- **Form Input Labels**: Use inline labels positioned absolutely inside input boxes for compact design
+- **Label Styling Standards**: Verdana font family, 0.875rem size, 500 weight, dark color (#1a1a1a) for inline labels
+- **Input Width Optimization**: Set fixed width (not min-width) for date inputs to ensure proper sizing (195px standard for date pickers with inline labels)
 
 ## Application Summary
 
