@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
 import { StorageService } from '../../services/storage.service';
+import { DateRangeService } from '../../services/date-range.service';
 import { Category, CategoryType } from '../../models';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { DataTableComponent, TableColumn } from '../../shared/data-table/data-table.component';
@@ -285,23 +286,31 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   constructor(
     private storageService: StorageService,
     private dialogService: DialogService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private dateRangeService: DateRangeService
   ) {}
 
   ngOnInit(): void {
-    // Initialize date range form with default values (current month)
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    // Initialize date range form with values from service
+    const currentRange = this.dateRangeService.getCurrentDateRange();
 
     this.dateRangeForm = this.fb.group({
-      fromDate: [this.formatDateForInput(firstDay)],
-      toDate: [this.formatDateForInput(lastDay)]
+      fromDate: [currentRange.fromDate],
+      toDate: [currentRange.toDate]
     });
 
-    // Listen to date range changes
+    // Listen to date range changes and update service
     this.subscription.add(
-      this.dateRangeForm.valueChanges.subscribe(() => {
+      this.dateRangeForm.valueChanges.subscribe((value) => {
+        this.dateRangeService.updateDateRange(value);
+        this.filterCategories();
+      })
+    );
+
+    // Listen to date range changes from other pages
+    this.subscription.add(
+      this.dateRangeService.dateRange$.subscribe((dateRange) => {
+        this.dateRangeForm.patchValue(dateRange, { emitEvent: false });
         this.filterCategories();
       })
     );
