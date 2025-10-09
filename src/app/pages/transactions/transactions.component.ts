@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subscription, combineLatest } from 'rxjs';
 
 import { StorageService } from '../../services/storage.service';
@@ -19,7 +20,7 @@ interface EnrichedTransaction extends Transaction {
 @Component({
   selector: 'app-transactions',
   standalone: true,
-  imports: [CommonModule, PageHeaderComponent, DataTableComponent],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent],
   template: `
     <div class="transactions-page">
       <app-page-header
@@ -28,7 +29,28 @@ interface EnrichedTransaction extends Transaction {
         [showAddButton]="true"
         (addClick)="openAddDialog()"
         addButtonText="Transaction"
-      />
+      >
+        <form [formGroup]="dateRangeForm" class="date-range-filter">
+          <div class="date-field-wrapper">
+            <label for="fromDate" class="date-label">Fr:</label>
+            <input
+              type="date"
+              id="fromDate"
+              formControlName="fromDate"
+              class="date-input"
+            />
+          </div>
+          <div class="date-field-wrapper">
+            <label for="toDate" class="date-label">To:</label>
+            <input
+              type="date"
+              id="toDate"
+              formControlName="toDate"
+              class="date-input"
+            />
+          </div>
+        </form>
+      </app-page-header>
 
       <div class="transactions-stats">
         <div class="stat-card">
@@ -103,6 +125,53 @@ interface EnrichedTransaction extends Transaction {
   `,
   styles: [`
     .transactions-page {
+      .date-range-filter {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+
+        .date-field-wrapper {
+          position: relative;
+          display: inline-block;
+
+          .date-label {
+            position: absolute;
+            left: 0.625rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.875rem;
+            font-weight: 500;
+            font-family: Verdana, sans-serif;
+            color: #1a1a1a;
+            pointer-events: none;
+            background: white;
+            padding: 0 0.25rem;
+          }
+
+          .date-input {
+            padding: 0.5rem 0.5rem 0.5rem 2.7rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: #111827;
+            background: white;
+            width: 170px;
+            outline: none;
+            transition: border-color 0.2s ease;
+
+            &:focus {
+              border-color: #3b82f6;
+              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+            &::-webkit-calendar-picker-indicator {
+              cursor: pointer;
+            }
+          }
+        }
+      }
+
       .transactions-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -227,6 +296,7 @@ interface EnrichedTransaction extends Transaction {
   `]
 })
 export class TransactionsComponent implements OnInit, OnDestroy {
+  allTransactions: Transaction[] = [];
   transactions: EnrichedTransaction[] = [];
   incomeTransactions: EnrichedTransaction[] = [];
   expenseTransactions: EnrichedTransaction[] = [];
@@ -239,6 +309,7 @@ export class TransactionsComponent implements OnInit, OnDestroy {
 
   totalIncome = 0;
   totalExpenses = 0;
+  dateRangeForm!: FormGroup;
 
   private subscription = new Subscription();
 
@@ -263,10 +334,28 @@ export class TransactionsComponent implements OnInit, OnDestroy {
 
   constructor(
     private storageService: StorageService,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private fb: FormBuilder
   ) {}
 
   ngOnInit(): void {
+    // Initialize date range form with default values (current month)
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    this.dateRangeForm = this.fb.group({
+      fromDate: [this.formatDateForInput(firstDay)],
+      toDate: [this.formatDateForInput(lastDay)]
+    });
+
+    // Listen to date range changes
+    this.subscription.add(
+      this.dateRangeForm.valueChanges.subscribe(() => {
+        this.filterTransactions();
+      })
+    );
+
     this.subscription.add(
       combineLatest([
         this.storageService.transactions$,
@@ -275,10 +364,8 @@ export class TransactionsComponent implements OnInit, OnDestroy {
       ]).subscribe(([transactions, accounts, categories]) => {
         this.accounts = accounts;
         this.categories = categories;
-        this.enrichTransactions(transactions);
-        this.updateTransactionGroups();
-        this.calculateTotals();
-        this.updateFilteredTransactions();
+        this.allTransactions = transactions;
+        this.filterTransactions();
       })
     );
   }
@@ -392,5 +479,35 @@ export class TransactionsComponent implements OnInit, OnDestroy {
     if (confirm('Are you sure you want to delete this transaction?')) {
       this.storageService.deleteTransaction(transaction.id);
     }
+  }
+
+  private filterTransactions(): void {
+    const { fromDate, toDate } = this.dateRangeForm.value;
+    const startDate = fromDate ? new Date(fromDate) : null;
+    const endDate = toDate ? new Date(toDate) : null;
+
+    // Set end date to end of day for inclusive comparison
+    if (endDate) {
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    const filtered = this.allTransactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      const afterStart = !startDate || transactionDate >= startDate;
+      const beforeEnd = !endDate || transactionDate <= endDate;
+      return afterStart && beforeEnd;
+    });
+
+    this.enrichTransactions(filtered);
+    this.updateTransactionGroups();
+    this.calculateTotals();
+    this.updateFilteredTransactions();
+  }
+
+  private formatDateForInput(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
 import { StorageService } from '../../services/storage.service';
@@ -13,7 +14,7 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
 @Component({
   selector: 'app-accounts',
   standalone: true,
-  imports: [CommonModule, PageHeaderComponent, DataTableComponent],
+  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent],
   template: `
     <div class="accounts-page">
       <app-page-header
@@ -22,7 +23,28 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
         [showAddButton]="true"
         (addClick)="openAddDialog()"
         addButtonText="Account"
-      />
+      >
+        <form [formGroup]="dateRangeForm" class="date-range-filter">
+          <div class="date-field-wrapper">
+            <label for="fromDate" class="date-label">Fr:</label>
+            <input
+              type="date"
+              id="fromDate"
+              formControlName="fromDate"
+              class="date-input"
+            />
+          </div>
+          <div class="date-field-wrapper">
+            <label for="toDate" class="date-label">To:</label>
+            <input
+              type="date"
+              id="toDate"
+              formControlName="toDate"
+              class="date-input"
+            />
+          </div>
+        </form>
+      </app-page-header>
 
       <div class="accounts-stats">
         <div class="stat-card">
@@ -57,6 +79,53 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
   `,
   styles: [`
     .accounts-page {
+      .date-range-filter {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+
+        .date-field-wrapper {
+          position: relative;
+          display: inline-block;
+
+          .date-label {
+            position: absolute;
+            left: 0.625rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.875rem;
+            font-weight: 500;
+            font-family: Verdana, sans-serif;
+            color: #1a1a1a;
+            pointer-events: none;
+            background: white;
+            padding: 0 0.25rem;
+          }
+
+          .date-input {
+            padding: 0.5rem 0.5rem 0.5rem 2.7rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: #111827;
+            background: white;
+            width: 170px;
+            outline: none;
+            transition: border-color 0.2s ease;
+
+            &:focus {
+              border-color: #3b82f6;
+              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+            &::-webkit-calendar-picker-indicator {
+              cursor: pointer;
+            }
+          }
+        }
+      }
+
       .accounts-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -178,8 +247,10 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
   `]
 })
 export class AccountsComponent implements OnInit, OnDestroy {
+  allAccounts: Account[] = [];
   accounts: Account[] = [];
   totalBalance = 0;
+  dateRangeForm!: FormGroup;
   private subscription = new Subscription();
 
   tableColumns: TableColumn[] = [
@@ -192,14 +263,32 @@ export class AccountsComponent implements OnInit, OnDestroy {
 
   constructor(
     private storageService: StorageService,
-    private dialogService: DialogService
+    private dialogService: DialogService,
+    private fb: FormBuilder
   ) {}
 
   ngOnInit(): void {
+    // Initialize date range form with default values (current month)
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    this.dateRangeForm = this.fb.group({
+      fromDate: [this.formatDateForInput(firstDay)],
+      toDate: [this.formatDateForInput(lastDay)]
+    });
+
+    // Listen to date range changes
+    this.subscription.add(
+      this.dateRangeForm.valueChanges.subscribe(() => {
+        this.filterAccounts();
+      })
+    );
+
     this.subscription.add(
       this.storageService.accounts$.subscribe(accounts => {
-        this.accounts = accounts;
-        this.calculateTotalBalance();
+        this.allAccounts = accounts;
+        this.filterAccounts();
       })
     );
   }
@@ -267,5 +356,32 @@ export class AccountsComponent implements OnInit, OnDestroy {
     if (confirm(`Are you sure you want to delete the account "${account.name}"?`)) {
       this.storageService.deleteAccount(account.id);
     }
+  }
+
+  private filterAccounts(): void {
+    const { fromDate, toDate } = this.dateRangeForm.value;
+    const startDate = fromDate ? new Date(fromDate) : null;
+    const endDate = toDate ? new Date(toDate) : null;
+
+    // Set end date to end of day for inclusive comparison
+    if (endDate) {
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    this.accounts = this.allAccounts.filter(account => {
+      const accountDate = new Date(account.createdAt);
+      const afterStart = !startDate || accountDate >= startDate;
+      const beforeEnd = !endDate || accountDate <= endDate;
+      return afterStart && beforeEnd;
+    });
+
+    this.calculateTotalBalance();
+  }
+
+  private formatDateForInput(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }
