@@ -204,13 +204,13 @@ interface DashboardStats {
           }
 
           .date-input {
-            padding: 0.5rem 0.5rem 0.5rem 3.5rem;
+            padding: 0.5rem 0.5rem 0.5rem 2.7rem;
             border: 1px solid #d1d5db;
             border-radius: 0.375rem;
             font-size: 0.875rem;
             color: #111827;
             background: white;
-            width: 182px;
+            width: 170px;
             outline: none;
             transition: border-color 0.2s ease;
 
