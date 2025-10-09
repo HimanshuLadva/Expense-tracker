@@ -19,7 +19,7 @@ Modern Angular 19 expense tracking application with comprehensive financial mana
 ```
 src/app/
 ├── models/           # Data entities and DTOs with barrel exports
-├── services/         # Business logic and state management
+├── services/         # Business logic and state management (StorageService, DateRangeService)
 ├── pages/           # Feature pages (dashboard, accounts, categories, transactions, reminders)
 ├── shared/          # Reusable components (data-table, dialogs, page-header, icon-selector)
 ├── app.component.*  # Root component with navigation sidebar
@@ -93,6 +93,7 @@ src/app/
 - **Storage Strategy**: Local storage with JSON serialization and custom date revival
 - **ID Generation**: Timestamp + random string combination
 - **Error Handling**: Try-catch blocks with console logging for storage operations
+- **Shared State Services**: Singleton services with BehaviorSubject for cross-page state synchronization (e.g., DateRangeService)
 
 ### Form Handling Standards
 - **Form Type**: Reactive forms with FormBuilder and validators
@@ -199,6 +200,25 @@ src/app/
 - **Comprehensive Filtering**: Apply date filters to all dashboard components (stats, charts, category breakdown)
 - **Filter Propagation**: Pass date range to all data calculation methods for consistent filtering
 
+### Date Range Picker Styling Standards
+- **Compact Design**: "Fr:" and "To:" labels (2-character abbreviations for space efficiency)
+- **Inline Label Positioning**: Absolute positioning inside input with Verdana font, 0.875rem, 500 weight
+- **Input Dimensions**: 170px width, 2.7rem left padding for label space
+- **Gap Spacing**: 0.5rem gap between date field wrappers
+- **Label Offset**: 0.625rem from left edge of input
+- **Consistent Application**: Same styling across all pages (Dashboard, Accounts, Categories, Transactions, Reminders)
+
+### Global Date Range Synchronization Pattern
+- **DateRangeService**: Centralized service managing shared date range state across application
+- **Service Architecture**: BehaviorSubject-based with Observable stream (dateRange$)
+- **Initial State**: Current month (first to last day) set on service initialization
+- **Bidirectional Sync**: Pages update service on local changes AND listen for external changes
+- **Update Pattern**: `dateRangeService.updateDateRange(value)` on form valueChanges
+- **Listen Pattern**: Subscribe to `dateRangeService.dateRange$` and patchValue with `{ emitEvent: false }`
+- **Loop Prevention**: Use `{ emitEvent: false }` when patching form from service to prevent infinite loops
+- **Cross-Page Behavior**: Date range changes persist when navigating between pages
+- **Data Filtering**: Each page filters its data based on the synchronized date range
+
 
 
 
@@ -224,6 +244,9 @@ src/app/
 - **Mobile Optimization**: Enhanced touch targets, horizontal scrolling, and compact spacing
 - **Dashboard Date Filtering**: Implemented date range picker with comprehensive filtering across all dashboard data
 - **Page Header Enhancement**: Extended page-header component with content projection for flexible action placement
+- **Universal Date Range Picker**: Added compact date range filters to all pages (Dashboard, Accounts, Categories, Transactions, Reminders)
+- **Global Date Synchronization**: Implemented DateRangeService for cross-page date range state management
+- **Data Filtering System**: All pages filter their data based on selected date range with inclusive date logic
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling
@@ -233,10 +256,13 @@ src/app/
 - **Mobile Priority**: Implement touch support and horizontal scrolling for overflow scenarios
 - **Table First Column**: Always configure first column for text content with left alignment and inherit font-size
 - **Typography Consistency**: Ensure consistent font sizing across similar UI elements using inheritance patterns
-- **Date Filter Pattern**: When adding date filtering to pages, use same pattern as dashboard (FormBuilder, valueChanges subscription, inclusive end date logic)
+- **Date Filter Pattern**: When adding date filtering to pages, use DateRangeService for synchronized state management
 - **Form Input Labels**: Use inline labels positioned absolutely inside input boxes for compact design
 - **Label Styling Standards**: Verdana font family, 0.875rem size, 500 weight, dark color (#1a1a1a) for inline labels
-- **Input Width Optimization**: Set fixed width (not min-width) for date inputs to ensure proper sizing (195px standard for date pickers with inline labels)
+- **Date Picker Dimensions**: 170px width, 2.7rem left padding, "Fr:" and "To:" labels for compact design
+- **Shared State Services**: For cross-page state, create dedicated service with BehaviorSubject pattern like DateRangeService
+- **Page Filtering**: Always maintain separate `all*` and filtered arrays, apply date range filtering on initialization and changes
+- **Service Initialization**: Initialize forms with `getCurrentDateRange()` from DateRangeService for consistency
 
 ## Application Summary
 
