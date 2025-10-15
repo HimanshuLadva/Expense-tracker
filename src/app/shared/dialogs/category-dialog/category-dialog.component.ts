@@ -69,25 +69,6 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             }
           </div>
 
-          @if (categoryForm.get('type')?.value === CategoryType.EXPENSE) {
-            <div class="form-group">
-              <label for="budgetLimit" class="label">Budget Limit (Optional)</label>
-              <input
-                type="number"
-                id="budgetLimit"
-                formControlName="budgetLimit"
-                class="form-input"
-                placeholder="0.00"
-                step="0.01"
-                [class.error]="categoryForm.get('budgetLimit')?.invalid && categoryForm.get('budgetLimit')?.touched"
-              />
-              @if (categoryForm.get('budgetLimit')?.hasError('min') && categoryForm.get('budgetLimit')?.touched) {
-                <span class="error-message">Budget limit must be at least 0</span>
-              }
-              <small class="help-text">Set a monthly spending limit for this category</small>
-            </div>
-          }
-
           <app-icon-selector
             formControlName="icon"
             label="Category Icon *"
@@ -305,19 +286,12 @@ export class CategoryDialogComponent implements OnInit {
       this.isEditMode = true;
       this.loadCategory(this.data.categoryId);
     }
-
-    this.categoryForm.get('type')?.valueChanges.subscribe(type => {
-      if (type === CategoryType.INCOME) {
-        this.categoryForm.get('budgetLimit')?.setValue(null);
-      }
-    });
   }
 
   private createForm(): FormGroup {
     return this.fb.group({
       type: ['', Validators.required],
       name: ['', [Validators.required, Validators.minLength(2)]],
-      budgetLimit: [null, [Validators.min(0)]],
       icon: ['', Validators.required]
     });
   }
@@ -331,7 +305,6 @@ export class CategoryDialogComponent implements OnInit {
       this.categoryForm.patchValue({
         type: category.type,
         name: category.name,
-        budgetLimit: category.budgetLimit,
         icon: category.icon
       });
     }
@@ -347,7 +320,6 @@ export class CategoryDialogComponent implements OnInit {
           ...this.category,
           type: formValue.type,
           name: formValue.name,
-          budgetLimit: formValue.type === CategoryType.EXPENSE ? formValue.budgetLimit : undefined,
           icon: formValue.icon,
           updatedAt: new Date()
         };
@@ -357,7 +329,6 @@ export class CategoryDialogComponent implements OnInit {
           id: this.storageService.generateId(),
           type: formValue.type,
           name: formValue.name,
-          budgetLimit: formValue.type === CategoryType.EXPENSE ? formValue.budgetLimit : undefined,
           icon: formValue.icon,
           createdAt: new Date(),
           updatedAt: new Date()

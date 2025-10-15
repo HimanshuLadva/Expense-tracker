@@ -199,6 +199,7 @@ src/app/
 - **Inclusive Date Logic**: Set end date to end of day (23:59:59.999) for proper date comparisons
 - **Comprehensive Filtering**: Apply date filters to all dashboard components (stats, charts, category breakdown)
 - **Filter Propagation**: Pass date range to all data calculation methods for consistent filtering
+- **Applicable Pages**: Dashboard, Accounts, Transactions, Reminders (NOT Categories - see below)
 
 ### Date Range Picker Styling Standards
 - **Compact Design**: "Fr:" and "To:" labels (2-character abbreviations for space efficiency)
@@ -206,7 +207,7 @@ src/app/
 - **Input Dimensions**: 170px width, 2.7rem left padding for label space
 - **Gap Spacing**: 0.5rem gap between date field wrappers
 - **Label Offset**: 0.625rem from left edge of input
-- **Consistent Application**: Same styling across all pages (Dashboard, Accounts, Categories, Transactions, Reminders)
+- **Consistent Application**: Same styling across date-filtered pages (Dashboard, Accounts, Transactions, Reminders)
 
 ### Global Date Range Synchronization Pattern
 - **DateRangeService**: Centralized service managing shared date range state across application
@@ -218,6 +219,7 @@ src/app/
 - **Loop Prevention**: Use `{ emitEvent: false }` when patching form from service to prevent infinite loops
 - **Cross-Page Behavior**: Date range changes persist when navigating between pages
 - **Data Filtering**: Each page filters its data based on the synchronized date range
+- **Categories Exception**: Categories page does NOT use date filtering - categories are constant entities that persist across all time periods
 
 ### Dialog Form Scrolling Pattern
 - **Form Structure**: Use flexbox layout with form-fields and form-actions sections
@@ -253,9 +255,10 @@ src/app/
 - **Mobile Optimization**: Enhanced touch targets, horizontal scrolling, and compact spacing
 - **Dashboard Date Filtering**: Implemented date range picker with comprehensive filtering across all dashboard data
 - **Page Header Enhancement**: Extended page-header component with content projection for flexible action placement
-- **Universal Date Range Picker**: Added compact date range filters to all pages (Dashboard, Accounts, Categories, Transactions, Reminders)
+- **Universal Date Range Picker**: Added compact date range filters to time-based pages (Dashboard, Accounts, Transactions, Reminders)
 - **Global Date Synchronization**: Implemented DateRangeService for cross-page date range state management
-- **Data Filtering System**: All pages filter their data based on selected date range with inclusive date logic
+- **Data Filtering System**: Time-based pages filter their data based on selected date range with inclusive date logic
+- **Categories Design**: Categories page simplified without date filtering - categories are constant organizational entities
 - **Dialog Scrolling Fix**: Fixed action button visibility in all dialog forms by implementing proper scrolling containers with max-height constraints
 
 ### Future Development Guidelines
@@ -266,7 +269,8 @@ src/app/
 - **Mobile Priority**: Implement touch support and horizontal scrolling for overflow scenarios
 - **Table First Column**: Always configure first column for text content with left alignment and inherit font-size
 - **Typography Consistency**: Ensure consistent font sizing across similar UI elements using inheritance patterns
-- **Date Filter Pattern**: When adding date filtering to pages, use DateRangeService for synchronized state management
+- **Date Filter Pattern**: When adding date filtering to time-based pages, use DateRangeService for synchronized state management
+- **Category Pattern**: Categories are constant entities - do NOT apply date filtering to category management pages
 - **Form Input Labels**: Use inline labels positioned absolutely inside input boxes for compact design
 - **Label Styling Standards**: Verdana font family, 0.875rem size, 500 weight, dark color (#1a1a1a) for inline labels
 - **Date Picker Dimensions**: 170px width, 2.7rem left padding, "Fr:" and "To:" labels for compact design

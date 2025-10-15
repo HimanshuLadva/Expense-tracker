@@ -7,7 +7,6 @@ export interface Category {
   id: string;
   name: string;
   type: CategoryType;
-  budgetLimit?: number;
   icon: string;
   createdAt: Date;
   updatedAt: Date;
@@ -16,7 +15,6 @@ export interface Category {
 export interface CreateCategoryRequest {
   name: string;
   type: CategoryType;
-  budgetLimit?: number;
   icon: string;
 }
 
@@ -24,6 +22,5 @@ export interface UpdateCategoryRequest {
   id: string;
   name: string;
   type: CategoryType;
-  budgetLimit?: number;
   icon: string;
 }

@@ -1,10 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
 import { StorageService } from '../../services/storage.service';
-import { DateRangeService } from '../../services/date-range.service';
 import { Category, CategoryType } from '../../models';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { DataTableComponent, TableColumn } from '../../shared/data-table/data-table.component';
@@ -14,7 +12,7 @@ import { CategoryDialogComponent } from '../../shared/dialogs/category-dialog/ca
 @Component({
   selector: 'app-categories',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PageHeaderComponent, DataTableComponent],
+  imports: [CommonModule, PageHeaderComponent, DataTableComponent],
   template: `
     <div class="categories-page">
       <app-page-header
@@ -23,28 +21,7 @@ import { CategoryDialogComponent } from '../../shared/dialogs/category-dialog/ca
         [showAddButton]="true"
         (addClick)="openAddDialog()"
         addButtonText="Category"
-      >
-        <form [formGroup]="dateRangeForm" class="date-range-filter">
-          <div class="date-field-wrapper">
-            <label for="fromDate" class="date-label">Fr:</label>
-            <input
-              type="date"
-              id="fromDate"
-              formControlName="fromDate"
-              class="date-input"
-            />
-          </div>
-          <div class="date-field-wrapper">
-            <label for="toDate" class="date-label">To:</label>
-            <input
-              type="date"
-              id="toDate"
-              formControlName="toDate"
-              class="date-input"
-            />
-          </div>
-        </form>
-      </app-page-header>
+      />
 
       <div class="categories-stats">
         <div class="stat-card total">
@@ -110,53 +87,6 @@ import { CategoryDialogComponent } from '../../shared/dialogs/category-dialog/ca
   `,
   styles: [`
     .categories-page {
-      .date-range-filter {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-
-        .date-field-wrapper {
-          position: relative;
-          display: inline-block;
-
-          .date-label {
-            position: absolute;
-            left: 0.625rem;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 0.875rem;
-            font-weight: 500;
-            font-family: Verdana, sans-serif;
-            color: #1a1a1a;
-            pointer-events: none;
-            background: white;
-            padding: 0 0.25rem;
-          }
-
-          .date-input {
-            padding: 0.5rem 0.5rem 0.5rem 2.7rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            color: #111827;
-            background: white;
-            width: 170px;
-            outline: none;
-            transition: border-color 0.2s ease;
-
-            &:focus {
-              border-color: #3b82f6;
-              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            }
-
-            &::-webkit-calendar-picker-indicator {
-              cursor: pointer;
-            }
-          }
-        }
-      }
-
       .categories-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -258,13 +188,11 @@ import { CategoryDialogComponent } from '../../shared/dialogs/category-dialog/ca
   `]
 })
 export class CategoriesComponent implements OnInit, OnDestroy {
-  allCategories: Category[] = [];
   categories: Category[] = [];
   incomeCategories: Category[] = [];
   expenseCategories: Category[] = [];
   filteredCategories: Category[] = [];
   activeTab: 'all' | 'income' | 'expense' = 'all';
-  dateRangeForm!: FormGroup;
   private subscription = new Subscription();
 
   tableColumns: TableColumn[] = [
@@ -279,46 +207,20 @@ export class CategoriesComponent implements OnInit, OnDestroy {
         'expense': '#ef4444'
       }
     },
-    { key: 'budgetLimit', label: 'Budget Limit', type: 'currency' },
     { key: 'createdAt', label: 'Created', type: 'date' }
   ];
 
   constructor(
     private storageService: StorageService,
-    private dialogService: DialogService,
-    private fb: FormBuilder,
-    private dateRangeService: DateRangeService
+    private dialogService: DialogService
   ) {}
 
   ngOnInit(): void {
-    // Initialize date range form with values from service
-    const currentRange = this.dateRangeService.getCurrentDateRange();
-
-    this.dateRangeForm = this.fb.group({
-      fromDate: [currentRange.fromDate],
-      toDate: [currentRange.toDate]
-    });
-
-    // Listen to date range changes and update service
-    this.subscription.add(
-      this.dateRangeForm.valueChanges.subscribe((value) => {
-        this.dateRangeService.updateDateRange(value);
-        this.filterCategories();
-      })
-    );
-
-    // Listen to date range changes from other pages
-    this.subscription.add(
-      this.dateRangeService.dateRange$.subscribe((dateRange) => {
-        this.dateRangeForm.patchValue(dateRange, { emitEvent: false });
-        this.filterCategories();
-      })
-    );
-
     this.subscription.add(
       this.storageService.categories$.subscribe(categories => {
-        this.allCategories = categories;
-        this.filterCategories();
+        this.categories = categories;
+        this.updateCategoryGroups();
+        this.updateFilteredCategories();
       })
     );
   }
@@ -369,33 +271,5 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     if (confirm(`Are you sure you want to delete the category "${category.name}"?`)) {
       this.storageService.deleteCategory(category.id);
     }
-  }
-
-  private filterCategories(): void {
-    const { fromDate, toDate } = this.dateRangeForm.value;
-    const startDate = fromDate ? new Date(fromDate) : null;
-    const endDate = toDate ? new Date(toDate) : null;
-
-    // Set end date to end of day for inclusive comparison
-    if (endDate) {
-      endDate.setHours(23, 59, 59, 999);
-    }
-
-    this.categories = this.allCategories.filter(category => {
-      const categoryDate = new Date(category.createdAt);
-      const afterStart = !startDate || categoryDate >= startDate;
-      const beforeEnd = !endDate || categoryDate <= endDate;
-      return afterStart && beforeEnd;
-    });
-
-    this.updateCategoryGroups();
-    this.updateFilteredCategories();
-  }
-
-  private formatDateForInput(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
   }
 }
