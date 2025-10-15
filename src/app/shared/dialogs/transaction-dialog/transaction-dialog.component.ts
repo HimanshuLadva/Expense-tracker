@@ -196,10 +196,28 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       padding: 0;
 
       .form-fields {
-        flex: 1;
         overflow-y: auto;
         padding: 0.25rem 0;
         max-height: calc(85vh - 200px);
+        margin-bottom: 1rem;
+
+        &::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+          background: #c1c1c1;
+          border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+          background: #a1a1a1;
+        }
 
         .form-group {
           margin-bottom: 1.25rem;
@@ -222,7 +240,6 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         gap: 0.75rem;
         padding-top: 1rem;
         border-top: 1px solid #e5e7eb;
-        margin-top: auto;
 
         .btn {
           flex: 1;

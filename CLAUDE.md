@@ -219,6 +219,15 @@ src/app/
 - **Cross-Page Behavior**: Date range changes persist when navigating between pages
 - **Data Filtering**: Each page filters its data based on the synchronized date range
 
+### Dialog Form Scrolling Pattern
+- **Form Structure**: Use flexbox layout with form-fields and form-actions sections
+- **Scrollable Content**: Apply `max-height: calc(90vh - 200px)` to form-fields container
+- **Fixed Actions**: Keep action buttons always visible at bottom without `margin-top: auto`
+- **Scroll Container**: form-fields div has `overflow-y: auto` with custom scrollbar styling
+- **Custom Scrollbar**: 6px width, rounded thumb, hover effects for better UX
+- **Button Visibility**: Ensures Cancel/Submit buttons remain visible when form content expands
+- **Consistent Pattern**: Applied across all dialog components (Category, Transaction, Reminder)
+
 
 
 
@@ -247,6 +256,7 @@ src/app/
 - **Universal Date Range Picker**: Added compact date range filters to all pages (Dashboard, Accounts, Categories, Transactions, Reminders)
 - **Global Date Synchronization**: Implemented DateRangeService for cross-page date range state management
 - **Data Filtering System**: All pages filter their data based on selected date range with inclusive date logic
+- **Dialog Scrolling Fix**: Fixed action button visibility in all dialog forms by implementing proper scrolling containers with max-height constraints
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling
