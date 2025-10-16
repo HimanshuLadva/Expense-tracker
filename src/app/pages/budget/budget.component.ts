@@ -382,18 +382,21 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
 
       .not-budgeted-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 1rem;
 
         .category-card {
           background: white;
-          padding: 1rem;
+          padding: 1.25rem;
           border-radius: 0.5rem;
           box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+          display: grid;
+          grid-template-columns: 1fr auto;
+          grid-template-rows: auto auto;
+          gap: 0.75rem;
+          align-items: start;
           transition: all 0.2s ease;
+          min-height: 80px;
 
           &:hover {
             box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.15);
@@ -403,23 +406,33 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            grid-column: 1 / -1;
+            min-width: 0;
 
             .category-icon {
-              font-size: 1.5rem;
+              font-size: 2rem;
+              flex-shrink: 0;
             }
 
             .category-name {
               font-weight: 600;
               color: #111827;
-              font-size: 0.875rem;
+              font-size: 1rem;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              flex: 1;
+              min-width: 0;
             }
 
             .category-type {
-              padding: 0.25rem 0.5rem;
+              padding: 0.25rem 0.625rem;
               border-radius: 0.25rem;
               font-size: 0.75rem;
               font-weight: 500;
               text-transform: uppercase;
+              white-space: nowrap;
+              flex-shrink: 0;
 
               &.income {
                 background: #d1fae5;
@@ -434,7 +447,8 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
           }
 
           .set-budget-btn {
-            padding: 0.5rem 1rem;
+            grid-column: 1 / -1;
+            padding: 0.625rem 1.25rem;
             background: #3b82f6;
             color: white;
             border: none;
@@ -444,6 +458,7 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
             cursor: pointer;
             transition: all 0.2s ease;
             white-space: nowrap;
+            width: 100%;
 
             &:hover {
               background: #2563eb;
