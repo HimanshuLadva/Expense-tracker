@@ -37,7 +37,7 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
           <div class="stat-icon">💰</div>
           <div class="stat-content">
             <div class="stat-label">Total Balance</div>
-            <div class="stat-value">{{ formatCompactCurrency(totalBalance) }}</div>
+            <div class="stat-value">{{ formatCurrency(totalBalance) }}</div>
           </div>
         </div>
       </div>
@@ -218,21 +218,6 @@ export class AccountsComponent implements OnInit, OnDestroy {
       style: 'currency',
       currency: 'INR'
     }).format(value);
-  }
-
-  formatCompactCurrency(value: number): string {
-    const absValue = Math.abs(value);
-    const sign = value < 0 ? '-' : '';
-
-    if (absValue >= 1e9) {
-      return `${sign}₹${(absValue / 1e9).toFixed(1)}B`;
-    } else if (absValue >= 1e6) {
-      return `${sign}₹${(absValue / 1e6).toFixed(1)}M`;
-    } else if (absValue >= 1e3) {
-      return `${sign}₹${(absValue / 1e3).toFixed(1)}K`;
-    } else {
-      return `${sign}₹${absValue.toFixed(0)}`;
-    }
   }
 
   openAddDialog(): void {

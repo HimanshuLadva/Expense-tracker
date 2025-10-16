@@ -165,10 +165,12 @@ src/app/
 ## # Memory: UI Enhancement and Styling Patterns
 
 ### Currency Display Standards
-- **Compact Formatting**: K/M/B notation for large numbers
-- **Single-line Display**: Prevent amount text wrapping
-- **Consistent Application**: Used across Dashboard, Transactions, Accounts screens
-- **Mobile Optimization**: Space-efficient number presentation
+- **Full Amount Display**: Use standard currency formatting with Indian Rupee (INR) locale
+- **Format Pattern**: Intl.NumberFormat with 'en-IN' locale and INR currency
+- **Data Table Currency**: All currency columns in data tables display full amounts (₹12,345.00)
+- **Stat Cards**: Summary statistics display full formatted currency values
+- **No Compact Notation**: Avoid K/M/B notation to ensure clarity and precision in financial data
+- **Consistent Application**: Applied uniformly across all pages (Dashboard, Accounts, Transactions, Budget)
 
 ### Table Layout and Alignment
 - **Header-Data Alignment**: Matching padding values between headers and data
@@ -208,7 +210,7 @@ src/app/
 - **Inclusive Date Logic**: Set end date to end of day (23:59:59.999) for proper date comparisons
 - **Comprehensive Filtering**: Apply date filters to all dashboard components (stats, charts, category breakdown)
 - **Filter Propagation**: Pass date range to all data calculation methods for consistent filtering
-- **Applicable Pages**: Dashboard, Accounts, Transactions, Reminders (NOT Categories - see below)
+- **Applicable Pages**: Dashboard, Transactions, Reminders (NOT Accounts or Categories - see below)
 
 ### Date Range Picker Styling Standards
 - **Compact Design**: "Fr:" and "To:" labels (2-character abbreviations for space efficiency)
@@ -216,7 +218,7 @@ src/app/
 - **Input Dimensions**: 170px width, 2.7rem left padding for label space
 - **Gap Spacing**: 0.5rem gap between date field wrappers
 - **Label Offset**: 0.625rem from left edge of input
-- **Consistent Application**: Same styling across date-filtered pages (Dashboard, Accounts, Transactions, Reminders)
+- **Consistent Application**: Same styling across date-filtered pages (Dashboard, Transactions, Reminders)
 
 ### Global Date Range Synchronization Pattern
 - **DateRangeService**: Centralized service managing shared date range state across application
@@ -228,7 +230,7 @@ src/app/
 - **Loop Prevention**: Use `{ emitEvent: false }` when patching form from service to prevent infinite loops
 - **Cross-Page Behavior**: Date range changes persist when navigating between pages
 - **Data Filtering**: Each page filters its data based on the synchronized date range
-- **Categories Exception**: Categories page does NOT use date filtering - categories are constant entities that persist across all time periods
+- **Constant Entity Pattern**: Accounts and Categories pages do NOT use date filtering - these are constant entities that persist across all time periods, unlike time-based transactions and reminders
 
 ### Dialog Form Scrolling Pattern
 - **Form Structure**: Use flexbox layout with form-fields and form-actions sections
@@ -258,35 +260,35 @@ src/app/
 
 ### Key System Enhancements Completed
 - **Responsive Design**: Fixed dashboard card overflow, added mobile touch support for filter tabs
-- **Currency Standardization**: Implemented K/M/B notation across all screens for consistent display
+- **Currency Display System**: Implemented full currency formatting (₹12,345.00) across all screens for clarity and precision
 - **Dialog System**: Created unified dialog architecture with standardized component structure
 - **Component Completeness**: Built missing ReminderDialogComponent with full CRUD functionality
 - **Mobile Optimization**: Enhanced touch targets, horizontal scrolling, and compact spacing
 - **Dashboard Date Filtering**: Implemented date range picker with comprehensive filtering across all dashboard data
 - **Page Header Enhancement**: Extended page-header component with content projection for flexible action placement
-- **Universal Date Range Picker**: Added compact date range filters to time-based pages (Dashboard, Accounts, Transactions, Reminders)
+- **Selective Date Range Filtering**: Date range filters applied only to time-based pages (Dashboard, Transactions, Reminders)
 - **Global Date Synchronization**: Implemented DateRangeService for cross-page date range state management
 - **Data Filtering System**: Time-based pages filter their data based on selected date range with inclusive date logic
-- **Categories Design**: Categories page simplified without date filtering - categories are constant organizational entities
+- **Constant Entity Pattern**: Accounts and Categories pages simplified without date filtering - these are persistent organizational entities
 - **Dialog Scrolling Fix**: Fixed action button visibility in all dialog forms by implementing proper scrolling containers with max-height constraints
 - **Budget Management**: Comprehensive monthly budget tracking system with real-time spending calculations and visual progress indicators
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling
-- **Currency Display**: Always apply compact formatting for consistent single-line presentation
+- **Currency Display**: Always use full currency formatting with Intl.NumberFormat for clarity in financial applications
 - **Dialog Pattern**: Follow header + content + scrollable fields + fixed actions structure
 - **Component Standards**: Ensure all CRUD operations have corresponding dialog components
 - **Mobile Priority**: Implement touch support and horizontal scrolling for overflow scenarios
 - **Table First Column**: Always configure first column for text content with left alignment and inherit font-size
 - **Typography Consistency**: Ensure consistent font sizing across similar UI elements using inheritance patterns
-- **Date Filter Pattern**: When adding date filtering to time-based pages, use DateRangeService for synchronized state management
-- **Category Pattern**: Categories are constant entities - do NOT apply date filtering to category management pages
+- **Date Filter Pattern**: Only apply date filtering to time-based pages (Dashboard, Transactions, Reminders) using DateRangeService
+- **Constant Entity Pattern**: Accounts and Categories are persistent entities - do NOT apply date filtering to these pages
 - **Form Input Labels**: Use inline labels positioned absolutely inside input boxes for compact design
 - **Label Styling Standards**: Verdana font family, 0.875rem size, 500 weight, dark color (#1a1a1a) for inline labels
 - **Date Picker Dimensions**: 170px width, 2.7rem left padding, "Fr:" and "To:" labels for compact design
 - **Shared State Services**: For cross-page state, create dedicated service with BehaviorSubject pattern like DateRangeService
-- **Page Filtering**: Always maintain separate `all*` and filtered arrays, apply date range filtering on initialization and changes
-- **Service Initialization**: Initialize forms with `getCurrentDateRange()` from DateRangeService for consistency
+- **Page Filtering**: For time-based pages, maintain separate `all*` and filtered arrays, apply date range filtering on initialization and changes
+- **Service Initialization**: Initialize date forms with `getCurrentDateRange()` from DateRangeService for consistency on time-based pages only
 
 ## Application Summary
 
