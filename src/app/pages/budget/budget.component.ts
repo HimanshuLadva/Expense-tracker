@@ -237,7 +237,7 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
 
         .budget-card {
           background: white;
-          padding: 1.5rem;
+          padding: 1rem 1.5rem 1.5rem 1.5rem;
           border-radius: 0.75rem;
           box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
           border-left: 4px solid #3b82f6;
@@ -387,7 +387,7 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
 
         .category-card {
           background: white;
-          padding: 1.25rem;
+          padding: 0.75rem 1rem 1rem 1rem;
           border-radius: 0.5rem;
           box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
           display: grid;
