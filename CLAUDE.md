@@ -3,7 +3,7 @@
 
 ## Project Overview
 
-Modern Angular 19 expense tracking application with comprehensive financial management capabilities including account management, transaction tracking, categorization, analytics, and reminders.
+Modern Angular 19 expense tracking application with comprehensive financial management capabilities including account management, transaction tracking, categorization, analytics, budget management, and reminders.
 
 ## # Memory: Project Structure and Architecture
 
@@ -20,7 +20,7 @@ Modern Angular 19 expense tracking application with comprehensive financial mana
 src/app/
 ├── models/           # Data entities and DTOs with barrel exports
 ├── services/         # Business logic and state management (StorageService, DateRangeService)
-├── pages/           # Feature pages (dashboard, accounts, categories, transactions, reminders)
+├── pages/           # Feature pages (dashboard, accounts, categories, transactions, budget, reminders)
 ├── shared/          # Reusable components (data-table, dialogs, page-header, icon-selector)
 ├── app.component.*  # Root component with navigation sidebar
 ├── app.config.ts    # Application configuration
@@ -148,10 +148,19 @@ src/app/
 - **Data Integrity**: Consistent balance calculation across all operations
 
 ### Reactive Data Synchronization
-- **BehaviorSubject Streams**: accounts$, categories$, transactions$, reminders$
+- **BehaviorSubject Streams**: accounts$, categories$, transactions$, budgets$, reminders$
 - **Cross-Component Updates**: Automatic UI updates via reactive subscriptions
 - **Computed Properties**: Derived data calculated from reactive streams
 - **Real-time Updates**: Immediate reflection of changes across application
+
+### Budget Management System
+- **Monthly Budgets**: Each category can have different budget limits per month (month + year combination)
+- **Real-time Tracking**: Automatic calculation of spent amounts from expense transactions
+- **Historical Data**: Includes previous spending when setting budgets mid-month
+- **Usage Calculation**: Spent = sum of expense transactions for category in current month
+- **Progress Indicators**: Visual progress bars showing percentage of budget used
+- **Dynamic Sections**: Categories move between "Budgeted" and "Not Budgeted" sections based on budget status
+- **Budget Model**: Budget entity with categoryId, month, year, limit, and timestamps
 
 ## # Memory: UI Enhancement and Styling Patterns
 
@@ -260,6 +269,7 @@ src/app/
 - **Data Filtering System**: Time-based pages filter their data based on selected date range with inclusive date logic
 - **Categories Design**: Categories page simplified without date filtering - categories are constant organizational entities
 - **Dialog Scrolling Fix**: Fixed action button visibility in all dialog forms by implementing proper scrolling containers with max-height constraints
+- **Budget Management**: Comprehensive monthly budget tracking system with real-time spending calculations and visual progress indicators
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling

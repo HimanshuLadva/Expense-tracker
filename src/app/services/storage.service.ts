@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Account, Category, Transaction, Reminder } from '../models';
+import { Account, Category, Transaction, Reminder, Budget } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -10,18 +10,21 @@ export class StorageService {
     ACCOUNTS: 'expense_tracker_accounts',
     CATEGORIES: 'expense_tracker_categories',
     TRANSACTIONS: 'expense_tracker_transactions',
-    REMINDERS: 'expense_tracker_reminders'
+    REMINDERS: 'expense_tracker_reminders',
+    BUDGETS: 'expense_tracker_budgets'
   };
 
   private accountsSubject = new BehaviorSubject<Account[]>(this.getAccounts());
   private categoriesSubject = new BehaviorSubject<Category[]>(this.getCategories());
   private transactionsSubject = new BehaviorSubject<Transaction[]>(this.getTransactions());
   private remindersSubject = new BehaviorSubject<Reminder[]>(this.getReminders());
+  private budgetsSubject = new BehaviorSubject<Budget[]>(this.getBudgets());
 
   public accounts$ = this.accountsSubject.asObservable();
   public categories$ = this.categoriesSubject.asObservable();
   public transactions$ = this.transactionsSubject.asObservable();
   public reminders$ = this.remindersSubject.asObservable();
+  public budgets$ = this.budgetsSubject.asObservable();
 
   private getFromStorage<T>(key: string): T[] {
     try {
@@ -202,6 +205,30 @@ export class StorageService {
     this.remindersSubject.next(reminders);
   }
 
+  getBudgets(): Budget[] {
+    return this.getFromStorage<Budget>(this.STORAGE_KEYS.BUDGETS);
+  }
+
+  saveBudget(budget: Budget): void {
+    const budgets = this.getBudgets();
+    const existingIndex = budgets.findIndex(b => b.id === budget.id);
+
+    if (existingIndex >= 0) {
+      budgets[existingIndex] = { ...budget, updatedAt: new Date() };
+    } else {
+      budgets.push({ ...budget, createdAt: new Date(), updatedAt: new Date() });
+    }
+
+    this.saveToStorage(this.STORAGE_KEYS.BUDGETS, budgets);
+    this.budgetsSubject.next(budgets);
+  }
+
+  deleteBudget(id: string): void {
+    const budgets = this.getBudgets().filter(b => b.id !== id);
+    this.saveToStorage(this.STORAGE_KEYS.BUDGETS, budgets);
+    this.budgetsSubject.next(budgets);
+  }
+
   clearAllData(): void {
     Object.values(this.STORAGE_KEYS).forEach(key => {
       localStorage.removeItem(key);
@@ -211,5 +238,6 @@ export class StorageService {
     this.categoriesSubject.next([]);
     this.transactionsSubject.next([]);
     this.remindersSubject.next([]);
+    this.budgetsSubject.next([]);
   }
 }
