@@ -6,7 +6,7 @@ import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 import { StorageService } from '../../services/storage.service';
 import { DateRangeService } from '../../services/date-range.service';
-import { Transaction, TransactionType, Account, Category, CategoryType } from '../../models';
+import { Transaction, TransactionType, Account, Category, CategoryType, Reminder } from '../../models';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 
 Chart.register(...registerables);
@@ -24,6 +24,13 @@ interface DashboardStats {
   thisMonthIncome: number;
   thisMonthExpenses: number;
   netIncome: number;
+}
+
+interface UpcomingReminder extends Reminder {
+  reminderDate: Date;
+  startDate: Date;
+  endDate: Date;
+  daysUntil: number;
 }
 
 @Component({
@@ -170,6 +177,27 @@ interface DashboardStats {
                 </div>
                 <div class="category-bar">
                   <div class="bar-fill" [style.width.%]="item.percentage" [class]="item.type"></div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Upcoming Reminders Section -->
+      @if (upcomingReminders.length > 0) {
+        <div class="upcoming-reminders">
+          <h3>Upcoming Reminders</h3>
+          <div class="reminders-list">
+            @for (reminder of upcomingReminders; track reminder.id) {
+              <div class="reminder-item">
+                <div class="reminder-icon">🔔</div>
+                <div class="reminder-content">
+                  <div class="reminder-title">{{ reminder.title }}</div>
+                  <div class="reminder-date">{{ formatDate(reminder.date) }}</div>
+                </div>
+                <div class="reminder-status" [class.today]="reminder.daysUntil === 0" [class.overdue]="reminder.daysUntil < 0">
+                  {{ getReminderStatus(reminder) }}
                 </div>
               </div>
             }
@@ -346,6 +374,7 @@ interface DashboardStats {
         border-radius: 0.75rem;
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
         padding: 1rem;
+        margin-bottom: 2rem;
 
         h3 {
           margin: 0 0 1rem 0;
@@ -434,6 +463,86 @@ interface DashboardStats {
           }
         }
       }
+
+      .upcoming-reminders {
+        background: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        padding: 1rem;
+
+        h3 {
+          margin: 0 0 1rem 0;
+          font-size: 1.125rem;
+          font-weight: 600;
+          color: #111827;
+        }
+
+        .reminders-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+
+          .reminder-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.875rem;
+            background: #f9fafb;
+            border-radius: 0.5rem;
+            border-left: 3px solid #3b82f6;
+            transition: all 0.2s ease;
+
+            &:hover {
+              background: #f3f4f6;
+              transform: translateX(4px);
+            }
+
+            .reminder-icon {
+              font-size: 1.5rem;
+              flex-shrink: 0;
+            }
+
+            .reminder-content {
+              flex: 1;
+              min-width: 0;
+
+              .reminder-title {
+                font-weight: 600;
+                color: #111827;
+                margin-bottom: 0.25rem;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+
+              .reminder-date {
+                font-size: 0.875rem;
+                color: #6b7280;
+              }
+            }
+
+            .reminder-status {
+              font-size: 0.875rem;
+              font-weight: 600;
+              padding: 0.375rem 0.75rem;
+              border-radius: 9999px;
+              background-color: #e0e7ff;
+              color: #3730a3;
+              white-space: nowrap;
+
+              &.today {
+                background-color: #fef3c7;
+                color: #92400e;
+              }
+
+              &.overdue {
+                background-color: #fee2e2;
+                color: #991b1b;
+              }
+            }
+          }
+        }
+      }
     }
 
     @media (max-width: 1024px) {
@@ -506,6 +615,25 @@ interface DashboardStats {
             text-align: left !important;
           }
         }
+
+        .upcoming-reminders {
+          .reminders-list {
+            .reminder-item {
+              flex-direction: row;
+              gap: 0.75rem;
+              padding: 0.75rem;
+
+              .reminder-icon {
+                font-size: 1.25rem;
+              }
+
+              .reminder-status {
+                font-size: 0.75rem;
+                padding: 0.25rem 0.5rem;
+              }
+            }
+          }
+        }
       }
     }
 
@@ -528,6 +656,27 @@ interface DashboardStats {
             }
           }
         }
+
+        .upcoming-reminders {
+          .reminders-list {
+            .reminder-item {
+              flex-wrap: wrap;
+              gap: 0.5rem;
+
+              .reminder-content {
+                flex: 1 1 100%;
+
+                .reminder-title {
+                  white-space: normal;
+                }
+              }
+
+              .reminder-status {
+                margin-left: auto;
+              }
+            }
+          }
+        }
       }
     }
   `]
@@ -542,6 +691,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   accounts: Account[] = [];
   categories: Category[] = [];
   transactions: Transaction[] = [];
+  upcomingReminders: UpcomingReminder[] = [];
 
   stats: DashboardStats = {
     totalAccounts: 0,
@@ -588,13 +738,15 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       combineLatest([
         this.storageService.accounts$,
         this.storageService.categories$,
-        this.storageService.transactions$
-      ]).subscribe(([accounts, categories, transactions]) => {
+        this.storageService.transactions$,
+        this.storageService.reminders$
+      ]).subscribe(([accounts, categories, transactions, reminders]) => {
         this.accounts = accounts;
         this.categories = categories;
         this.transactions = transactions;
         this.calculateStats();
         this.calculateCategoryBreakdown();
+        this.calculateUpcomingReminders(reminders);
 
         // Recreate charts with new data
         setTimeout(() => this.createCharts(), 100);
@@ -687,6 +839,45 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         };
       })
       .sort((a, b) => b.amount - a.amount);
+  }
+
+  private calculateUpcomingReminders(reminders: Reminder[]): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Filter active reminders with future dates and calculate their effective dates
+    const upcomingRemindersWithDates = reminders
+      .filter(r => r.isActive)
+      .map(reminder => {
+        const reminderDate = new Date(reminder.date);
+        reminderDate.setHours(0, 0, 0, 0);
+
+        // Calculate the start date (beforeDays) and end date (afterDays)
+        const startDate = new Date(reminderDate);
+        startDate.setDate(startDate.getDate() - reminder.beforeDays);
+
+        const endDate = new Date(reminderDate);
+        endDate.setDate(endDate.getDate() + reminder.afterDays);
+
+        return {
+          ...reminder,
+          reminderDate,
+          startDate,
+          endDate,
+          daysUntil: Math.ceil((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+        };
+      })
+      .filter(r => {
+        // Show reminders with future dates (today or later)
+        return r.reminderDate >= today;
+      })
+      .sort((a, b) => {
+        // Sort by reminder date (closest first)
+        return a.reminderDate.getTime() - b.reminderDate.getTime();
+      })
+      .slice(0, 10); // Take top 10
+
+    this.upcomingReminders = upcomingRemindersWithDates;
   }
 
   private createCharts(): void {
@@ -969,6 +1160,28 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       return `${sign}₹${(absValue / 1e3).toFixed(1)}K`;
     } else {
       return `${sign}₹${absValue.toFixed(0)}`;
+    }
+  }
+
+  formatDate(date: Date): string {
+    return new Date(date).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  getReminderStatus(reminder: UpcomingReminder): string {
+    if (reminder.daysUntil === 0) {
+      return 'Today';
+    } else if (reminder.daysUntil === 1) {
+      return 'Tomorrow';
+    } else if (reminder.daysUntil === -1) {
+      return 'Yesterday';
+    } else if (reminder.daysUntil > 0) {
+      return `In ${reminder.daysUntil} days`;
+    } else {
+      return `${Math.abs(reminder.daysUntil)} days ago`;
     }
   }
 

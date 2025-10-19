@@ -241,6 +241,19 @@ src/app/
 - **Button Visibility**: Ensures Cancel/Submit buttons remain visible when form content expands
 - **Consistent Pattern**: Applied across all dialog components (Category, Transaction, Reminder)
 
+### Dashboard Reminder Display Pattern
+- **Upcoming Reminders Section**: Display top 10 upcoming reminders on dashboard below category breakdown
+- **Filter Logic**: Show only active reminders with dates today or in the future (not past dates)
+- **Sorting Strategy**: Sort by reminder date ascending (closest date first)
+- **Extended Interface Pattern**: Create extended interfaces for computed properties (e.g., UpcomingReminder extends Reminder)
+- **Computed Properties**: Add daysUntil, reminderDate, startDate, endDate as computed fields for UI display
+- **Status Display**: Dynamic status badges showing "Today", "Tomorrow", "In X days" based on daysUntil calculation
+- **Status Color Coding**: Today (yellow), Future (blue), Overdue (red) for visual distinction
+- **Card Design**: White background card with blue left border, bell icon, title, date, and status badge
+- **Hover Effects**: Subtle transform translateX on hover for interactive feedback
+- **Responsive Layout**: Horizontal layout on desktop, stacked content on mobile with flex-wrap
+- **Conditional Rendering**: Only display section when upcomingReminders array has items
+
 
 
 
@@ -272,6 +285,7 @@ src/app/
 - **Constant Entity Pattern**: Accounts and Categories pages simplified without date filtering - these are persistent organizational entities
 - **Dialog Scrolling Fix**: Fixed action button visibility in all dialog forms by implementing proper scrolling containers with max-height constraints
 - **Budget Management**: Comprehensive monthly budget tracking system with real-time spending calculations and visual progress indicators
+- **Dashboard Reminders Widget**: Top 10 upcoming reminders display on dashboard with smart filtering, status badges, and responsive design
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling
@@ -289,6 +303,8 @@ src/app/
 - **Shared State Services**: For cross-page state, create dedicated service with BehaviorSubject pattern like DateRangeService
 - **Page Filtering**: For time-based pages, maintain separate `all*` and filtered arrays, apply date range filtering on initialization and changes
 - **Service Initialization**: Initialize date forms with `getCurrentDateRange()` from DateRangeService for consistency on time-based pages only
+- **Extended Interfaces**: When adding computed properties to existing models, create extended interfaces (e.g., UpcomingReminder extends Reminder) for type safety
+- **Dashboard Widgets**: Display summary information from other pages (top 10 patterns) with conditional rendering and responsive design
 
 ## Application Summary
 
