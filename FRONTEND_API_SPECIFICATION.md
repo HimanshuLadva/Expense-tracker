@@ -1,0 +1,1861 @@
+# Expense Tracker - Frontend Data Models, Services & API Specification
+
+> **Document Version**: 1.0
+> **Date**: January 2025
+> **Project**: Angular 19 Expense Tracker Application
+
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Data Models](#data-models)
+3. [Service Architecture](#service-architecture)
+4. [API Endpoints Specification](#api-endpoints-specification)
+5. [Business Logic & Rules](#business-logic--rules)
+6. [Data Flow Patterns](#data-flow-patterns)
+7. [API Migration Strategy](#api-migration-strategy)
+8. [Testing & Validation](#testing--validation)
+
+---
+
+## Overview
+
+This document provides comprehensive documentation of the Expense Tracker frontend application's data models, service architecture, and API requirements. The application currently uses **localStorage** for data persistence with reactive BehaviorSubject streams. This specification defines the required backend API for full-stack implementation.
+
+### Technology Stack
+
+- **Frontend**: Angular 19 with standalone components
+- **State Management**: RxJS BehaviorSubject streams
+- **Current Storage**: Browser localStorage with JSON serialization
+- **Target Backend**: RESTful API with JSON payloads
+- **Currency**: Indian Rupee (INR) with `en-IN` locale formatting
+
+### Key Features
+
+- Account management with automatic balance calculation
+- Transaction tracking (Income, Expense, Transfer)
+- Category-based organization
+- Monthly budget management with real-time tracking
+- Financial reminders with date-based notifications
+- Date range filtering across time-based pages
+- Reactive data synchronization
+
+---
+
+## Data Models
+
+### 1. Account Model
+
+**Purpose**: Represents financial accounts (bank accounts, cash wallets, credit cards, etc.)
+
+```typescript
+interface Account {
+  id: string;                  // Unique identifier
+  name: string;                // Account name (e.g., "Salary Account", "Cash Wallet")
+  initialAmount: number;       // Starting balance when account created
+  currentBalance: number;      // Real-time calculated balance (auto-updated)
+  icon: string;                // Icon identifier for UI display
+  createdAt: Date;             // Creation timestamp
+  updatedAt: Date;             // Last modification timestamp
+}
+```
+
+**Create Request DTO**:
+```typescript
+interface CreateAccountRequest {
+  name: string;
+  initialAmount: number;
+  icon: string;
+}
+```
+
+**Update Request DTO**:
+```typescript
+interface UpdateAccountRequest {
+  id: string;
+  name: string;
+  initialAmount: number;
+  icon: string;
+}
+```
+
+**Field Specifications**:
+
+| Field | Type | Required | Constraints | Notes |
+|-------|------|----------|-------------|-------|
+| `id` | string | Yes | Unique | Auto-generated on server |
+| `name` | string | Yes | Max 100 chars | Account display name |
+| `initialAmount` | number | Yes | >= 0 | Starting balance |
+| `currentBalance` | number | Yes | Any number | Auto-calculated, not in requests |
+| `icon` | string | Yes | Non-empty | Icon identifier |
+| `createdAt` | Date | Yes | ISO 8601 | Auto-generated on creation |
+| `updatedAt` | Date | Yes | ISO 8601 | Auto-updated on modification |
+
+**Business Rules**:
+- `currentBalance` is automatically calculated from transactions
+- Initial balance sets the starting point: `currentBalance = initialAmount + sum(transaction_effects)`
+- When updating `initialAmount`, recalculate balance: `newBalance = newInitialAmount + (oldBalance - oldInitialAmount)`
+- Account is a **persistent entity** (no date filtering applied)
+
+---
+
+### 2. Category Model
+
+**Purpose**: Categorizes transactions as income or expense types
+
+```typescript
+enum CategoryType {
+  INCOME = 'income',
+  EXPENSE = 'expense'
+}
+
+interface Category {
+  id: string;                  // Unique identifier
+  name: string;                // Category name (e.g., "Salary", "Groceries", "Transport")
+  type: CategoryType;          // Either 'income' or 'expense'
+  icon: string;                // Icon identifier for UI display
+  createdAt: Date;             // Creation timestamp
+  updatedAt: Date;             // Last modification timestamp
+}
+```
+
+**Create Request DTO**:
+```typescript
+interface CreateCategoryRequest {
+  name: string;
+  type: CategoryType;
+  icon: string;
+}
+```
+
+**Update Request DTO**:
+```typescript
+interface UpdateCategoryRequest {
+  id: string;
+  name: string;
+  type: CategoryType;
+  icon: string;
+}
+```
+
+**Field Specifications**:
+
+| Field | Type | Required | Constraints | Notes |
+|-------|------|----------|-------------|-------|
+| `id` | string | Yes | Unique | Auto-generated on server |
+| `name` | string | Yes | Max 100 chars | Category display name |
+| `type` | CategoryType | Yes | 'income' \| 'expense' | Determines usage context |
+| `icon` | string | Yes | Non-empty | Icon identifier |
+| `createdAt` | Date | Yes | ISO 8601 | Auto-generated |
+| `updatedAt` | Date | Yes | ISO 8601 | Auto-updated |
+
+**Business Rules**:
+- Categories are **persistent entities** (no date filtering)
+- Can have multiple categories of same type
+- Used for transaction categorization and budget planning
+- Only expense categories can have budgets
+
+---
+
+### 3. Transaction Model
+
+**Purpose**: Records financial transactions (income, expenses, transfers between accounts)
+
+```typescript
+enum TransactionType {
+  INCOME = 'income',
+  EXPENSE = 'expense',
+  TRANSFER = 'transfer'
+}
+
+interface Transaction {
+  id: string;                  // Unique identifier
+  type: TransactionType;       // Transaction type
+  amount: number;              // Transaction amount (always positive)
+  date: Date;                  // Transaction date
+  accountId: string;           // Source account ID (foreign key)
+  categoryId?: string;         // Category ID (optional, not used for transfers)
+  toAccountId?: string;        // Destination account ID (only for transfers)
+  narration?: string;          // Optional description/notes
+  createdAt: Date;             // Creation timestamp
+  updatedAt: Date;             // Last modification timestamp
+}
+```
+
+**Create Request DTO**:
+```typescript
+interface CreateTransactionRequest {
+  type: TransactionType;
+  amount: number;
+  date: Date;
+  accountId: string;
+  categoryId?: string;         // Required for INCOME/EXPENSE
+  toAccountId?: string;        // Required for TRANSFER
+  narration?: string;
+}
+```
+
+**Update Request DTO**:
+```typescript
+interface UpdateTransactionRequest {
+  id: string;
+  type: TransactionType;
+  amount: number;
+  date: Date;
+  accountId: string;
+  categoryId?: string;
+  toAccountId?: string;
+  narration?: string;
+}
+```
+
+**Field Requirements by Type**:
+
+| Transaction Type | Required Fields | Optional Fields | Notes |
+|-----------------|----------------|-----------------|-------|
+| **INCOME** | type, amount, date, accountId, categoryId | narration | Adds to account balance |
+| **EXPENSE** | type, amount, date, accountId, categoryId | narration | Subtracts from account balance |
+| **TRANSFER** | type, amount, date, accountId, toAccountId | narration | Moves between accounts |
+
+**Field Specifications**:
+
+| Field | Type | Required | Constraints | Notes |
+|-------|------|----------|-------------|-------|
+| `id` | string | Yes | Unique | Auto-generated |
+| `type` | TransactionType | Yes | Enum value | Determines effect on accounts |
+| `amount` | number | Yes | > 0 | Always positive |
+| `date` | Date | Yes | Valid date | Transaction date |
+| `accountId` | string | Yes | Must exist | Source account reference |
+| `categoryId` | string | Conditional | Must exist | Required for income/expense |
+| `toAccountId` | string | Conditional | Must exist | Required for transfer |
+| `narration` | string | No | Max 500 chars | Optional description |
+| `createdAt` | Date | Yes | ISO 8601 | Auto-generated |
+| `updatedAt` | Date | Yes | ISO 8601 | Auto-updated |
+
+**Business Rules**:
+- Amount is always stored as positive number
+- Transaction effects on account balances:
+  - **INCOME**: `accountBalance += amount`
+  - **EXPENSE**: `accountBalance -= amount`
+  - **TRANSFER**: `fromAccountBalance -= amount`, `toAccountBalance += amount`
+- When updating transaction:
+  1. Revert old transaction effects
+  2. Apply new transaction effects
+- When deleting transaction: revert transaction effects
+- Transactions are **time-based entities** (date filtering applied)
+
+---
+
+### 4. Budget Model
+
+**Purpose**: Monthly budget limits for expense categories with real-time spending tracking
+
+```typescript
+interface Budget {
+  id: string;                  // Unique identifier
+  categoryId: string;          // Category ID (foreign key, must be expense category)
+  month: number;               // Month (1-12)
+  year: number;                // Year (e.g., 2025)
+  limit: number;               // Budget limit amount
+  createdAt: Date;             // Creation timestamp
+  updatedAt: Date;             // Last modification timestamp
+}
+
+interface BudgetWithUsage extends Budget {
+  categoryName: string;        // Computed: Category name
+  categoryIcon: string;        // Computed: Category icon
+  spent: number;               // Computed: Sum of expenses in month/year
+  remaining: number;           // Computed: limit - spent
+  percentageUsed: number;      // Computed: (spent / limit) * 100
+}
+```
+
+**Create Request DTO**:
+```typescript
+interface CreateBudgetRequest {
+  categoryId: string;
+  month: number;               // 1-12
+  year: number;                // e.g., 2025
+  limit: number;
+}
+```
+
+**Update Request DTO**:
+```typescript
+interface UpdateBudgetRequest {
+  id: string;
+  limit: number;               // Only limit is updatable
+}
+```
+
+**Field Specifications**:
+
+| Field | Type | Required | Constraints | Notes |
+|-------|------|----------|-------------|-------|
+| `id` | string | Yes | Unique | Auto-generated |
+| `categoryId` | string | Yes | Must exist, must be expense | Foreign key |
+| `month` | number | Yes | 1-12 | Calendar month |
+| `year` | number | Yes | >= current year - 10 | Calendar year |
+| `limit` | number | Yes | > 0 | Budget limit |
+| `createdAt` | Date | Yes | ISO 8601 | Auto-generated |
+| `updatedAt` | Date | Yes | ISO 8601 | Auto-updated |
+
+**Computed Fields (BudgetWithUsage)**:
+
+| Field | Type | Calculation | Notes |
+|-------|------|------------|-------|
+| `categoryName` | string | Join with Category | Display name |
+| `categoryIcon` | string | Join with Category | Icon for UI |
+| `spent` | number | SUM(expenses for category in month/year) | Real-time calculation |
+| `remaining` | number | `limit - spent` | Can be negative |
+| `percentageUsed` | number | `(spent / limit) * 100` | Progress indicator |
+
+**Business Rules**:
+- One budget per category per month/year (unique constraint)
+- Only expense categories can have budgets
+- Spent amount includes all expenses created before budget was set (historical data)
+- Budget tracking is real-time (updated on transaction create/edit/delete)
+- Budgets are **time-based** but use month/year granularity
+
+---
+
+### 5. Reminder Model
+
+**Purpose**: Financial reminders with date-based notification windows
+
+```typescript
+interface Reminder {
+  id: string;                  // Unique identifier
+  title: string;               // Reminder title/description
+  date: Date;                  // Target reminder date
+  beforeDays: number;          // Show reminder X days before date
+  afterDays: number;           // Show reminder X days after date
+  isActive: boolean;           // Active/inactive status
+  createdAt: Date;             // Creation timestamp
+  updatedAt: Date;             // Last modification timestamp
+}
+```
+
+**Create Request DTO**:
+```typescript
+interface CreateReminderRequest {
+  title: string;
+  date: Date;
+  beforeDays: number;
+  afterDays: number;
+  // isActive defaults to true on creation
+}
+```
+
+**Update Request DTO**:
+```typescript
+interface UpdateReminderRequest {
+  id: string;
+  title: string;
+  date: Date;
+  beforeDays: number;
+  afterDays: number;
+  isActive: boolean;
+}
+```
+
+**Field Specifications**:
+
+| Field | Type | Required | Constraints | Notes |
+|-------|------|----------|-------------|-------|
+| `id` | string | Yes | Unique | Auto-generated |
+| `title` | string | Yes | Max 200 chars | Reminder description |
+| `date` | Date | Yes | Valid date | Target reminder date |
+| `beforeDays` | number | Yes | >= 0, <= 365 | Notification window start |
+| `afterDays` | number | Yes | >= 0, <= 365 | Notification window end |
+| `isActive` | boolean | Yes | true/false | Toggle active status |
+| `createdAt` | Date | Yes | ISO 8601 | Auto-generated |
+| `updatedAt` | Date | Yes | ISO 8601 | Auto-updated |
+
+**Business Rules**:
+- Reminder window: `(date - beforeDays)` to `(date + afterDays)`
+- Dashboard displays only active reminders within window
+- Reminders are **time-based entities** (date filtering applied)
+- Status display logic:
+  - **Today**: date equals current date
+  - **Tomorrow**: date is 1 day away
+  - **In X days**: date is X days in future
+  - **Overdue**: current date > (date + afterDays)
+
+---
+
+### 6. Shared Models
+
+**DateRange Interface** (DateRangeService):
+```typescript
+interface DateRange {
+  fromDate: string;            // Format: 'YYYY-MM-DD'
+  toDate: string;              // Format: 'YYYY-MM-DD'
+}
+```
+
+**Dashboard Stats Interface**:
+```typescript
+interface DashboardStats {
+  totalAccounts: number;
+  totalCategories: number;
+  totalTransactions: number;
+  totalBalance: number;
+  thisMonthIncome: number;
+  thisMonthExpenses: number;
+  netIncome: number;
+}
+```
+
+---
+
+## Service Architecture
+
+### 1. StorageService
+
+**Purpose**: Central data management service with reactive streams
+
+**Current Implementation**: localStorage-based
+**Future**: HTTP-based API calls
+
+**File**: `src/app/services/storage.service.ts`
+
+**Reactive Streams**:
+```typescript
+@Injectable({ providedIn: 'root' })
+export class StorageService {
+  // Observable streams for reactive UI updates
+  accounts$: Observable<Account[]>
+  categories$: Observable<Category[]>
+  transactions$: Observable<Transaction[]>
+  budgets$: Observable<Budget[]>
+  reminders$: Observable<Reminder[]>
+}
+```
+
+**Key Methods**:
+
+#### Account Operations
+```typescript
+generateId(): string
+getAccounts(): Account[]
+saveAccount(account: Account): void
+deleteAccount(id: string): void
+updateAccountBalance(accountId: string, amount: number): void
+```
+
+#### Category Operations
+```typescript
+getCategories(): Category[]
+saveCategory(category: Category): void
+deleteCategory(id: string): void
+```
+
+#### Transaction Operations
+```typescript
+getTransactions(): Transaction[]
+saveTransaction(transaction: Transaction): void
+deleteTransaction(id: string): void
+```
+
+#### Budget Operations
+```typescript
+getBudgets(): Budget[]
+saveBudget(budget: Budget): void
+deleteBudget(id: string): void
+```
+
+#### Reminder Operations
+```typescript
+getReminders(): Reminder[]
+saveReminder(reminder: Reminder): void
+deleteReminder(id: string): void
+```
+
+#### Utility Operations
+```typescript
+clearAllData(): void
+```
+
+**Internal Methods** (Transaction Balance Logic):
+```typescript
+private applyTransactionEffect(transaction: Transaction): void
+private revertTransactionEffect(transaction: Transaction): void
+```
+
+**Pattern Details**:
+
+1. **BehaviorSubject Pattern**: All entities use BehaviorSubject for state management
+2. **Automatic Updates**: Service methods automatically update streams
+3. **Error Handling**: Try-catch blocks with console logging
+4. **Date Handling**: Custom JSON parser for Date fields (`*At` fields and `date`)
+5. **ID Generation**: `Date.now().toString(36) + Math.random().toString(36).substr(2)`
+
+---
+
+### 2. DateRangeService
+
+**Purpose**: Centralized date range state management for cross-page synchronization
+
+**File**: `src/app/services/date-range.service.ts`
+
+**Interface**:
+```typescript
+@Injectable({ providedIn: 'root' })
+export class DateRangeService {
+  dateRange$: Observable<DateRange>
+
+  updateDateRange(dateRange: DateRange): void
+  getCurrentDateRange(): DateRange
+}
+```
+
+**Initial State**: Current month (first day to last day)
+
+**Usage Pattern**:
+```typescript
+// Subscribe to changes
+this.dateRangeService.dateRange$.subscribe(range => {
+  this.filterData(range);
+});
+
+// Update date range
+this.dateRangeService.updateDateRange({
+  fromDate: '2025-01-01',
+  toDate: '2025-01-31'
+});
+```
+
+**Date Format**: `YYYY-MM-DD` (HTML date input compatible)
+
+**Applied To**: Dashboard, Transactions, Reminders pages
+**NOT Applied To**: Accounts, Categories pages (persistent entities)
+
+---
+
+### 3. Dialog Services
+
+**DialogService** (Angular CDK Dialog):
+```typescript
+@Injectable({ providedIn: 'root' })
+export class DialogService {
+  // Opens dialogs with consistent configuration
+  // Handles result returns via DialogResult interface
+}
+```
+
+**DialogResult Interface**:
+```typescript
+interface DialogResult {
+  success?: boolean;
+  data?: any;
+}
+```
+
+---
+
+## API Endpoints Specification
+
+### Base Configuration
+
+**Base URL**: `/api/v1`
+**Authentication**: JWT Bearer token (future implementation)
+**Content-Type**: `application/json`
+**Date Format**: ISO 8601 (`YYYY-MM-DDTHH:mm:ss.sssZ`)
+
+---
+
+### 1. Account Endpoints
+
+#### GET /api/v1/accounts
+Get all accounts for authenticated user
+
+**Request**: None
+**Response**: `Account[]`
+
+**Example Response**:
+```json
+[
+  {
+    "id": "acc_123",
+    "name": "Salary Account",
+    "initialAmount": 50000,
+    "currentBalance": 67500,
+    "icon": "bank",
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-15T10:30:00.000Z"
+  }
+]
+```
+
+---
+
+#### POST /api/v1/accounts
+Create new account
+
+**Request Body**: `CreateAccountRequest`
+```json
+{
+  "name": "Salary Account",
+  "initialAmount": 50000,
+  "icon": "bank"
+}
+```
+
+**Response**: `Account` (201 Created)
+```json
+{
+  "id": "acc_123",
+  "name": "Salary Account",
+  "initialAmount": 50000,
+  "currentBalance": 50000,
+  "icon": "bank",
+  "createdAt": "2025-01-15T10:30:00.000Z",
+  "updatedAt": "2025-01-15T10:30:00.000Z"
+}
+```
+
+**Business Logic**:
+- Generate unique ID
+- Set `currentBalance = initialAmount` initially
+- Set timestamps (createdAt, updatedAt)
+
+---
+
+#### PUT /api/v1/accounts/:id
+Update existing account
+
+**Request Body**: `UpdateAccountRequest`
+```json
+{
+  "id": "acc_123",
+  "name": "Updated Account Name",
+  "initialAmount": 60000,
+  "icon": "wallet"
+}
+```
+
+**Response**: `Account` (200 OK)
+
+**Business Logic**:
+- When updating `initialAmount`:
+  ```
+  newCurrentBalance = newInitialAmount + (oldCurrentBalance - oldInitialAmount)
+  ```
+- Update `updatedAt` timestamp
+
+---
+
+#### DELETE /api/v1/accounts/:id
+Delete account
+
+**Response**: `{ success: boolean }` (200 OK)
+
+**Business Logic**:
+- Consider cascade delete or prevent if transactions exist
+- Recommended: Soft delete (isDeleted flag) for data integrity
+
+---
+
+### 2. Category Endpoints
+
+#### GET /api/v1/categories
+Get all categories
+
+**Query Parameters**:
+- `type` (optional): Filter by 'income' or 'expense'
+
+**Response**: `Category[]`
+
+**Example**: `GET /api/v1/categories?type=expense`
+
+---
+
+#### POST /api/v1/categories
+Create new category
+
+**Request Body**: `CreateCategoryRequest`
+```json
+{
+  "name": "Groceries",
+  "type": "expense",
+  "icon": "shopping-cart"
+}
+```
+
+**Response**: `Category` (201 Created)
+
+---
+
+#### PUT /api/v1/categories/:id
+Update existing category
+
+**Request Body**: `UpdateCategoryRequest`
+
+**Response**: `Category` (200 OK)
+
+---
+
+#### DELETE /api/v1/categories/:id
+Delete category
+
+**Response**: `{ success: boolean }` (200 OK)
+
+**Business Logic**: Prevent deletion if budgets or transactions exist
+
+---
+
+### 3. Transaction Endpoints
+
+#### GET /api/v1/transactions
+Get transactions with optional filtering
+
+**Query Parameters**:
+- `fromDate` (optional): ISO date string (e.g., "2025-01-01")
+- `toDate` (optional): ISO date string (e.g., "2025-01-31")
+- `accountId` (optional): Filter by account
+- `categoryId` (optional): Filter by category
+- `type` (optional): Filter by type ('income', 'expense', 'transfer')
+- `limit` (optional): Pagination limit (default: 50)
+- `offset` (optional): Pagination offset (default: 0)
+- `sortBy` (optional): Sort field (default: 'date')
+- `order` (optional): Sort order ('asc' or 'desc', default: 'desc')
+
+**Response**: `Transaction[]`
+
+**Example**: `GET /api/v1/transactions?fromDate=2025-01-01&toDate=2025-01-31&type=expense`
+
+**Date Filtering Logic**:
+- End date should be inclusive: set time to 23:59:59.999
+- Default to current month if no dates provided
+
+---
+
+#### POST /api/v1/transactions
+Create new transaction
+
+**Request Body**: `CreateTransactionRequest`
+
+**Income Example**:
+```json
+{
+  "type": "income",
+  "amount": 5000,
+  "date": "2025-01-15T00:00:00.000Z",
+  "accountId": "acc_123",
+  "categoryId": "cat_salary",
+  "narration": "Monthly salary"
+}
+```
+
+**Transfer Example**:
+```json
+{
+  "type": "transfer",
+  "amount": 1000,
+  "date": "2025-01-15T00:00:00.000Z",
+  "accountId": "acc_123",
+  "toAccountId": "acc_456",
+  "narration": "Transfer to savings"
+}
+```
+
+**Response**: `Transaction` (201 Created)
+
+**Business Logic**:
+1. Validate account existence
+2. Validate category exists (for income/expense)
+3. Validate toAccount exists (for transfer)
+4. Apply transaction effects to account balances:
+   - Income: `accountBalance += amount`
+   - Expense: `accountBalance -= amount`
+   - Transfer: `fromAccountBalance -= amount`, `toAccountBalance += amount`
+5. Set timestamps
+
+---
+
+#### PUT /api/v1/transactions/:id
+Update existing transaction
+
+**Request Body**: `UpdateTransactionRequest`
+
+**Response**: `Transaction` (200 OK)
+
+**Business Logic**:
+1. Get old transaction
+2. Revert old transaction effects on account balances
+3. Apply new transaction effects
+4. Handle transaction type changes
+5. Update timestamp
+
+---
+
+#### DELETE /api/v1/transactions/:id
+Delete transaction
+
+**Response**: `{ success: boolean }` (200 OK)
+
+**Business Logic**:
+1. Get transaction
+2. Revert transaction effects on account balance(s)
+3. Delete transaction
+
+---
+
+### 4. Budget Endpoints
+
+#### GET /api/v1/budgets
+Get budgets with optional filtering and computed usage data
+
+**Query Parameters**:
+- `month` (optional): Filter by month (1-12)
+- `year` (optional): Filter by year (e.g., 2025)
+- `includeUsage` (optional): Include computed fields (default: true)
+
+**Response**: `BudgetWithUsage[]`
+
+**Example Response**:
+```json
+[
+  {
+    "id": "budget_123",
+    "categoryId": "cat_groceries",
+    "month": 1,
+    "year": 2025,
+    "limit": 10000,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z",
+    "categoryName": "Groceries",
+    "categoryIcon": "shopping-cart",
+    "spent": 7500,
+    "remaining": 2500,
+    "percentageUsed": 75
+  }
+]
+```
+
+**Spent Calculation Logic**:
+```sql
+SELECT SUM(amount) as spent
+FROM transactions
+WHERE categoryId = :categoryId
+  AND type = 'expense'
+  AND MONTH(date) = :month
+  AND YEAR(date) = :year
+```
+
+**Computed Fields**:
+```javascript
+spent = SUM(expenses for category in month/year)
+remaining = limit - spent
+percentageUsed = (spent / limit) * 100
+```
+
+---
+
+#### POST /api/v1/budgets
+Create new budget
+
+**Request Body**: `CreateBudgetRequest`
+```json
+{
+  "categoryId": "cat_groceries",
+  "month": 1,
+  "year": 2025,
+  "limit": 10000
+}
+```
+
+**Response**: `Budget` (201 Created)
+
+**Business Logic**:
+- Validate category exists and is expense type
+- Prevent duplicate budgets (same category + month + year)
+- Return 409 Conflict if duplicate exists
+
+---
+
+#### PUT /api/v1/budgets/:id
+Update budget limit
+
+**Request Body**: `UpdateBudgetRequest`
+```json
+{
+  "id": "budget_123",
+  "limit": 12000
+}
+```
+
+**Response**: `Budget` (200 OK)
+
+**Note**: Only limit is updatable; month/year/category cannot be changed
+
+---
+
+#### DELETE /api/v1/budgets/:id
+Delete budget
+
+**Response**: `{ success: boolean }` (200 OK)
+
+---
+
+### 5. Reminder Endpoints
+
+#### GET /api/v1/reminders
+Get reminders with optional filtering
+
+**Query Parameters**:
+- `fromDate` (optional): ISO date string
+- `toDate` (optional): ISO date string
+- `isActive` (optional): Filter by active status (true/false)
+- `limit` (optional): Pagination limit
+- `offset` (optional): Pagination offset
+
+**Response**: `Reminder[]`
+
+---
+
+#### GET /api/v1/reminders/upcoming
+Get upcoming reminders for dashboard widget
+
+**Query Parameters**:
+- `limit` (optional): Max number of reminders (default: 10)
+
+**Response**: Extended reminder objects with computed properties
+
+**Example Response**:
+```json
+[
+  {
+    "id": "rem_123",
+    "title": "Pay electricity bill",
+    "date": "2025-01-20T00:00:00.000Z",
+    "beforeDays": 3,
+    "afterDays": 2,
+    "isActive": true,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z",
+    "daysUntil": 5,
+    "status": "upcoming"
+  }
+]
+```
+
+**Filter Logic**:
+```javascript
+currentDate >= (reminderDate - beforeDays) AND
+currentDate <= (reminderDate + afterDays) AND
+isActive = true
+```
+
+**Sort**: By date ascending (closest first)
+
+---
+
+#### POST /api/v1/reminders
+Create new reminder
+
+**Request Body**: `CreateReminderRequest`
+```json
+{
+  "title": "Pay rent",
+  "date": "2025-02-01T00:00:00.000Z",
+  "beforeDays": 5,
+  "afterDays": 0
+}
+```
+
+**Response**: `Reminder` (201 Created)
+
+**Business Logic**: Set `isActive = true` by default
+
+---
+
+#### PUT /api/v1/reminders/:id
+Update existing reminder
+
+**Request Body**: `UpdateReminderRequest`
+
+**Response**: `Reminder` (200 OK)
+
+---
+
+#### DELETE /api/v1/reminders/:id
+Delete reminder
+
+**Response**: `{ success: boolean }` (200 OK)
+
+---
+
+### 6. Dashboard/Analytics Endpoints
+
+#### GET /api/v1/dashboard/stats
+Get dashboard statistics
+
+**Query Parameters**:
+- `fromDate` (optional): ISO date string
+- `toDate` (optional): ISO date string
+
+**Response**:
+```json
+{
+  "totalAccounts": 3,
+  "totalCategories": 12,
+  "totalTransactions": 45,
+  "totalBalance": 67500,
+  "thisMonthIncome": 50000,
+  "thisMonthExpenses": 35000,
+  "netIncome": 15000
+}
+```
+
+**Calculation Logic**:
+```javascript
+totalBalance = SUM(accounts.currentBalance)
+thisMonthIncome = SUM(transactions.amount WHERE type='income' AND date in range)
+thisMonthExpenses = SUM(transactions.amount WHERE type='expense' AND date in range)
+netIncome = thisMonthIncome - thisMonthExpenses
+```
+
+---
+
+#### GET /api/v1/dashboard/category-breakdown
+Get expense breakdown by category
+
+**Query Parameters**:
+- `fromDate` (optional): ISO date string
+- `toDate` (optional): ISO date string
+
+**Response**:
+```json
+[
+  {
+    "categoryId": "cat_food",
+    "categoryName": "Food",
+    "categoryIcon": "food",
+    "totalAmount": 8500,
+    "percentage": 24.3,
+    "transactionCount": 15
+  }
+]
+```
+
+**Calculation Logic**:
+```sql
+SELECT
+  categoryId,
+  SUM(amount) as totalAmount,
+  COUNT(*) as transactionCount,
+  (SUM(amount) / total_expenses) * 100 as percentage
+FROM transactions
+WHERE type = 'expense'
+  AND date BETWEEN :fromDate AND :toDate
+GROUP BY categoryId
+ORDER BY totalAmount DESC
+```
+
+---
+
+#### GET /api/v1/dashboard/charts
+Get chart data for dashboard visualizations
+
+**Query Parameters**:
+- `fromDate` (optional): ISO date string
+- `toDate` (optional): ISO date string
+- `chartType` (optional): 'income-expense' | 'category-wise'
+
+**Response** (Income vs Expense by period):
+```json
+{
+  "labels": ["Week 1", "Week 2", "Week 3", "Week 4"],
+  "datasets": [
+    {
+      "label": "Income",
+      "data": [12000, 15000, 10000, 13000]
+    },
+    {
+      "label": "Expense",
+      "data": [8000, 9500, 7500, 10000]
+    }
+  ]
+}
+```
+
+---
+
+## Business Logic & Rules
+
+### 1. Transaction Balance Effects
+
+**Effect Application**:
+
+```javascript
+function applyTransactionEffect(transaction) {
+  switch (transaction.type) {
+    case 'income':
+      account.currentBalance += transaction.amount;
+      break;
+    case 'expense':
+      account.currentBalance -= transaction.amount;
+      break;
+    case 'transfer':
+      fromAccount.currentBalance -= transaction.amount;
+      toAccount.currentBalance += transaction.amount;
+      break;
+  }
+}
+```
+
+**Effect Reversion** (for updates/deletes):
+
+```javascript
+function revertTransactionEffect(transaction) {
+  // Apply opposite effect
+  switch (transaction.type) {
+    case 'income':
+      account.currentBalance -= transaction.amount;
+      break;
+    case 'expense':
+      account.currentBalance += transaction.amount;
+      break;
+    case 'transfer':
+      fromAccount.currentBalance += transaction.amount;
+      toAccount.currentBalance -= transaction.amount;
+      break;
+  }
+}
+```
+
+**Update Transaction Logic**:
+```javascript
+1. Get old transaction
+2. revertTransactionEffect(oldTransaction)
+3. Update transaction data
+4. applyTransactionEffect(newTransaction)
+5. Update timestamps
+```
+
+---
+
+### 2. Budget Tracking Logic
+
+**Real-time Spent Calculation**:
+```javascript
+function calculateBudgetSpent(categoryId, month, year) {
+  return transactions
+    .filter(t =>
+      t.categoryId === categoryId &&
+      t.type === 'expense' &&
+      t.date.getMonth() + 1 === month &&
+      t.date.getFullYear() === year
+    )
+    .reduce((sum, t) => sum + t.amount, 0);
+}
+```
+
+**Budget Status Logic**:
+```javascript
+function getBudgetStatus(spent, limit) {
+  const percentage = (spent / limit) * 100;
+
+  if (spent >= limit) {
+    return { status: 'exceeded', color: 'red' };
+  } else if (percentage >= 80) {
+    return { status: 'warning', color: 'orange' };
+  } else {
+    return { status: 'on-track', color: 'green' };
+  }
+}
+```
+
+---
+
+### 3. Date Range Filtering
+
+**Inclusive Date Logic**:
+```javascript
+function applyDateRangeFilter(items, fromDate, toDate) {
+  // Ensure end date includes entire day
+  const endDate = new Date(toDate);
+  endDate.setHours(23, 59, 59, 999);
+
+  return items.filter(item => {
+    const itemDate = new Date(item.date);
+    return itemDate >= new Date(fromDate) && itemDate <= endDate;
+  });
+}
+```
+
+**Default Date Range** (Current Month):
+```javascript
+function getCurrentMonthRange() {
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  return {
+    fromDate: formatDate(firstDay),  // 'YYYY-MM-DD'
+    toDate: formatDate(lastDay)
+  };
+}
+```
+
+---
+
+### 4. Entity Relationships
+
+**Database Schema Relationships**:
+
+```
+Account (1) ──< (N) Transaction
+  - accountId references Account.id
+  - toAccountId references Account.id (for transfers)
+
+Category (1) ──< (N) Transaction
+  - categoryId references Category.id
+
+Category (1) ──< (N) Budget
+  - categoryId references Category.id
+  - Only expense categories can have budgets
+
+User (1) ──< (N) Account
+User (1) ──< (N) Category
+User (1) ──< (N) Transaction
+User (1) ──< (N) Budget
+User (1) ──< (N) Reminder
+```
+
+**Foreign Key Constraints**:
+- All `*Id` fields are foreign keys
+- Enforce referential integrity
+- Consider cascade behavior for deletes
+
+---
+
+### 5. Data Validation Rules
+
+#### Account Validation
+```javascript
+{
+  name: { required: true, maxLength: 100 },
+  initialAmount: { required: true, min: 0, type: 'number' },
+  icon: { required: true, notEmpty: true }
+}
+```
+
+#### Category Validation
+```javascript
+{
+  name: { required: true, maxLength: 100 },
+  type: { required: true, enum: ['income', 'expense'] },
+  icon: { required: true, notEmpty: true }
+}
+```
+
+#### Transaction Validation
+```javascript
+{
+  type: { required: true, enum: ['income', 'expense', 'transfer'] },
+  amount: { required: true, min: 0.01, type: 'number' },
+  date: { required: true, validDate: true },
+  accountId: { required: true, exists: 'accounts' },
+  categoryId: {
+    requiredIf: (data) => ['income', 'expense'].includes(data.type),
+    exists: 'categories'
+  },
+  toAccountId: {
+    requiredIf: (data) => data.type === 'transfer',
+    exists: 'accounts',
+    notSameAs: 'accountId'
+  },
+  narration: { optional: true, maxLength: 500 }
+}
+```
+
+#### Budget Validation
+```javascript
+{
+  categoryId: {
+    required: true,
+    exists: 'categories',
+    categoryType: 'expense'
+  },
+  month: { required: true, min: 1, max: 12, type: 'integer' },
+  year: { required: true, min: 2020, max: 2100, type: 'integer' },
+  limit: { required: true, min: 1, type: 'number' },
+  unique: ['categoryId', 'month', 'year']
+}
+```
+
+#### Reminder Validation
+```javascript
+{
+  title: { required: true, maxLength: 200 },
+  date: { required: true, validDate: true },
+  beforeDays: { required: true, min: 0, max: 365, type: 'integer' },
+  afterDays: { required: true, min: 0, max: 365, type: 'integer' }
+}
+```
+
+---
+
+## Data Flow Patterns
+
+### 1. Frontend Reactive Pattern
+
+**Current Implementation**:
+
+```typescript
+// Service Layer (StorageService)
+private accountsSubject = new BehaviorSubject<Account[]>([]);
+public accounts$ = this.accountsSubject.asObservable();
+
+saveAccount(account: Account): void {
+  // Save to localStorage
+  const accounts = this.getAccounts();
+  // ... update logic
+  this.accountsSubject.next(accounts);  // Trigger UI updates
+}
+
+// Component Layer
+export class AccountsComponent implements OnInit {
+  accounts: Account[] = [];
+
+  ngOnInit() {
+    this.storageService.accounts$.subscribe(accounts => {
+      this.accounts = accounts;  // Automatic UI update
+    });
+  }
+}
+```
+
+**Future API Pattern**:
+
+```typescript
+// API Service Layer
+export class AccountApiService {
+  private accountsSubject = new BehaviorSubject<Account[]>([]);
+  public accounts$ = this.accountsSubject.asObservable();
+
+  loadAccounts(): void {
+    this.http.get<Account[]>('/api/v1/accounts').subscribe(
+      accounts => this.accountsSubject.next(accounts)
+    );
+  }
+
+  createAccount(data: CreateAccountRequest): Observable<Account> {
+    return this.http.post<Account>('/api/v1/accounts', data).pipe(
+      tap(() => this.loadAccounts())  // Refresh list
+    );
+  }
+}
+```
+
+---
+
+### 2. Date Range Synchronization Pattern
+
+**Implementation**:
+
+```typescript
+// Service maintains shared state
+export class DateRangeService {
+  private dateRangeSubject = new BehaviorSubject<DateRange>(initialRange);
+  public dateRange$ = this.dateRangeSubject.asObservable();
+}
+
+// Pages subscribe and update
+export class DashboardComponent {
+  ngOnInit() {
+    // Listen for external changes
+    this.dateRangeService.dateRange$.subscribe(range => {
+      this.dateRangeForm.patchValue(range, { emitEvent: false });
+      this.filterData(range);
+    });
+
+    // Publish local changes
+    this.dateRangeForm.valueChanges.subscribe(value => {
+      this.dateRangeService.updateDateRange(value);
+    });
+  }
+}
+```
+
+**Key Points**:
+- Use `{ emitEvent: false }` to prevent infinite loops
+- Date range persists across page navigation
+- Only time-based pages participate in synchronization
+
+---
+
+### 3. Transaction Effect Cascade
+
+**Create Transaction Flow**:
+
+```
+1. User submits transaction form
+2. Component calls StorageService.saveTransaction()
+3. Service saves transaction to storage
+4. Service calls applyTransactionEffect()
+   - Updates account balance(s)
+   - Saves updated accounts
+   - Triggers accounts$ stream update
+5. Service triggers transactions$ stream update
+6. UI automatically updates:
+   - Transaction list
+   - Account balances
+   - Dashboard stats
+   - Budget spent amounts
+```
+
+**Update Transaction Flow**:
+
+```
+1. User edits transaction
+2. Service calls saveTransaction() with existing ID
+3. Service finds old transaction
+4. Service calls revertTransactionEffect(oldTransaction)
+   - Reverts old balance changes
+5. Service updates transaction data
+6. Service calls applyTransactionEffect(newTransaction)
+   - Applies new balance changes
+7. All streams update, UI refreshes
+```
+
+---
+
+### 4. Budget Real-time Tracking
+
+**Flow**:
+
+```
+Transaction Created/Updated/Deleted
+       ↓
+Check if transaction.type === 'expense'
+       ↓
+Find budgets for transaction.categoryId + month + year
+       ↓
+Recalculate spent amount
+       ↓
+Update BudgetWithUsage computed fields
+       ↓
+UI updates budget cards with:
+  - New spent amount
+  - Updated remaining
+  - New percentage used
+  - Status color change if threshold crossed
+```
+
+---
+
+## API Migration Strategy
+
+### Phase 1: Parallel Implementation
+
+1. **Create API service layer** alongside existing StorageService
+2. **Feature flag** to toggle between localStorage and API
+3. **Identical interfaces** for seamless switching
+
+```typescript
+// environment.ts
+export const environment = {
+  useApiStorage: false  // Toggle between localStorage and API
+};
+
+// Factory pattern
+export function provideStorageService() {
+  return environment.useApiStorage
+    ? ApiStorageService
+    : LocalStorageService;
+}
+```
+
+---
+
+### Phase 2: Data Export/Import
+
+**Export Format**:
+```json
+{
+  "version": "1.0",
+  "exportDate": "2025-01-15T10:30:00.000Z",
+  "data": {
+    "accounts": [...],
+    "categories": [...],
+    "transactions": [...],
+    "budgets": [...],
+    "reminders": [...]
+  }
+}
+```
+
+**Migration Endpoints**:
+
+```
+POST /api/v1/import
+  - Import exported data
+  - Validate data integrity
+  - Handle ID conflicts
+
+GET /api/v1/export
+  - Export current user data
+  - Include all entities
+```
+
+---
+
+### Phase 3: Gradual Migration
+
+1. **Authentication**: Implement user registration/login
+2. **Data Sync**: One-time data import from localStorage
+3. **Feature Toggle**: Enable API storage for new users
+4. **Testing**: Run both implementations in parallel
+5. **Cutover**: Switch all users to API storage
+6. **Cleanup**: Remove localStorage code
+
+---
+
+### Phase 4: API Enhancements
+
+**Recommended Additions**:
+
+1. **Pagination**: Add to all list endpoints
+   ```
+   GET /api/v1/transactions?limit=50&offset=0
+   ```
+
+2. **Sorting**: Add sort parameters
+   ```
+   GET /api/v1/transactions?sortBy=date&order=desc
+   ```
+
+3. **Search**: Add full-text search
+   ```
+   GET /api/v1/transactions?search=grocery
+   ```
+
+4. **Bulk Operations**: Batch create/update/delete
+   ```
+   POST /api/v1/transactions/bulk
+   DELETE /api/v1/transactions/bulk
+   ```
+
+5. **Multi-currency Support**:
+   ```typescript
+   interface Account {
+     currency: 'INR' | 'USD' | 'EUR'
+     // Add exchange rate handling
+   }
+   ```
+
+6. **File Attachments**: Receipt uploads
+   ```
+   POST /api/v1/transactions/:id/attachments
+   ```
+
+7. **Tags**: Flexible categorization
+   ```typescript
+   interface Transaction {
+     tags?: string[]
+   }
+   ```
+
+8. **Recurring Transactions**: Auto-generation
+   ```typescript
+   interface RecurringTransaction {
+     frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
+     startDate: Date
+     endDate?: Date
+   }
+   ```
+
+---
+
+## Testing & Validation
+
+### Unit Tests
+
+**Model Validation**:
+```javascript
+describe('Account Model', () => {
+  it('should validate required fields');
+  it('should reject negative initialAmount');
+  it('should calculate currentBalance correctly');
+});
+```
+
+**Service Logic**:
+```javascript
+describe('StorageService', () => {
+  it('should apply income transaction effect');
+  it('should revert expense transaction effect');
+  it('should handle transfer between accounts');
+  it('should prevent invalid transaction types');
+});
+```
+
+**Date Filtering**:
+```javascript
+describe('Date Range Filtering', () => {
+  it('should include end date completely (23:59:59.999)');
+  it('should filter transactions within range');
+  it('should handle month boundaries correctly');
+});
+```
+
+---
+
+### Integration Tests
+
+**API Endpoints**:
+```javascript
+describe('Transaction API', () => {
+  it('POST /transactions should create and update balance');
+  it('PUT /transactions should revert old and apply new effects');
+  it('DELETE /transactions should revert balance effects');
+});
+
+describe('Budget API', () => {
+  it('GET /budgets should calculate spent amount correctly');
+  it('should include historical expenses in spent calculation');
+  it('should prevent duplicate budgets');
+});
+```
+
+---
+
+### E2E Tests
+
+**User Flows**:
+```javascript
+describe('Complete Transaction Flow', () => {
+  it('should create income, update balance, reflect in dashboard');
+  it('should create expense, update balance, update budget tracking');
+  it('should transfer between accounts and update both balances');
+});
+
+describe('Budget Tracking', () => {
+  it('should update budget progress when expense created');
+  it('should move category between budgeted/not-budgeted sections');
+  it('should show correct status color based on spending');
+});
+```
+
+---
+
+## Error Handling
+
+### HTTP Status Codes
+
+| Code | Meaning | Usage |
+|------|---------|-------|
+| 200 | OK | Successful GET, PUT, DELETE |
+| 201 | Created | Successful POST |
+| 400 | Bad Request | Validation errors |
+| 401 | Unauthorized | Authentication required |
+| 403 | Forbidden | Insufficient permissions |
+| 404 | Not Found | Resource doesn't exist |
+| 409 | Conflict | Duplicate resource (e.g., budget) |
+| 422 | Unprocessable Entity | Business logic validation failed |
+| 500 | Server Error | Unexpected server error |
+
+---
+
+### Error Response Format
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input data",
+    "details": [
+      {
+        "field": "amount",
+        "message": "Amount must be greater than 0",
+        "value": -100
+      },
+      {
+        "field": "accountId",
+        "message": "Account does not exist",
+        "value": "invalid_id"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### Frontend Error Handling
+
+```typescript
+this.apiService.createTransaction(data).subscribe({
+  next: (transaction) => {
+    // Success handling
+    this.showSuccessMessage('Transaction created');
+  },
+  error: (error) => {
+    if (error.status === 400) {
+      // Validation errors
+      this.showValidationErrors(error.error.details);
+    } else if (error.status === 401) {
+      // Redirect to login
+      this.router.navigate(['/login']);
+    } else {
+      // Generic error
+      this.showErrorMessage('Failed to create transaction');
+    }
+  }
+});
+```
+
+---
+
+## Security Considerations
+
+### Authentication & Authorization
+
+**JWT Token Pattern**:
+```typescript
+// Include in all API requests
+headers: {
+  'Authorization': `Bearer ${token}`,
+  'Content-Type': 'application/json'
+}
+```
+
+**User Isolation**: All queries must filter by authenticated user
+```sql
+SELECT * FROM accounts WHERE userId = :currentUserId
+```
+
+---
+
+### Data Validation
+
+- **Server-side validation**: Never trust client data
+- **Parameterized queries**: Prevent SQL injection
+- **Input sanitization**: Prevent XSS attacks
+- **Type checking**: Validate data types match models
+
+---
+
+### Rate Limiting
+
+```javascript
+// Example rate limits
+POST /api/v1/transactions: 100 requests/hour
+POST /api/v1/accounts: 20 requests/hour
+GET endpoints: 1000 requests/hour
+```
+
+---
+
+### Data Privacy
+
+- **Encryption at rest**: Sensitive financial data
+- **HTTPS only**: All API communications
+- **CORS policies**: Restrict origin domains
+- **Audit logging**: Track all data modifications
+
+---
+
+## Performance Optimization
+
+### Database Indexing
+
+```sql
+-- Recommended indexes for optimal performance
+CREATE INDEX idx_transactions_date ON transactions(date);
+CREATE INDEX idx_transactions_account ON transactions(accountId);
+CREATE INDEX idx_transactions_category ON transactions(categoryId);
+CREATE INDEX idx_transactions_user_date ON transactions(userId, date);
+CREATE INDEX idx_budgets_category_period ON budgets(categoryId, month, year);
+CREATE INDEX idx_reminders_date_active ON reminders(date, isActive);
+CREATE INDEX idx_accounts_user ON accounts(userId);
+CREATE INDEX idx_categories_user_type ON categories(userId, type);
+```
+
+---
+
+### Caching Strategy
+
+**Redis Caching**:
+```javascript
+// Cache rarely-changing data
+cache.set('user:123:categories', categories, ttl: 3600);
+cache.set('user:123:accounts', accounts, ttl: 1800);
+
+// Invalidate on updates
+onCategoryUpdated() {
+  cache.del('user:123:categories');
+}
+```
+
+**ETags**: For conditional requests
+```
+GET /api/v1/transactions
+If-None-Match: "etag-value"
+→ 304 Not Modified (if unchanged)
+```
+
+---
+
+### Query Optimization
+
+**Dashboard Stats** (Use database views):
+```sql
+CREATE VIEW user_dashboard_stats AS
+SELECT
+  userId,
+  SUM(CASE WHEN type='income' THEN amount ELSE 0 END) as totalIncome,
+  SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as totalExpense,
+  COUNT(*) as totalTransactions
+FROM transactions
+GROUP BY userId;
+```
+
+**Pagination**: Always limit query results
+```javascript
+const limit = Math.min(req.query.limit || 50, 100);
+const offset = req.query.offset || 0;
+```
+
+---
+
+### Frontend Optimization
+
+- **Lazy loading**: Route-based code splitting (already implemented)
+- **Virtual scrolling**: Large transaction lists (already implemented)
+- **Debouncing**: Search/filter inputs
+- **Caching**: Store API responses in memory with expiration
+
+---
+
+## Conclusion
+
+This comprehensive specification provides everything needed to implement a backend API for the Expense Tracker application. The frontend is already structured with:
+
+✅ **Well-defined data models** with DTOs
+✅ **Reactive service patterns** ready for API integration
+✅ **Consistent business logic** documented and tested
+✅ **Clear separation of concerns** for easy migration
+
+### Next Steps
+
+1. **Backend Setup**: Choose technology stack (.NET Core web api, etc.)
+2. **Database Schema**: Create tables based on models with proper relationships
+3. **API Implementation**: Implement endpoints following this specification
+4. **Authentication**: Add JWT-based user authentication
+5. **Testing**: Write comprehensive tests for all endpoints
+6. **Frontend Migration**: Switch from StorageService to API service layer
+7. **Data Migration**: Export localStorage data and import to backend
+8. **Deployment**: Deploy backend API and update frontend
+
+---
+
+**Document Maintained By**: Development Team
+**Last Updated**: January 2025
+**Version**: 1.0
