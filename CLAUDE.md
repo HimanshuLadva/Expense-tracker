@@ -91,7 +91,8 @@ src/app/
 - **Central Service**: StorageService as single source of truth for all data
 - **Reactive Streams**: BehaviorSubject for real-time UI updates
 - **Storage Strategy**: Local storage with JSON serialization and custom date revival
-- **ID Generation**: Timestamp + random string combination
+- **ID Generation**: Integer-based using `Date.now()` (timestamp in milliseconds)
+- **ID Type**: All entity IDs are `number` type (not string) for better performance and database compatibility
 - **Error Handling**: Try-catch blocks with console logging for storage operations
 - **Shared State Services**: Singleton services with BehaviorSubject for cross-page state synchronization (e.g., DateRangeService)
 
@@ -286,6 +287,7 @@ src/app/
 - **Dialog Scrolling Fix**: Fixed action button visibility in all dialog forms by implementing proper scrolling containers with max-height constraints
 - **Budget Management**: Comprehensive monthly budget tracking system with real-time spending calculations and visual progress indicators
 - **Dashboard Reminders Widget**: Top 10 upcoming reminders display on dashboard with smart filtering, status badges, and responsive design
+- **Integer ID Migration**: Migrated all entity IDs from string to number type for better performance and database compatibility (uses `Date.now()` for generation)
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling

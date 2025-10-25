@@ -221,7 +221,7 @@ export class SetBudgetDialogComponent implements OnInit {
   month!: number;
   year!: number;
   monthName!: string;
-  budgetId?: string;
+  budgetId?: number;
 
   constructor(
     private fb: FormBuilder,

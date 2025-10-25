@@ -51,7 +51,7 @@ This document provides comprehensive documentation of the Expense Tracker fronte
 
 ```typescript
 interface Account {
-  id: string;                  // Unique identifier
+  id: number;                  // Unique identifier (integer)
   name: string;                // Account name (e.g., "Salary Account", "Cash Wallet")
   initialAmount: number;       // Starting balance when account created
   currentBalance: number;      // Real-time calculated balance (auto-updated)
@@ -73,7 +73,7 @@ interface CreateAccountRequest {
 **Update Request DTO**:
 ```typescript
 interface UpdateAccountRequest {
-  id: string;
+  id: number;
   name: string;
   initialAmount: number;
   icon: string;
@@ -84,7 +84,7 @@ interface UpdateAccountRequest {
 
 | Field | Type | Required | Constraints | Notes |
 |-------|------|----------|-------------|-------|
-| `id` | string | Yes | Unique | Auto-generated on server |
+| `id` | number | Yes | Unique, Integer | Auto-generated on server |
 | `name` | string | Yes | Max 100 chars | Account display name |
 | `initialAmount` | number | Yes | >= 0 | Starting balance |
 | `currentBalance` | number | Yes | Any number | Auto-calculated, not in requests |
@@ -111,7 +111,7 @@ enum CategoryType {
 }
 
 interface Category {
-  id: string;                  // Unique identifier
+  id: number;                  // Unique identifier (integer)
   name: string;                // Category name (e.g., "Salary", "Groceries", "Transport")
   type: CategoryType;          // Either 'income' or 'expense'
   icon: string;                // Icon identifier for UI display
@@ -132,7 +132,7 @@ interface CreateCategoryRequest {
 **Update Request DTO**:
 ```typescript
 interface UpdateCategoryRequest {
-  id: string;
+  id: number;
   name: string;
   type: CategoryType;
   icon: string;
@@ -143,7 +143,7 @@ interface UpdateCategoryRequest {
 
 | Field | Type | Required | Constraints | Notes |
 |-------|------|----------|-------------|-------|
-| `id` | string | Yes | Unique | Auto-generated on server |
+| `id` | number | Yes | Unique, Integer | Auto-generated on server |
 | `name` | string | Yes | Max 100 chars | Category display name |
 | `type` | CategoryType | Yes | 'income' \| 'expense' | Determines usage context |
 | `icon` | string | Yes | Non-empty | Icon identifier |
@@ -170,13 +170,13 @@ enum TransactionType {
 }
 
 interface Transaction {
-  id: string;                  // Unique identifier
+  id: number;                  // Unique identifier (integer)
   type: TransactionType;       // Transaction type
   amount: number;              // Transaction amount (always positive)
   date: Date;                  // Transaction date
-  accountId: string;           // Source account ID (foreign key)
-  categoryId?: string;         // Category ID (optional, not used for transfers)
-  toAccountId?: string;        // Destination account ID (only for transfers)
+  accountId: number;           // Source account ID (foreign key)
+  categoryId?: number;         // Category ID (optional, not used for transfers)
+  toAccountId?: number;        // Destination account ID (only for transfers)
   narration?: string;          // Optional description/notes
   createdAt: Date;             // Creation timestamp
   updatedAt: Date;             // Last modification timestamp
@@ -189,9 +189,9 @@ interface CreateTransactionRequest {
   type: TransactionType;
   amount: number;
   date: Date;
-  accountId: string;
-  categoryId?: string;         // Required for INCOME/EXPENSE
-  toAccountId?: string;        // Required for TRANSFER
+  accountId: number;
+  categoryId?: number;         // Required for INCOME/EXPENSE
+  toAccountId?: number;        // Required for TRANSFER
   narration?: string;
 }
 ```
@@ -199,13 +199,13 @@ interface CreateTransactionRequest {
 **Update Request DTO**:
 ```typescript
 interface UpdateTransactionRequest {
-  id: string;
+  id: number;
   type: TransactionType;
   amount: number;
   date: Date;
-  accountId: string;
-  categoryId?: string;
-  toAccountId?: string;
+  accountId: number;
+  categoryId?: number;
+  toAccountId?: number;
   narration?: string;
 }
 ```
@@ -222,13 +222,13 @@ interface UpdateTransactionRequest {
 
 | Field | Type | Required | Constraints | Notes |
 |-------|------|----------|-------------|-------|
-| `id` | string | Yes | Unique | Auto-generated |
+| `id` | number | Yes | Unique, Integer | Auto-generated |
 | `type` | TransactionType | Yes | Enum value | Determines effect on accounts |
 | `amount` | number | Yes | > 0 | Always positive |
 | `date` | Date | Yes | Valid date | Transaction date |
-| `accountId` | string | Yes | Must exist | Source account reference |
-| `categoryId` | string | Conditional | Must exist | Required for income/expense |
-| `toAccountId` | string | Conditional | Must exist | Required for transfer |
+| `accountId` | number | Yes | Must exist | Source account reference |
+| `categoryId` | number | Conditional | Must exist | Required for income/expense |
+| `toAccountId` | number | Conditional | Must exist | Required for transfer |
 | `narration` | string | No | Max 500 chars | Optional description |
 | `createdAt` | Date | Yes | ISO 8601 | Auto-generated |
 | `updatedAt` | Date | Yes | ISO 8601 | Auto-updated |
@@ -253,8 +253,8 @@ interface UpdateTransactionRequest {
 
 ```typescript
 interface Budget {
-  id: string;                  // Unique identifier
-  categoryId: string;          // Category ID (foreign key, must be expense category)
+  id: number;                  // Unique identifier (integer)
+  categoryId: number;          // Category ID (foreign key, must be expense category)
   month: number;               // Month (1-12)
   year: number;                // Year (e.g., 2025)
   limit: number;               // Budget limit amount
@@ -274,7 +274,7 @@ interface BudgetWithUsage extends Budget {
 **Create Request DTO**:
 ```typescript
 interface CreateBudgetRequest {
-  categoryId: string;
+  categoryId: number;
   month: number;               // 1-12
   year: number;                // e.g., 2025
   limit: number;
@@ -284,7 +284,7 @@ interface CreateBudgetRequest {
 **Update Request DTO**:
 ```typescript
 interface UpdateBudgetRequest {
-  id: string;
+  id: number;
   limit: number;               // Only limit is updatable
 }
 ```
@@ -293,8 +293,8 @@ interface UpdateBudgetRequest {
 
 | Field | Type | Required | Constraints | Notes |
 |-------|------|----------|-------------|-------|
-| `id` | string | Yes | Unique | Auto-generated |
-| `categoryId` | string | Yes | Must exist, must be expense | Foreign key |
+| `id` | number | Yes | Unique, Integer | Auto-generated |
+| `categoryId` | number | Yes | Must exist, must be expense | Foreign key |
 | `month` | number | Yes | 1-12 | Calendar month |
 | `year` | number | Yes | >= current year - 10 | Calendar year |
 | `limit` | number | Yes | > 0 | Budget limit |
@@ -326,7 +326,7 @@ interface UpdateBudgetRequest {
 
 ```typescript
 interface Reminder {
-  id: string;                  // Unique identifier
+  id: number;                  // Unique identifier (integer)
   title: string;               // Reminder title/description
   date: Date;                  // Target reminder date
   beforeDays: number;          // Show reminder X days before date
@@ -351,7 +351,7 @@ interface CreateReminderRequest {
 **Update Request DTO**:
 ```typescript
 interface UpdateReminderRequest {
-  id: string;
+  id: number;
   title: string;
   date: Date;
   beforeDays: number;
@@ -364,7 +364,7 @@ interface UpdateReminderRequest {
 
 | Field | Type | Required | Constraints | Notes |
 |-------|------|----------|-------------|-------|
-| `id` | string | Yes | Unique | Auto-generated |
+| `id` | number | Yes | Unique, Integer | Auto-generated |
 | `title` | string | Yes | Max 200 chars | Reminder description |
 | `date` | Date | Yes | Valid date | Target reminder date |
 | `beforeDays` | number | Yes | >= 0, <= 365 | Notification window start |
@@ -438,39 +438,39 @@ export class StorageService {
 
 #### Account Operations
 ```typescript
-generateId(): string
+generateId(): number
 getAccounts(): Account[]
 saveAccount(account: Account): void
-deleteAccount(id: string): void
-updateAccountBalance(accountId: string, amount: number): void
+deleteAccount(id: number): void
+updateAccountBalance(accountId: number, amount: number): void
 ```
 
 #### Category Operations
 ```typescript
 getCategories(): Category[]
 saveCategory(category: Category): void
-deleteCategory(id: string): void
+deleteCategory(id: number): void
 ```
 
 #### Transaction Operations
 ```typescript
 getTransactions(): Transaction[]
 saveTransaction(transaction: Transaction): void
-deleteTransaction(id: string): void
+deleteTransaction(id: number): void
 ```
 
 #### Budget Operations
 ```typescript
 getBudgets(): Budget[]
 saveBudget(budget: Budget): void
-deleteBudget(id: string): void
+deleteBudget(id: number): void
 ```
 
 #### Reminder Operations
 ```typescript
 getReminders(): Reminder[]
 saveReminder(reminder: Reminder): void
-deleteReminder(id: string): void
+deleteReminder(id: number): void
 ```
 
 #### Utility Operations
@@ -490,7 +490,7 @@ private revertTransactionEffect(transaction: Transaction): void
 2. **Automatic Updates**: Service methods automatically update streams
 3. **Error Handling**: Try-catch blocks with console logging
 4. **Date Handling**: Custom JSON parser for Date fields (`*At` fields and `date`)
-5. **ID Generation**: `Date.now().toString(36) + Math.random().toString(36).substr(2)`
+5. **ID Generation**: `Date.now()` (returns integer timestamp in milliseconds)
 
 ---
 
@@ -578,7 +578,7 @@ Get all accounts for authenticated user
 ```json
 [
   {
-    "id": "acc_123",
+    "id": 123,
     "name": "Salary Account",
     "initialAmount": 50000,
     "currentBalance": 67500,
@@ -606,7 +606,7 @@ Create new account
 **Response**: `Account` (201 Created)
 ```json
 {
-  "id": "acc_123",
+  "id": 123,
   "name": "Salary Account",
   "initialAmount": 50000,
   "currentBalance": 50000,
@@ -629,7 +629,7 @@ Update existing account
 **Request Body**: `UpdateAccountRequest`
 ```json
 {
-  "id": "acc_123",
+  "id": 123,
   "name": "Updated Account Name",
   "initialAmount": 60000,
   "icon": "wallet"
@@ -743,8 +743,8 @@ Create new transaction
   "type": "income",
   "amount": 5000,
   "date": "2025-01-15T00:00:00.000Z",
-  "accountId": "acc_123",
-  "categoryId": "cat_salary",
+  "accountId": 123,
+  "categoryId": 456,
   "narration": "Monthly salary"
 }
 ```
@@ -755,8 +755,8 @@ Create new transaction
   "type": "transfer",
   "amount": 1000,
   "date": "2025-01-15T00:00:00.000Z",
-  "accountId": "acc_123",
-  "toAccountId": "acc_456",
+  "accountId": 123,
+  "toAccountId": 789,
   "narration": "Transfer to savings"
 }
 ```
@@ -819,8 +819,8 @@ Get budgets with optional filtering and computed usage data
 ```json
 [
   {
-    "id": "budget_123",
-    "categoryId": "cat_groceries",
+    "id": 123,
+    "categoryId": 456,
     "month": 1,
     "year": 2025,
     "limit": 10000,
@@ -860,7 +860,7 @@ Create new budget
 **Request Body**: `CreateBudgetRequest`
 ```json
 {
-  "categoryId": "cat_groceries",
+  "categoryId": 456,
   "month": 1,
   "year": 2025,
   "limit": 10000
@@ -882,7 +882,7 @@ Update budget limit
 **Request Body**: `UpdateBudgetRequest`
 ```json
 {
-  "id": "budget_123",
+  "id": 123,
   "limit": 12000
 }
 ```
@@ -928,7 +928,7 @@ Get upcoming reminders for dashboard widget
 ```json
 [
   {
-    "id": "rem_123",
+    "id": 123,
     "title": "Pay electricity bill",
     "date": "2025-01-20T00:00:00.000Z",
     "beforeDays": 3,
@@ -1031,7 +1031,7 @@ Get expense breakdown by category
 ```json
 [
   {
-    "categoryId": "cat_food",
+    "categoryId": 123,
     "categoryName": "Food",
     "categoryIcon": "food",
     "totalAmount": 8500,

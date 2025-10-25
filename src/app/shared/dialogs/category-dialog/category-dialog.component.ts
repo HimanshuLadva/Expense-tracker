@@ -296,7 +296,7 @@ export class CategoryDialogComponent implements OnInit {
     });
   }
 
-  private loadCategory(id: string): void {
+  private loadCategory(id: number): void {
     const categories = this.storageService.getCategories();
     const category = categories.find(c => c.id === id);
 

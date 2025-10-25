@@ -4,7 +4,7 @@ export enum CategoryType {
 }
 
 export interface Category {
-  id: string;
+  id: number;
   name: string;
   type: CategoryType;
   icon: string;
@@ -19,7 +19,7 @@ export interface CreateCategoryRequest {
 }
 
 export interface UpdateCategoryRequest {
-  id: string;
+  id: number;
   name: string;
   type: CategoryType;
   icon: string;

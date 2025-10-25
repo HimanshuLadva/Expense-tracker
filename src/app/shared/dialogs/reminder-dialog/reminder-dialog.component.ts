@@ -349,7 +349,7 @@ export class ReminderDialogComponent implements OnInit {
     });
   }
 
-  private loadReminder(id: string): void {
+  private loadReminder(id: number): void {
     const reminders = this.storageService.getReminders();
     const reminder = reminders.find(r => r.id === id);
 

@@ -1,5 +1,5 @@
 export interface Reminder {
-  id: string;
+  id: number;
   title: string;
   date: Date;
   beforeDays: number;
@@ -17,7 +17,7 @@ export interface CreateReminderRequest {
 }
 
 export interface UpdateReminderRequest {
-  id: string;
+  id: number;
   title: string;
   date: Date;
   beforeDays: number;

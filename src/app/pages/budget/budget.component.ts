@@ -645,7 +645,7 @@ export class BudgetComponent implements OnInit, OnDestroy {
     );
   }
 
-  private calculateSpent(categoryId: string, transactions: any[], startDate: Date, endDate: Date): number {
+  private calculateSpent(categoryId: number, transactions: any[], startDate: Date, endDate: Date): number {
     return transactions
       .filter(t => {
         const transactionDate = new Date(t.date);

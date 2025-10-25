@@ -5,13 +5,13 @@ export enum TransactionType {
 }
 
 export interface Transaction {
-  id: string;
+  id: number;
   type: TransactionType;
   amount: number;
   date: Date;
-  accountId: string;
-  categoryId?: string;
-  toAccountId?: string;
+  accountId: number;
+  categoryId?: number;
+  toAccountId?: number;
   narration?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -21,19 +21,19 @@ export interface CreateTransactionRequest {
   type: TransactionType;
   amount: number;
   date: Date;
-  accountId: string;
-  categoryId?: string;
-  toAccountId?: string;
+  accountId: number;
+  categoryId?: number;
+  toAccountId?: number;
   narration?: string;
 }
 
 export interface UpdateTransactionRequest {
-  id: string;
+  id: number;
   type: TransactionType;
   amount: number;
   date: Date;
-  accountId: string;
-  categoryId?: string;
-  toAccountId?: string;
+  accountId: number;
+  categoryId?: number;
+  toAccountId?: number;
   narration?: string;
 }

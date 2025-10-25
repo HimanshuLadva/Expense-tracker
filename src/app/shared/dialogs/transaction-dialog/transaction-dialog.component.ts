@@ -394,7 +394,7 @@ export class TransactionDialogComponent implements OnInit, OnDestroy {
 
   TransactionType = TransactionType;
   selectedType: TransactionType | null = null;
-  selectedAccountId: string | null = null;
+  selectedAccountId: number | null = null;
 
   private subscription = new Subscription();
 
@@ -487,7 +487,7 @@ export class TransactionDialogComponent implements OnInit, OnDestroy {
     }
   }
 
-  private loadTransaction(id: string): void {
+  private loadTransaction(id: number): void {
     const transactions = this.storageService.getTransactions();
     const transaction = transactions.find(t => t.id === id);
 

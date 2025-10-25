@@ -1,6 +1,6 @@
 export interface Budget {
-  id: string;
-  categoryId: string;
+  id: number;
+  categoryId: number;
   month: number; // 1-12
   year: number;
   limit: number;
@@ -9,14 +9,14 @@ export interface Budget {
 }
 
 export interface CreateBudgetRequest {
-  categoryId: string;
+  categoryId: number;
   month: number;
   year: number;
   limit: number;
 }
 
 export interface UpdateBudgetRequest {
-  id: string;
+  id: number;
   limit: number;
 }
 

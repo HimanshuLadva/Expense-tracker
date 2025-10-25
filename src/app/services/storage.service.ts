@@ -49,8 +49,8 @@ export class StorageService {
     }
   }
 
-  generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  generateId(): number {
+    return Date.now();
   }
 
   getAccounts(): Account[] {
@@ -71,13 +71,13 @@ export class StorageService {
     this.accountsSubject.next(accounts);
   }
 
-  deleteAccount(id: string): void {
+  deleteAccount(id: number): void {
     const accounts = this.getAccounts().filter(a => a.id !== id);
     this.saveToStorage(this.STORAGE_KEYS.ACCOUNTS, accounts);
     this.accountsSubject.next(accounts);
   }
 
-  updateAccountBalance(accountId: string, amount: number): void {
+  updateAccountBalance(accountId: number, amount: number): void {
     const accounts = this.getAccounts();
     const account = accounts.find(a => a.id === accountId);
     if (account) {
@@ -106,7 +106,7 @@ export class StorageService {
     this.categoriesSubject.next(categories);
   }
 
-  deleteCategory(id: string): void {
+  deleteCategory(id: number): void {
     const categories = this.getCategories().filter(c => c.id !== id);
     this.saveToStorage(this.STORAGE_KEYS.CATEGORIES, categories);
     this.categoriesSubject.next(categories);
@@ -133,7 +133,7 @@ export class StorageService {
     this.transactionsSubject.next(transactions);
   }
 
-  deleteTransaction(id: string): void {
+  deleteTransaction(id: number): void {
     const transactions = this.getTransactions();
     const transaction = transactions.find(t => t.id === id);
 
@@ -199,7 +199,7 @@ export class StorageService {
     this.remindersSubject.next(reminders);
   }
 
-  deleteReminder(id: string): void {
+  deleteReminder(id: number): void {
     const reminders = this.getReminders().filter(r => r.id !== id);
     this.saveToStorage(this.STORAGE_KEYS.REMINDERS, reminders);
     this.remindersSubject.next(reminders);
@@ -223,7 +223,7 @@ export class StorageService {
     this.budgetsSubject.next(budgets);
   }
 
-  deleteBudget(id: string): void {
+  deleteBudget(id: number): void {
     const budgets = this.getBudgets().filter(b => b.id !== id);
     this.saveToStorage(this.STORAGE_KEYS.BUDGETS, budgets);
     this.budgetsSubject.next(budgets);

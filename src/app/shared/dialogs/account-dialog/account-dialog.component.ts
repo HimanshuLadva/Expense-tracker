@@ -231,7 +231,7 @@ export class AccountDialogComponent implements OnInit {
     });
   }
 
-  private loadAccount(id: string): void {
+  private loadAccount(id: number): void {
     const accounts = this.storageService.getAccounts();
     const account = accounts.find(a => a.id === id);
 

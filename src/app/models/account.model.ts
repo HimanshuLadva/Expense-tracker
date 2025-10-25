@@ -1,5 +1,5 @@
 export interface Account {
-  id: string;
+  id: number;
   name: string;
   initialAmount: number;
   currentBalance: number;
@@ -15,7 +15,7 @@ export interface CreateAccountRequest {
 }
 
 export interface UpdateAccountRequest {
-  id: string;
+  id: number;
   name: string;
   initialAmount: number;
   icon: string;
