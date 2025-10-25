@@ -14,9 +14,33 @@ Please note: don't add any code snippets
 *****for reading*****
 Read my CLAUDE.md file to understand this project's context, then scan the codebase structure. Summarize what you've learned about the project and confirm you're ready to help with development tasks.
 =============================================================================
+*****for removing code snippets for CLAUDE.md file*****
 remove code snippets from file and only do memory entry of 
 1. Project structure and architecture patterns
 2. Coding style and naming conventions used in existing files
 3. Tech stack and dependencies from config files
 4. Development patterns and best practices
 Add memory entries to CLAUDE.md using # so future sessions remember the project's architecture, coding style, and conventions.
+==================================================================================================
+==================================================================================================
+=============================BACKEND PROMPTS======================================================
+****for analyze frontend app structure*****
+Analyze the Angular 19 frontend project at [../Expense-tracker/src/**] to understand:
+
+1. **Data Models**: What TypeScript interfaces/classes define the application's data structure?
+
+2. **localStorage Usage**: What data is stored in localStorage and how is it structured?
+
+3. **Services & API Calls**: What operations are currently performed (CRUD operations, business logic)?
+
+4. **Core Features**: What functionality does this expense tracker application provide?
+
+Stack: Angular 19 frontend → .NET Web API backend (replacing localStorage)
+
+Goal: Quick analysis summary so I can immediately start building the corresponding .NET Web API controllers, models, and services. Just tell me what I need to know to replicate this frontend's data needs in a .NET backend.
+=================================================================================================
+*****remove weatherforecast api*****
+remove WeatherForecast api endpoints and WeatherForecast api related coding
+=================================================================================================
+*****while making any crud operation of any page*****
+PLEASE NOTE:when you need other table data use join in EF core but don't use key constraints
