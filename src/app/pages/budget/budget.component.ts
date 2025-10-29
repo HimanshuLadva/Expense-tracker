@@ -512,6 +512,9 @@ export class BudgetComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Load categories from API when budget page is accessed
+    this.storageService.loadCategories();
+
     // Initialize date range form with values from service
     const currentRange = this.dateRangeService.getCurrentDateRange();
 

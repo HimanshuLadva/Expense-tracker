@@ -14,13 +14,13 @@ export interface Category {
 
 export interface CreateCategoryRequest {
   name: string;
-  type: CategoryType;
+  type: 'income' | 'expense';
   icon: string;
 }
 
 export interface UpdateCategoryRequest {
   id: number;
   name: string;
-  type: CategoryType;
+  type: 'income' | 'expense';
   icon: string;
 }

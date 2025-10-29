@@ -216,6 +216,9 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Load categories from API
+    this.storageService.loadCategories();
+
     this.subscription.add(
       this.storageService.categories$.subscribe(categories => {
         this.categories = categories;
@@ -269,7 +272,15 @@ export class CategoriesComponent implements OnInit, OnDestroy {
 
   deleteCategory(category: Category): void {
     if (confirm(`Are you sure you want to delete the category "${category.name}"?`)) {
-      this.storageService.deleteCategory(category.id);
+      this.storageService.deleteCategory(category.id).subscribe({
+        next: () => {
+          // Category deleted successfully
+        },
+        error: (error) => {
+          console.error('Failed to delete category:', error);
+          alert('Failed to delete category. Please try again.');
+        }
+      });
     }
   }
 }

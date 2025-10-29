@@ -323,20 +323,38 @@ export class CategoryDialogComponent implements OnInit {
           icon: formValue.icon,
           updatedAt: new Date()
         };
-        this.storageService.saveCategory(updatedCategory);
+
+        this.storageService.saveCategory(updatedCategory, true).subscribe({
+          next: () => {
+            this.dialogRef.close({ success: true } as DialogResult);
+          },
+          error: (error) => {
+            console.error('Failed to update category:', error);
+            alert('Failed to update category. Please try again.');
+            this.isSubmitting = false;
+          }
+        });
       } else {
         const newCategory: Category = {
-          id: this.storageService.generateId(),
+          id: 0, // Backend will generate the ID
           type: formValue.type,
           name: formValue.name,
           icon: formValue.icon,
           createdAt: new Date(),
           updatedAt: new Date()
         };
-        this.storageService.saveCategory(newCategory);
-      }
 
-      this.dialogRef.close({ success: true } as DialogResult);
+        this.storageService.saveCategory(newCategory, false).subscribe({
+          next: () => {
+            this.dialogRef.close({ success: true } as DialogResult);
+          },
+          error: (error) => {
+            console.error('Failed to create category:', error);
+            alert('Failed to create category. Please try again.');
+            this.isSubmitting = false;
+          }
+        });
+      }
     }
   }
 

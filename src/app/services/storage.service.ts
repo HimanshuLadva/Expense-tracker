@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Account, Category, Transaction, Reminder, Budget } from '../models';
 import { AccountApiService } from './account-api.service';
+import { CategoryApiService } from './category-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -16,7 +17,7 @@ export class StorageService {
   };
 
   private accountsSubject = new BehaviorSubject<Account[]>([]);
-  private categoriesSubject = new BehaviorSubject<Category[]>(this.getCategories());
+  private categoriesSubject = new BehaviorSubject<Category[]>([]);
   private transactionsSubject = new BehaviorSubject<Transaction[]>(this.getTransactions());
   private remindersSubject = new BehaviorSubject<Reminder[]>(this.getReminders());
   private budgetsSubject = new BehaviorSubject<Budget[]>(this.getBudgets());
@@ -27,7 +28,10 @@ export class StorageService {
   public reminders$ = this.remindersSubject.asObservable();
   public budgets$ = this.budgetsSubject.asObservable();
 
-  constructor(private accountApiService: AccountApiService) {}
+  constructor(
+    private accountApiService: AccountApiService,
+    private categoryApiService: CategoryApiService
+  ) {}
 
   /**
    * Load accounts from API - call this from AccountsComponent
@@ -40,6 +44,21 @@ export class StorageService {
       error: (error) => {
         console.error('Error loading accounts from API:', error);
         this.accountsSubject.next([]);
+      }
+    });
+  }
+
+  /**
+   * Load categories from API - call this from CategoriesComponent
+   */
+  loadCategories(): void {
+    this.categoryApiService.getAll().subscribe({
+      next: (categories) => {
+        this.categoriesSubject.next(categories);
+      },
+      error: (error) => {
+        console.error('Error loading categories from API:', error);
+        this.categoriesSubject.next([]);
       }
     });
   }
@@ -171,28 +190,76 @@ export class StorageService {
     }
   }
 
+  /**
+   * Get current categories value (synchronous)
+   */
   getCategories(): Category[] {
-    return this.getFromStorage<Category>(this.STORAGE_KEYS.CATEGORIES);
+    return this.categoriesSubject.value;
   }
 
-  saveCategory(category: Category): void {
-    const categories = this.getCategories();
-    const existingIndex = categories.findIndex(c => c.id === category.id);
+  /**
+   * Save category (create or update) via API
+   */
+  saveCategory(category: Category, isUpdate: boolean = false): Observable<Category> {
+    return new Observable(observer => {
+      if (isUpdate) {
+        const updateRequest = {
+          id: category.id,
+          name: category.name,
+          type: category.type.toLowerCase() as 'income' | 'expense', // Ensure lowercase string
+          icon: category.icon
+        };
 
-    if (existingIndex >= 0) {
-      categories[existingIndex] = { ...category, updatedAt: new Date() };
-    } else {
-      categories.push({ ...category, createdAt: new Date(), updatedAt: new Date() });
-    }
+        this.categoryApiService.update(updateRequest).subscribe({
+          next: (updatedCategory) => {
+            this.loadCategories(); // Refresh categories list
+            observer.next(updatedCategory);
+            observer.complete();
+          },
+          error: (error) => {
+            console.error('Error updating category:', error);
+            observer.error(error);
+          }
+        });
+      } else {
+        const createRequest = {
+          name: category.name,
+          type: category.type.toLowerCase() as 'income' | 'expense', // Ensure lowercase string
+          icon: category.icon
+        };
 
-    this.saveToStorage(this.STORAGE_KEYS.CATEGORIES, categories);
-    this.categoriesSubject.next(categories);
+        this.categoryApiService.create(createRequest).subscribe({
+          next: (newCategory) => {
+            this.loadCategories(); // Refresh categories list
+            observer.next(newCategory);
+            observer.complete();
+          },
+          error: (error) => {
+            console.error('Error creating category:', error);
+            observer.error(error);
+          }
+        });
+      }
+    });
   }
 
-  deleteCategory(id: number): void {
-    const categories = this.getCategories().filter(c => c.id !== id);
-    this.saveToStorage(this.STORAGE_KEYS.CATEGORIES, categories);
-    this.categoriesSubject.next(categories);
+  /**
+   * Delete category via API
+   */
+  deleteCategory(id: number): Observable<void> {
+    return new Observable(observer => {
+      this.categoryApiService.delete(id).subscribe({
+        next: () => {
+          this.loadCategories(); // Refresh categories list
+          observer.next();
+          observer.complete();
+        },
+        error: (error) => {
+          console.error('Error deleting category:', error);
+          observer.error(error);
+        }
+      });
+    });
   }
 
   getTransactions(): Transaction[] {

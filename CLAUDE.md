@@ -96,8 +96,8 @@ src/environments/
 ### Data Management Patterns
 - **Central Service**: StorageService as single source of truth for all data
 - **Reactive Streams**: BehaviorSubject for real-time UI updates
-- **Hybrid Storage Strategy**: Backend REST API for Accounts entity, Local storage for Categories, Transactions, Budgets, Reminders
-- **API Service Layer**: Dedicated API services for backend communication (e.g., AccountApiService)
+- **Hybrid Storage Strategy**: Backend REST API for Accounts and Categories entities, Local storage for Transactions, Budgets, Reminders
+- **API Service Layer**: Dedicated API services for backend communication (e.g., AccountApiService, CategoryApiService)
 - **ID Generation**: Backend-generated IDs for API entities, `Date.now()` for localStorage entities
 - **ID Type**: All entity IDs are `number` type (not string) for better performance and database compatibility
 - **Error Handling**: Try-catch blocks with console logging for storage operations, user-friendly alerts for API errors
@@ -170,14 +170,27 @@ src/environments/
 - **Request Fields**: Include only fields needed for specific operation
 - **Update Request**: Must include both initialAmount and currentBalance for Account updates
 - **Response Type**: API returns full entity object matching entity interface
+- **String Literal Types**: Use string literal types (e.g., 'income' | 'expense') instead of enums in request DTOs for proper JSON serialization
+- **Type Conversion**: Explicitly convert enum values to lowercase strings when creating API requests
 
 ### Lazy Loading Pattern for API Data
 - **On-Demand Loading**: API data loaded only when pages that need it are accessed
 - **Loading Method**: Public loadEntity() method in StorageService for component consumption
 - **Call Location**: Components call load method in ngOnInit lifecycle hook
-- **Applicable Components**: AccountsComponent, DashboardComponent, TransactionsComponent, TransactionDialogComponent
+- **Applicable Components**: AccountsComponent, CategoriesComponent, DashboardComponent, TransactionsComponent, BudgetComponent, TransactionDialogComponent
 - **Automatic Refresh**: After CRUD operations, call load method to refresh data from API
 - **No Service Init Loading**: Do NOT load data in service constructor - only on explicit component request
+
+### Component-Entity Dependencies Matrix
+- **AccountsComponent**: Calls loadAccounts() only
+- **CategoriesComponent**: Calls loadCategories() only
+- **DashboardComponent**: Calls both loadAccounts() and loadCategories() for comprehensive dashboard view
+- **TransactionsComponent**: Calls both loadAccounts() and loadCategories() for transaction form dependencies
+- **BudgetComponent**: Calls loadCategories() only for budget-category associations
+- **TransactionDialogComponent**: Calls both loadAccounts() and loadCategories() when dialog opens
+- **AccountDialogComponent**: No load calls needed, works with parent's loaded data
+- **CategoryDialogComponent**: No load calls needed, works with parent's loaded data
+- **Pattern**: Page components load data, dialog components work with already-loaded data except TransactionDialog which needs fresh data on open
 
 ### StorageService Bridge Pattern
 - **Hybrid Role**: Acts as bridge between components and both localStorage and API services
@@ -186,6 +199,18 @@ src/environments/
 - **BehaviorSubject Maintained**: Keep reactive streams pattern even for API-backed entities
 - **Stream Updates**: After API calls complete, update BehaviorSubject to trigger reactive UI updates
 - **Error Propagation**: Catch API errors, log to console, and propagate to calling component
+
+### Data Consistency Patterns for API-Backed Entities
+- **Single Source of Truth**: BehaviorSubject holds current state, components subscribe to stream for reactive updates
+- **Optimistic vs Pessimistic Updates**: Current implementation uses pessimistic updates - only update BehaviorSubject after successful API response
+- **Refresh Strategy**: Always call loadEntity() after create/update/delete to ensure frontend state matches backend reality
+- **Synchronous Getters**: Provide synchronous getEntity() methods that return BehaviorSubject.value for immediate access when needed
+- **Stream-First Architecture**: Components primarily consume data through Observable subscriptions, not direct method calls
+- **State Initialization**: Start with empty arrays in BehaviorSubject, populate only after explicit load calls
+- **Cross-Component Sync**: Reactive streams automatically propagate changes to all subscribed components when BehaviorSubject updates
+- **Error State Handling**: On load errors, set empty array to BehaviorSubject to provide consistent fallback state
+- **No Local Caching**: API-backed entities do not cache in localStorage, backend is always source of truth
+- **Concurrent Load Safety**: Multiple components calling same loadEntity() simultaneously is safe - last response wins pattern
 
 ### API Error Handling Pattern
 - **Subscribe Pattern**: Use subscribe with next and error callbacks for all API calls
@@ -209,6 +234,63 @@ src/environments/
 - **Update Endpoint**: POST with id, name, initialAmount, currentBalance, icon in request body
 - **Delete Endpoint**: POST with id in request body, returns void
 - **Balance Updates**: Frontend calculates new balance before sending update request
+
+### Category API Integration Specifics
+- **GetAll Endpoint**: POST with empty object body to retrieve all categories
+- **GetById Endpoint**: POST with id in request body to retrieve single category
+- **Create Endpoint**: POST with name, type, icon in request body
+- **Update Endpoint**: POST with id, name, type, icon in request body
+- **Delete Endpoint**: POST with id in request body, returns void
+- **Category Types**: type field must be lowercase string 'income' or 'expense' (not numeric values)
+- **Type Conversion**: Frontend explicitly converts CategoryType enum to lowercase string before sending to API
+- **String Literal Pattern**: Request DTOs use string literal types for enum-like fields to ensure proper API serialization
+- **Components Using Categories**: CategoriesComponent, DashboardComponent, TransactionsComponent, BudgetComponent, TransactionDialogComponent all call loadCategories() in ngOnInit
+
+### Entity Migration from localStorage to API - Step-by-Step Pattern
+1. **Update Environment Configuration**: Verify correct API URL in environment.ts and environment.prod.ts
+2. **Create Request/Response Interfaces**: Add CreateEntityRequest and UpdateEntityRequest to entity model file using string literal types for enum fields
+3. **Create API Service**: Build entity-api.service.ts following established service pattern with all five CRUD endpoints
+4. **Update StorageService Initialization**: Change entity BehaviorSubject initialization from loading localStorage to empty array for lazy loading
+5. **Add Load Method**: Create public loadEntity() method in StorageService that calls API service and updates BehaviorSubject
+6. **Update Save Method**: Convert saveEntity() to return Observable, add isUpdate parameter, call appropriate API endpoint, refresh data after operation
+7. **Update Delete Method**: Convert deleteEntity() to return Observable, call API delete endpoint, refresh data after operation
+8. **Update Get Method**: Change getEntity() to return current BehaviorSubject value instead of reading from localStorage
+9. **Inject API Service**: Add API service to StorageService constructor dependencies
+10. **Update Main Component**: Add loadEntity() call in entity page component ngOnInit
+11. **Update Dialog Component**: Change save/delete operations to subscribe to Observables with error handling and user feedback
+12. **Update Related Components**: Add loadEntity() calls to all components that consume the entity data in their ngOnInit
+13. **Handle Type Conversions**: Apply toLowerCase() or other conversions for enum fields in request object creation
+14. **Remove localStorage Logic**: Delete all localStorage-related methods for the migrated entity
+15. **Test CRUD Operations**: Verify create, read, update, delete operations work correctly with API
+16. **Update Documentation**: Document new API endpoints, components affected, and any special patterns in CLAUDE.md
+
+### API Integration Best Practices
+- **Type Safety**: Always use strongly typed interfaces for request/response objects
+- **Error Messages**: Provide clear, user-friendly error messages for all API failures
+- **Loading State**: Manage isSubmitting flags in dialogs to prevent duplicate submissions
+- **Data Refresh**: Always call load method after successful CRUD operations to sync with backend
+- **Observable Pattern**: Return Observables from StorageService, let components handle subscriptions
+- **Enum Handling**: Use string literal types in DTOs and explicitly convert enum values before sending
+- **ID Management**: Set ID to 0 for create operations, backend generates actual IDs
+- **Empty Body Pattern**: Send empty object for GetAll endpoints that require no parameters
+- **Component Initialization**: Load API data in ngOnInit, never in service constructor
+- **Subscription Cleanup**: Always unsubscribe in component ngOnDestroy to prevent memory leaks
+- **Centralized Configuration**: Use environment files for all API URLs, never hardcode endpoints
+- **Consistent Error Handling**: Log to console for debugging, show alerts for user notification
+
+### Common API Integration Pitfalls
+- **Missing Load Calls**: Forgetting to add loadEntity() calls to consuming components results in empty data
+- **Enum Serialization Issues**: TypeScript enums may serialize to numbers or strings depending on definition - always use explicit string literal types for API contracts
+- **Type Case Sensitivity**: Backend may expect specific casing for string values - verify and enforce with explicit conversions
+- **Unhandled Observables**: Failing to subscribe to returned Observables means operations never execute
+- **Missing Error Handlers**: Operations without error callbacks fail silently and confuse users
+- **Hardcoded IDs**: Using Date.now() for create operations when backend expects ID to be 0 or undefined
+- **Stale Data Display**: Not calling load method after CRUD operations leaves UI showing outdated information
+- **Multiple API Calls**: Loading data in service constructor causes unnecessary duplicate API requests
+- **Subscription Leaks**: Missing unsubscribe in ngOnDestroy causes memory leaks and unexpected behavior
+- **Environment Mismatch**: Using wrong API URL or forgetting to update environment files after backend port changes
+- **Component Order Dependencies**: Assuming entity data is available immediately when it requires async API load
+- **Dialog State Bugs**: Not resetting isSubmitting flag on errors prevents retry attempts
 
 ## # Memory: Data Flow and Transaction Patterns
 
@@ -358,10 +440,24 @@ src/environments/
 - **Budget Management**: Comprehensive monthly budget tracking system with real-time spending calculations and visual progress indicators
 - **Dashboard Reminders Widget**: Top 10 upcoming reminders display on dashboard with smart filtering, status badges, and responsive design
 - **Integer ID Migration**: Migrated all entity IDs from string to number type for better performance and database compatibility
-- **Backend API Integration**: Implemented REST API integration for Accounts entity with dedicated service layer
-- **Environment Configuration**: Added environment files for centralized API URL management
+- **Backend API Integration**: Implemented REST API integration for Accounts and Categories entities with dedicated service layer
+- **Environment Configuration**: Added environment files for centralized API URL management (https://localhost:44319)
 - **Lazy Loading API Pattern**: API data loaded on-demand when pages are accessed, not on app initialization
-- **Hybrid Data Strategy**: Accounts use backend API, other entities continue using localStorage
+- **Hybrid Data Strategy**: Accounts and Categories use backend API, Transactions/Budgets/Reminders continue using localStorage
+- **Category API Migration**: Migrated Categories from localStorage to REST API with CategoryApiService following established patterns
+
+### Lessons Learned from Category API Migration
+- **Multi-Component Impact**: Categories are consumed by 5+ components - always identify all consuming components before starting migration
+- **String Type Enforcement**: API expected lowercase string values for type field, not enum numeric values - critical to test actual payload format
+- **Request DTO Design**: String literal types in request interfaces provide better type safety and clearer API contracts than enum types
+- **Lazy Loading Benefits**: Initializing BehaviorSubject with empty array and loading on-demand reduces unnecessary API calls on app startup
+- **Observable Conversion**: Converting synchronous save/delete methods to Observable pattern required updating all calling components with subscription handling
+- **Error Feedback Loop**: User-friendly error messages in dialogs with alert() provide immediate feedback when API operations fail
+- **Type Conversion Layer**: Adding explicit toLowerCase() conversions in StorageService ensures consistent data format regardless of internal representation
+- **Component Load Pattern**: Every component using entity data needs explicit loadEntity() call in ngOnInit - reactive streams alone are not sufficient
+- **Dialog State Management**: isSubmitting flag must be reset in error callback to allow retry attempts after failed operations
+- **Centralized API Configuration**: Environment file changes automatically apply to all API services - single source of truth for backend URL
+- **Testing Type Format**: Always verify JSON payload format matches API expectations, especially for enum-like fields that might serialize differently
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling
@@ -381,21 +477,26 @@ src/environments/
 - **Service Initialization**: Initialize date forms with `getCurrentDateRange()` from DateRangeService for consistency on time-based pages only
 - **Extended Interfaces**: When adding computed properties to existing models, create extended interfaces (e.g., UpcomingReminder extends Reminder) for type safety
 - **Dashboard Widgets**: Display summary information from other pages (top 10 patterns) with conditional rendering and responsive design
-- **API Integration**: When integrating new entities with backend, follow AccountApiService pattern with dedicated API service
-- **Data Loading**: Load API data lazily in component ngOnInit, not in service constructor
-- **Error Handling**: Always provide user-friendly error messages for failed API operations
+- **API Integration**: When integrating new entities with backend, follow the 16-step Entity Migration pattern documented in Backend API Integration Patterns section
+- **Data Loading**: Load API data lazily in component ngOnInit, not in service constructor - call loadEntity() for every entity used by the component
+- **Error Handling**: Always provide user-friendly error messages for failed API operations using alert() with "Failed to [operation] [entity]. Please try again." pattern
 - **Update Requests**: Include all necessary fields in update requests, including both initial and current values where applicable
-- **Observable Pattern**: Return Observables from service methods for API operations, allow components to handle subscription
+- **Observable Pattern**: Return Observables from service methods for API operations, allow components to handle subscription with error callbacks
+- **String Literal Types**: When API expects string values for enum-like fields, use string literal types in request DTOs and explicitly convert enum values
+- **Component Dependencies**: Identify all components that consume an entity before migration and update each to call appropriate load methods
+- **Dialog Subscriptions**: Update dialog components to subscribe to save/delete Observables with proper error handling and isSubmitting state management
+- **Type Format Validation**: Verify that enum-like fields are sent as correct string format expected by API, not numeric or other representations
+- **Multi-Component Loading**: When multiple entities are needed, call all relevant load methods in ngOnInit without waiting for sequential completion
 
 ## Application Summary
 
 Comprehensive Angular 19 expense tracker demonstrating modern development practices:
 - **Architecture**: Standalone components with feature-based organization and lazy loading
 - **State Management**: Reactive service patterns with BehaviorSubject streams
-- **Backend Integration**: REST API communication for Accounts with hybrid data persistence approach
+- **Backend Integration**: REST API communication for Accounts and Categories with hybrid data persistence approach
 - **User Experience**: Mobile-first responsive design with professional dialog system
 - **Performance**: Optimized change detection, virtual scrolling, lazy data loading, and bundle management
 - **Maintainability**: Consistent patterns, comprehensive TypeScript, and clean organization
-- **Scalability**: Modular API service layer ready for additional entity integrations
+- **Scalability**: Modular API service layer with multiple entity integrations (Accounts, Categories)
 
-Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, and backend API integration in 2025.
+Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, and progressive backend API integration in 2025.

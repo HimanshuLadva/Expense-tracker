@@ -341,8 +341,9 @@ export class TransactionsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Load accounts from API when transactions page is accessed
+    // Load accounts and categories from API when transactions page is accessed
     this.storageService.loadAccounts();
+    this.storageService.loadCategories();
 
     // Initialize date range form with values from service
     const currentRange = this.dateRangeService.getCurrentDateRange();
