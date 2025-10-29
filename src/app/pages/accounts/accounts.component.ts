@@ -184,7 +184,7 @@ export class AccountsComponent implements OnInit, OnDestroy {
   private subscription = new Subscription();
 
   tableColumns: TableColumn[] = [
-    { key: 'icon', label: '', type: 'text' },
+    { key: 'icon', label: 'Icon', type: 'text' },
     { key: 'name', label: 'Account Name', type: 'text' },
     { key: 'initialAmount', label: 'Initial', type: 'currency' },
     { key: 'currentBalance', label: 'Current Balance', type: 'currency' },
@@ -197,6 +197,10 @@ export class AccountsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Load accounts from API when page is accessed
+    this.storageService.loadAccounts();
+
+    // Subscribe to accounts stream for real-time updates
     this.subscription.add(
       this.storageService.accounts$.subscribe(accounts => {
         this.accounts = accounts;
@@ -251,7 +255,15 @@ export class AccountsComponent implements OnInit, OnDestroy {
 
   deleteAccount(account: Account): void {
     if (confirm(`Are you sure you want to delete the account "${account.name}"?`)) {
-      this.storageService.deleteAccount(account.id);
+      this.storageService.deleteAccount(account.id).subscribe({
+        next: () => {
+          // Account deleted successfully
+        },
+        error: (error) => {
+          console.error('Error deleting account:', error);
+          alert('Failed to delete account. Please try again.');
+        }
+      });
     }
   }
 }

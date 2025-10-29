@@ -12,19 +12,24 @@ Modern Angular 19 expense tracking application with comprehensive financial mana
 - **Module Organization**: Feature-based structure with lazy-loaded routes
 - **Component Pattern**: Standalone components with inline templates and styles
 - **State Management**: Service-based reactive patterns using BehaviorSubject
-- **Data Persistence**: Local storage with JSON serialization and date handling
+- **Data Persistence**: Hybrid approach - Backend REST API for Accounts, Local storage for other entities
+- **Backend Integration**: HTTP communication via dedicated API service layer
 - **Navigation**: Route-based lazy loading with dynamic imports
 
 ### Directory Structure Pattern
 ```
 src/app/
-├── models/           # Data entities and DTOs with barrel exports
-├── services/         # Business logic and state management (StorageService, DateRangeService)
+├── models/           # Data entities and DTOs with barrel exports (includes API request/response interfaces)
+├── services/         # Business logic and state management (StorageService, DateRangeService, API services)
 ├── pages/           # Feature pages (dashboard, accounts, categories, transactions, budget, reminders)
 ├── shared/          # Reusable components (data-table, dialogs, page-header, icon-selector)
 ├── app.component.*  # Root component with navigation sidebar
-├── app.config.ts    # Application configuration
+├── app.config.ts    # Application configuration (includes HttpClient provider)
 └── app.routes.ts    # Route definitions with lazy loading
+
+src/environments/
+├── environment.ts      # Development environment config (API URLs)
+└── environment.prod.ts # Production environment config
 ```
 
 ### Component Architecture Pattern
@@ -65,6 +70,7 @@ src/app/
 - **Angular**: v19.2.0 (latest with modern features)
 - **Angular CLI**: v19.2.16 (build system and tooling)
 - **Angular CDK**: v19.2.19 (dialog components and utilities)
+- **Angular HTTP Client**: Built-in HTTP module with fetch API support
 - **TypeScript**: v5.7.2 (strict mode enabled)
 - **RxJS**: v7.8.0 (reactive programming)
 
@@ -90,10 +96,11 @@ src/app/
 ### Data Management Patterns
 - **Central Service**: StorageService as single source of truth for all data
 - **Reactive Streams**: BehaviorSubject for real-time UI updates
-- **Storage Strategy**: Local storage with JSON serialization and custom date revival
-- **ID Generation**: Integer-based using `Date.now()` (timestamp in milliseconds)
+- **Hybrid Storage Strategy**: Backend REST API for Accounts entity, Local storage for Categories, Transactions, Budgets, Reminders
+- **API Service Layer**: Dedicated API services for backend communication (e.g., AccountApiService)
+- **ID Generation**: Backend-generated IDs for API entities, `Date.now()` for localStorage entities
 - **ID Type**: All entity IDs are `number` type (not string) for better performance and database compatibility
-- **Error Handling**: Try-catch blocks with console logging for storage operations
+- **Error Handling**: Try-catch blocks with console logging for storage operations, user-friendly alerts for API errors
 - **Shared State Services**: Singleton services with BehaviorSubject for cross-page state synchronization (e.g., DateRangeService)
 
 ### Form Handling Standards
@@ -139,6 +146,69 @@ src/app/
 - **No Any Types**: Explicit typing for all data structures
 - **Interface First**: Define interfaces before implementation
 - **Consistent Imports**: Barrel exports for clean import statements
+
+## # Memory: Backend API Integration Patterns
+
+### API Service Architecture
+- **Dedicated API Services**: Create separate service for each entity API (e.g., AccountApiService)
+- **Service Location**: Place API services in src/app/services/ directory
+- **Naming Convention**: entity-name-api.service.ts (kebab-case)
+- **Service Decorator**: Use `@Injectable({ providedIn: 'root' })` for singleton pattern
+- **HTTP Method**: All API endpoints use POST method regardless of operation type
+- **Request/Response**: Strongly typed using interfaces defined in model files
+
+### Environment Configuration Pattern
+- **Environment Files**: Centralized API URL configuration in src/environments/
+- **Development Config**: environment.ts contains development API URL
+- **Production Config**: environment.prod.ts contains production API URL
+- **Current API Host**: https://localhost:44319 (HTTPS with specific port)
+- **Usage Pattern**: Import environment in API services, use `environment.apiUrl` for base URL
+
+### API Request/Response Interfaces
+- **Location**: Define in corresponding model file alongside entity interface
+- **Naming Pattern**: CreateEntityRequest, UpdateEntityRequest for request DTOs
+- **Request Fields**: Include only fields needed for specific operation
+- **Update Request**: Must include both initialAmount and currentBalance for Account updates
+- **Response Type**: API returns full entity object matching entity interface
+
+### Lazy Loading Pattern for API Data
+- **On-Demand Loading**: API data loaded only when pages that need it are accessed
+- **Loading Method**: Public loadEntity() method in StorageService for component consumption
+- **Call Location**: Components call load method in ngOnInit lifecycle hook
+- **Applicable Components**: AccountsComponent, DashboardComponent, TransactionsComponent, TransactionDialogComponent
+- **Automatic Refresh**: After CRUD operations, call load method to refresh data from API
+- **No Service Init Loading**: Do NOT load data in service constructor - only on explicit component request
+
+### StorageService Bridge Pattern
+- **Hybrid Role**: Acts as bridge between components and both localStorage and API services
+- **Single Interface**: Components interact only with StorageService, not directly with API services
+- **Observable Return**: API operations return Observable for async handling in components
+- **BehaviorSubject Maintained**: Keep reactive streams pattern even for API-backed entities
+- **Stream Updates**: After API calls complete, update BehaviorSubject to trigger reactive UI updates
+- **Error Propagation**: Catch API errors, log to console, and propagate to calling component
+
+### API Error Handling Pattern
+- **Subscribe Pattern**: Use subscribe with next and error callbacks for all API calls
+- **Console Logging**: Always log errors to console with descriptive context
+- **User Feedback**: Display user-friendly alert messages for failed operations
+- **State Reset**: Reset isSubmitting flags on error to allow retry
+- **Error Messages**: "Failed to [operation] [entity]. Please try again."
+- **Graceful Degradation**: On load errors, set empty array to BehaviorSubject
+
+### HTTP Client Configuration
+- **Provider Location**: Add provideHttpClient in app.config.ts providers array
+- **Fetch API**: Use withFetch() option for modern fetch-based implementation
+- **Dependency Injection**: Inject HttpClient in API service constructors
+- **Request Configuration**: Set Content-Type to application/json for all requests
+- **Body Serialization**: Angular automatically serializes request objects to JSON
+
+### Account API Integration Specifics
+- **GetAll Endpoint**: POST with empty object body to retrieve all accounts
+- **GetById Endpoint**: POST with id in request body to retrieve single account
+- **Create Endpoint**: POST with name, initialAmount, icon in request body
+- **Update Endpoint**: POST with id, name, initialAmount, currentBalance, icon in request body
+- **Delete Endpoint**: POST with id in request body, returns void
+- **Balance Updates**: Frontend calculates new balance before sending update request
 
 ## # Memory: Data Flow and Transaction Patterns
 
@@ -287,7 +357,11 @@ src/app/
 - **Dialog Scrolling Fix**: Fixed action button visibility in all dialog forms by implementing proper scrolling containers with max-height constraints
 - **Budget Management**: Comprehensive monthly budget tracking system with real-time spending calculations and visual progress indicators
 - **Dashboard Reminders Widget**: Top 10 upcoming reminders display on dashboard with smart filtering, status badges, and responsive design
-- **Integer ID Migration**: Migrated all entity IDs from string to number type for better performance and database compatibility (uses `Date.now()` for generation)
+- **Integer ID Migration**: Migrated all entity IDs from string to number type for better performance and database compatibility
+- **Backend API Integration**: Implemented REST API integration for Accounts entity with dedicated service layer
+- **Environment Configuration**: Added environment files for centralized API URL management
+- **Lazy Loading API Pattern**: API data loaded on-demand when pages are accessed, not on app initialization
+- **Hybrid Data Strategy**: Accounts use backend API, other entities continue using localStorage
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling
@@ -307,14 +381,21 @@ src/app/
 - **Service Initialization**: Initialize date forms with `getCurrentDateRange()` from DateRangeService for consistency on time-based pages only
 - **Extended Interfaces**: When adding computed properties to existing models, create extended interfaces (e.g., UpcomingReminder extends Reminder) for type safety
 - **Dashboard Widgets**: Display summary information from other pages (top 10 patterns) with conditional rendering and responsive design
+- **API Integration**: When integrating new entities with backend, follow AccountApiService pattern with dedicated API service
+- **Data Loading**: Load API data lazily in component ngOnInit, not in service constructor
+- **Error Handling**: Always provide user-friendly error messages for failed API operations
+- **Update Requests**: Include all necessary fields in update requests, including both initial and current values where applicable
+- **Observable Pattern**: Return Observables from service methods for API operations, allow components to handle subscription
 
 ## Application Summary
 
 Comprehensive Angular 19 expense tracker demonstrating modern development practices:
 - **Architecture**: Standalone components with feature-based organization and lazy loading
 - **State Management**: Reactive service patterns with BehaviorSubject streams
+- **Backend Integration**: REST API communication for Accounts with hybrid data persistence approach
 - **User Experience**: Mobile-first responsive design with professional dialog system
-- **Performance**: Optimized change detection, virtual scrolling, and bundle management
+- **Performance**: Optimized change detection, virtual scrolling, lazy data loading, and bundle management
 - **Maintainability**: Consistent patterns, comprehensive TypeScript, and clean organization
+- **Scalability**: Modular API service layer ready for additional entity integrations
 
-Serves as foundation for financial management applications with emphasis on responsive design and mobile optimization in 2024.
+Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, and backend API integration in 2025.

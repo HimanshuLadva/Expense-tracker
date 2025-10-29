@@ -18,5 +18,6 @@ export interface UpdateAccountRequest {
   id: number;
   name: string;
   initialAmount: number;
+  currentBalance: number;
   icon: string;
 }

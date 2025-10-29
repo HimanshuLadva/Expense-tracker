@@ -716,6 +716,9 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
+    // Load accounts from API when dashboard is accessed
+    this.storageService.loadAccounts();
+
     // Initialize date range form with values from service
     const currentRange = this.dateRangeService.getCurrentDateRange();
 

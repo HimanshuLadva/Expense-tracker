@@ -408,6 +408,9 @@ export class TransactionDialogComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Load accounts from API when dialog opens
+    this.storageService.loadAccounts();
+
     this.subscription.add(
       combineLatest([
         this.storageService.accounts$,

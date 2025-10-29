@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Account, Category, Transaction, Reminder, Budget } from '../models';
+import { AccountApiService } from './account-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -14,7 +15,7 @@ export class StorageService {
     BUDGETS: 'expense_tracker_budgets'
   };
 
-  private accountsSubject = new BehaviorSubject<Account[]>(this.getAccounts());
+  private accountsSubject = new BehaviorSubject<Account[]>([]);
   private categoriesSubject = new BehaviorSubject<Category[]>(this.getCategories());
   private transactionsSubject = new BehaviorSubject<Transaction[]>(this.getTransactions());
   private remindersSubject = new BehaviorSubject<Reminder[]>(this.getReminders());
@@ -25,6 +26,23 @@ export class StorageService {
   public transactions$ = this.transactionsSubject.asObservable();
   public reminders$ = this.remindersSubject.asObservable();
   public budgets$ = this.budgetsSubject.asObservable();
+
+  constructor(private accountApiService: AccountApiService) {}
+
+  /**
+   * Load accounts from API - call this from AccountsComponent
+   */
+  loadAccounts(): void {
+    this.accountApiService.getAll().subscribe({
+      next: (accounts) => {
+        this.accountsSubject.next(accounts);
+      },
+      error: (error) => {
+        console.error('Error loading accounts from API:', error);
+        this.accountsSubject.next([]);
+      }
+    });
+  }
 
   private getFromStorage<T>(key: string): T[] {
     try {
@@ -53,38 +71,103 @@ export class StorageService {
     return Date.now();
   }
 
+  /**
+   * Get current accounts value (synchronous)
+   */
   getAccounts(): Account[] {
-    return this.getFromStorage<Account>(this.STORAGE_KEYS.ACCOUNTS);
+    return this.accountsSubject.value;
   }
 
-  saveAccount(account: Account): void {
-    const accounts = this.getAccounts();
-    const existingIndex = accounts.findIndex(a => a.id === account.id);
+  /**
+   * Save account (create or update) via API
+   */
+  saveAccount(account: Account, isUpdate: boolean = false): Observable<Account> {
+    return new Observable(observer => {
+      if (isUpdate) {
+        const updateRequest = {
+          id: account.id,
+          name: account.name,
+          initialAmount: account.initialAmount,
+          currentBalance: account.currentBalance,
+          icon: account.icon
+        };
 
-    if (existingIndex >= 0) {
-      accounts[existingIndex] = { ...account, updatedAt: new Date() };
-    } else {
-      accounts.push({ ...account, createdAt: new Date(), updatedAt: new Date() });
-    }
+        this.accountApiService.update(updateRequest).subscribe({
+          next: (updatedAccount) => {
+            this.loadAccounts(); // Refresh accounts list
+            observer.next(updatedAccount);
+            observer.complete();
+          },
+          error: (error) => {
+            console.error('Error updating account:', error);
+            observer.error(error);
+          }
+        });
+      } else {
+        const createRequest = {
+          name: account.name,
+          initialAmount: account.initialAmount,
+          icon: account.icon
+        };
 
-    this.saveToStorage(this.STORAGE_KEYS.ACCOUNTS, accounts);
-    this.accountsSubject.next(accounts);
+        this.accountApiService.create(createRequest).subscribe({
+          next: (newAccount) => {
+            this.loadAccounts(); // Refresh accounts list
+            observer.next(newAccount);
+            observer.complete();
+          },
+          error: (error) => {
+            console.error('Error creating account:', error);
+            observer.error(error);
+          }
+        });
+      }
+    });
   }
 
-  deleteAccount(id: number): void {
-    const accounts = this.getAccounts().filter(a => a.id !== id);
-    this.saveToStorage(this.STORAGE_KEYS.ACCOUNTS, accounts);
-    this.accountsSubject.next(accounts);
+  /**
+   * Delete account via API
+   */
+  deleteAccount(id: number): Observable<void> {
+    return new Observable(observer => {
+      this.accountApiService.delete(id).subscribe({
+        next: () => {
+          this.loadAccounts(); // Refresh accounts list
+          observer.next();
+          observer.complete();
+        },
+        error: (error) => {
+          console.error('Error deleting account:', error);
+          observer.error(error);
+        }
+      });
+    });
   }
 
+  /**
+   * Update account balance (for transactions)
+   */
   updateAccountBalance(accountId: number, amount: number): void {
     const accounts = this.getAccounts();
     const account = accounts.find(a => a.id === accountId);
     if (account) {
-      account.currentBalance += amount;
-      account.updatedAt = new Date();
-      this.saveToStorage(this.STORAGE_KEYS.ACCOUNTS, accounts);
-      this.accountsSubject.next(accounts);
+      const updatedBalance = account.currentBalance + amount;
+      const updateRequest = {
+        id: account.id,
+        name: account.name,
+        initialAmount: account.initialAmount,
+        currentBalance: updatedBalance,
+        icon: account.icon
+      };
+
+      this.accountApiService.update(updateRequest).subscribe({
+        next: () => {
+          this.loadAccounts(); // Refresh accounts list
+        },
+        error: (error) => {
+          console.error('Error updating account balance:', error);
+        }
+      });
     }
   }
 
