@@ -1451,196 +1451,21 @@ UI updates budget cards with:
 
 ## API Migration Strategy
 
-### Phase 1: Parallel Implementation
+**Recommended Approach**:
+1. Create API service layer alongside existing StorageService with identical interfaces
+2. Implement data export/import endpoints (POST /api/v1/import, GET /api/v1/export)
+3. Add authentication (JWT-based user registration/login)
+4. Migrate existing localStorage data to backend
+5. Switch to API-based storage
 
-1. **Create API service layer** alongside existing StorageService
-2. **Feature flag** to toggle between localStorage and API
-3. **Identical interfaces** for seamless switching
-
-```typescript
-// environment.ts
-export const environment = {
-  useApiStorage: false  // Toggle between localStorage and API
-};
-
-// Factory pattern
-export function provideStorageService() {
-  return environment.useApiStorage
-    ? ApiStorageService
-    : LocalStorageService;
-}
-```
-
----
-
-### Phase 2: Data Export/Import
-
-**Export Format**:
-```json
-{
-  "version": "1.0",
-  "exportDate": "2025-01-15T10:30:00.000Z",
-  "data": {
-    "accounts": [...],
-    "categories": [...],
-    "transactions": [...],
-    "budgets": [...],
-    "reminders": [...]
-  }
-}
-```
-
-**Migration Endpoints**:
-
-```
-POST /api/v1/import
-  - Import exported data
-  - Validate data integrity
-  - Handle ID conflicts
-
-GET /api/v1/export
-  - Export current user data
-  - Include all entities
-```
-
----
-
-### Phase 3: Gradual Migration
-
-1. **Authentication**: Implement user registration/login
-2. **Data Sync**: One-time data import from localStorage
-3. **Feature Toggle**: Enable API storage for new users
-4. **Testing**: Run both implementations in parallel
-5. **Cutover**: Switch all users to API storage
-6. **Cleanup**: Remove localStorage code
-
----
-
-### Phase 4: API Enhancements
-
-**Recommended Additions**:
-
-1. **Pagination**: Add to all list endpoints
-   ```
-   GET /api/v1/transactions?limit=50&offset=0
-   ```
-
-2. **Sorting**: Add sort parameters
-   ```
-   GET /api/v1/transactions?sortBy=date&order=desc
-   ```
-
-3. **Search**: Add full-text search
-   ```
-   GET /api/v1/transactions?search=grocery
-   ```
-
-4. **Bulk Operations**: Batch create/update/delete
-   ```
-   POST /api/v1/transactions/bulk
-   DELETE /api/v1/transactions/bulk
-   ```
-
-5. **Multi-currency Support**:
-   ```typescript
-   interface Account {
-     currency: 'INR' | 'USD' | 'EUR'
-     // Add exchange rate handling
-   }
-   ```
-
-6. **File Attachments**: Receipt uploads
-   ```
-   POST /api/v1/transactions/:id/attachments
-   ```
-
-7. **Tags**: Flexible categorization
-   ```typescript
-   interface Transaction {
-     tags?: string[]
-   }
-   ```
-
-8. **Recurring Transactions**: Auto-generation
-   ```typescript
-   interface RecurringTransaction {
-     frequency: 'daily' | 'weekly' | 'monthly' | 'yearly'
-     startDate: Date
-     endDate?: Date
-   }
-   ```
-
----
-
-## Testing & Validation
-
-### Unit Tests
-
-**Model Validation**:
-```javascript
-describe('Account Model', () => {
-  it('should validate required fields');
-  it('should reject negative initialAmount');
-  it('should calculate currentBalance correctly');
-});
-```
-
-**Service Logic**:
-```javascript
-describe('StorageService', () => {
-  it('should apply income transaction effect');
-  it('should revert expense transaction effect');
-  it('should handle transfer between accounts');
-  it('should prevent invalid transaction types');
-});
-```
-
-**Date Filtering**:
-```javascript
-describe('Date Range Filtering', () => {
-  it('should include end date completely (23:59:59.999)');
-  it('should filter transactions within range');
-  it('should handle month boundaries correctly');
-});
-```
-
----
-
-### Integration Tests
-
-**API Endpoints**:
-```javascript
-describe('Transaction API', () => {
-  it('POST /transactions should create and update balance');
-  it('PUT /transactions should revert old and apply new effects');
-  it('DELETE /transactions should revert balance effects');
-});
-
-describe('Budget API', () => {
-  it('GET /budgets should calculate spent amount correctly');
-  it('should include historical expenses in spent calculation');
-  it('should prevent duplicate budgets');
-});
-```
-
----
-
-### E2E Tests
-
-**User Flows**:
-```javascript
-describe('Complete Transaction Flow', () => {
-  it('should create income, update balance, reflect in dashboard');
-  it('should create expense, update balance, update budget tracking');
-  it('should transfer between accounts and update both balances');
-});
-
-describe('Budget Tracking', () => {
-  it('should update budget progress when expense created');
-  it('should move category between budgeted/not-budgeted sections');
-  it('should show correct status color based on spending');
-});
-```
+**Future Enhancements**:
+- Pagination and sorting for list endpoints
+- Full-text search capabilities
+- Bulk operations for batch create/update/delete
+- Multi-currency support with exchange rates
+- File attachments for receipts
+- Flexible tagging system
+- Recurring transaction auto-generation
 
 ---
 
@@ -1716,121 +1541,43 @@ this.apiService.createTransaction(data).subscribe({
 ## Security Considerations
 
 ### Authentication & Authorization
+- JWT Bearer token authentication for all API requests
+- User isolation: All queries filtered by authenticated user ID
+- Authorization header format: `Bearer ${token}`
 
-**JWT Token Pattern**:
-```typescript
-// Include in all API requests
-headers: {
-  'Authorization': `Bearer ${token}`,
-  'Content-Type': 'application/json'
-}
-```
+### Data Validation & Security
+- Server-side validation (never trust client data)
+- Parameterized queries (prevent SQL injection)
+- Input sanitization (prevent XSS attacks)
+- Type checking against model definitions
 
-**User Isolation**: All queries must filter by authenticated user
-```sql
-SELECT * FROM accounts WHERE userId = :currentUserId
-```
-
----
-
-### Data Validation
-
-- **Server-side validation**: Never trust client data
-- **Parameterized queries**: Prevent SQL injection
-- **Input sanitization**: Prevent XSS attacks
-- **Type checking**: Validate data types match models
-
----
-
-### Rate Limiting
-
-```javascript
-// Example rate limits
-POST /api/v1/transactions: 100 requests/hour
-POST /api/v1/accounts: 20 requests/hour
-GET endpoints: 1000 requests/hour
-```
-
----
-
-### Data Privacy
-
-- **Encryption at rest**: Sensitive financial data
-- **HTTPS only**: All API communications
-- **CORS policies**: Restrict origin domains
-- **Audit logging**: Track all data modifications
+### Rate Limiting & Privacy
+- Rate limits on endpoints (e.g., 100 req/hour for transactions)
+- HTTPS only for all communications
+- Encryption at rest for sensitive data
+- CORS policies and audit logging
 
 ---
 
 ## Performance Optimization
 
-### Database Indexing
-
-```sql
--- Recommended indexes for optimal performance
-CREATE INDEX idx_transactions_date ON transactions(date);
-CREATE INDEX idx_transactions_account ON transactions(accountId);
-CREATE INDEX idx_transactions_category ON transactions(categoryId);
-CREATE INDEX idx_transactions_user_date ON transactions(userId, date);
-CREATE INDEX idx_budgets_category_period ON budgets(categoryId, month, year);
-CREATE INDEX idx_reminders_date_active ON reminders(date, isActive);
-CREATE INDEX idx_accounts_user ON accounts(userId);
-CREATE INDEX idx_categories_user_type ON categories(userId, type);
-```
-
----
+### Database Optimization
+- **Indexing**: Create indexes on frequently queried fields (date, accountId, categoryId, userId)
+- **Composite Indexes**: transactions(userId, date), budgets(categoryId, month, year)
+- **Database Views**: Use views for complex aggregate queries (dashboard stats)
+- **Pagination**: Always limit query results (default 50, max 100)
 
 ### Caching Strategy
-
-**Redis Caching**:
-```javascript
-// Cache rarely-changing data
-cache.set('user:123:categories', categories, ttl: 3600);
-cache.set('user:123:accounts', accounts, ttl: 1800);
-
-// Invalidate on updates
-onCategoryUpdated() {
-  cache.del('user:123:categories');
-}
-```
-
-**ETags**: For conditional requests
-```
-GET /api/v1/transactions
-If-None-Match: "etag-value"
-→ 304 Not Modified (if unchanged)
-```
-
----
-
-### Query Optimization
-
-**Dashboard Stats** (Use database views):
-```sql
-CREATE VIEW user_dashboard_stats AS
-SELECT
-  userId,
-  SUM(CASE WHEN type='income' THEN amount ELSE 0 END) as totalIncome,
-  SUM(CASE WHEN type='expense' THEN amount ELSE 0 END) as totalExpense,
-  COUNT(*) as totalTransactions
-FROM transactions
-GROUP BY userId;
-```
-
-**Pagination**: Always limit query results
-```javascript
-const limit = Math.min(req.query.limit || 50, 100);
-const offset = req.query.offset || 0;
-```
-
----
+- **Redis Caching**: Cache rarely-changing data (categories, accounts) with TTL
+- **Cache Invalidation**: Clear cache on entity updates
+- **ETags**: Support conditional requests with If-None-Match headers
+- **Frontend Caching**: Store API responses in memory with expiration
 
 ### Frontend Optimization
-
-- **Lazy loading**: Route-based code splitting (already implemented)
-- **Virtual scrolling**: Large transaction lists (already implemented)
-- **Debouncing**: Search/filter inputs
-- **Caching**: Store API responses in memory with expiration
+- Lazy loading with route-based code splitting (implemented)
+- Virtual scrolling for large transaction lists (implemented)
+- Debouncing for search and filter inputs (implemented)
+- In-memory response caching with expiration
 
 ---
 
