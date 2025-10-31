@@ -719,6 +719,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     // Load accounts and categories from API when dashboard is accessed
     this.storageService.loadAccounts();
     this.storageService.loadCategories();
+    this.storageService.loadReminders();
 
     // Initialize date range form with values from service
     const currentRange = this.dateRangeService.getCurrentDateRange();

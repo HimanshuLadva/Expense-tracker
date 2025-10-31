@@ -96,8 +96,8 @@ src/environments/
 ### Data Management Patterns
 - **Central Service**: StorageService as single source of truth for all data
 - **Reactive Streams**: BehaviorSubject for real-time UI updates
-- **Hybrid Storage Strategy**: Backend REST API for Accounts and Categories entities, Local storage for Transactions, Budgets, Reminders
-- **API Service Layer**: Dedicated API services for backend communication (e.g., AccountApiService, CategoryApiService)
+- **Hybrid Storage Strategy**: Backend REST API for Accounts, Categories, and Reminders entities, Local storage for Transactions and Budgets
+- **API Service Layer**: Dedicated API services for backend communication (e.g., AccountApiService, CategoryApiService, ReminderApiService)
 - **ID Generation**: Backend-generated IDs for API entities, `Date.now()` for localStorage entities
 - **ID Type**: All entity IDs are `number` type (not string) for better performance and database compatibility
 - **Error Handling**: Try-catch blocks with console logging for storage operations, user-friendly alerts for API errors
@@ -177,19 +177,21 @@ src/environments/
 - **On-Demand Loading**: API data loaded only when pages that need it are accessed
 - **Loading Method**: Public loadEntity() method in StorageService for component consumption
 - **Call Location**: Components call load method in ngOnInit lifecycle hook
-- **Applicable Components**: AccountsComponent, CategoriesComponent, DashboardComponent, TransactionsComponent, BudgetComponent, TransactionDialogComponent
+- **Applicable Components**: AccountsComponent, CategoriesComponent, RemindersComponent, DashboardComponent, TransactionsComponent, BudgetComponent, TransactionDialogComponent
 - **Automatic Refresh**: After CRUD operations, call load method to refresh data from API
 - **No Service Init Loading**: Do NOT load data in service constructor - only on explicit component request
 
 ### Component-Entity Dependencies Matrix
 - **AccountsComponent**: Calls loadAccounts() only
 - **CategoriesComponent**: Calls loadCategories() only
-- **DashboardComponent**: Calls both loadAccounts() and loadCategories() for comprehensive dashboard view
+- **RemindersComponent**: Calls loadReminders() only
+- **DashboardComponent**: Calls loadAccounts(), loadCategories(), and loadReminders() for comprehensive dashboard view
 - **TransactionsComponent**: Calls both loadAccounts() and loadCategories() for transaction form dependencies
 - **BudgetComponent**: Calls loadCategories() only for budget-category associations
 - **TransactionDialogComponent**: Calls both loadAccounts() and loadCategories() when dialog opens
 - **AccountDialogComponent**: No load calls needed, works with parent's loaded data
 - **CategoryDialogComponent**: No load calls needed, works with parent's loaded data
+- **ReminderDialogComponent**: No load calls needed, works with parent's loaded data
 - **Pattern**: Page components load data, dialog components work with already-loaded data except TransactionDialog which needs fresh data on open
 
 ### StorageService Bridge Pattern
@@ -245,6 +247,19 @@ src/environments/
 - **Type Conversion**: Frontend explicitly converts CategoryType enum to lowercase string before sending to API
 - **String Literal Pattern**: Request DTOs use string literal types for enum-like fields to ensure proper API serialization
 - **Components Using Categories**: CategoriesComponent, DashboardComponent, TransactionsComponent, BudgetComponent, TransactionDialogComponent all call loadCategories() in ngOnInit
+
+### Reminder API Integration Specifics
+- **GetAll Endpoint**: POST with empty object body to retrieve all reminders
+- **GetActive Endpoint**: POST with empty object body to retrieve only active reminders (isActive = true)
+- **GetById Endpoint**: POST with id in request body to retrieve single reminder
+- **Create Endpoint**: POST with title, date, beforeDays, afterDays in request body
+- **Update Endpoint**: POST with id, title, date, beforeDays, afterDays, isActive in request body
+- **Delete Endpoint**: POST with id in request body, returns void
+- **Date Format**: API expects ISO 8601 string format (e.g., "2025-11-01T00:00:00Z"), frontend converts Date objects to ISO strings before sending
+- **Date Conversion**: ReminderApiService handles conversion between Date objects (frontend) and ISO strings (API) using toISOString() and new Date()
+- **Response Transformation**: API service uses RxJS map operator to convert API response dates from strings to Date objects
+- **Model Consistency**: Reminder model keeps Date type for date, createdAt, updatedAt fields; conversion happens only in API service layer
+- **Components Using Reminders**: RemindersComponent calls loadReminders(), DashboardComponent calls loadReminders() for upcoming reminders widget
 
 ### Entity Migration from localStorage to API - Step-by-Step Pattern
 1. **Update Environment Configuration**: Verify correct API URL in environment.ts and environment.prod.ts
@@ -443,8 +458,9 @@ src/environments/
 - **Backend API Integration**: Implemented REST API integration for Accounts and Categories entities with dedicated service layer
 - **Environment Configuration**: Added environment files for centralized API URL management (https://localhost:44319)
 - **Lazy Loading API Pattern**: API data loaded on-demand when pages are accessed, not on app initialization
-- **Hybrid Data Strategy**: Accounts and Categories use backend API, Transactions/Budgets/Reminders continue using localStorage
+- **Hybrid Data Strategy**: Accounts, Categories, and Reminders use backend API, Transactions/Budgets continue using localStorage
 - **Category API Migration**: Migrated Categories from localStorage to REST API with CategoryApiService following established patterns
+- **Reminder API Migration**: Migrated Reminders from localStorage to REST API with ReminderApiService including date conversion layer
 
 ### Lessons Learned from Category API Migration
 - **Multi-Component Impact**: Categories are consumed by 5+ components - always identify all consuming components before starting migration
@@ -458,6 +474,18 @@ src/environments/
 - **Dialog State Management**: isSubmitting flag must be reset in error callback to allow retry attempts after failed operations
 - **Centralized API Configuration**: Environment file changes automatically apply to all API services - single source of truth for backend URL
 - **Testing Type Format**: Always verify JSON payload format matches API expectations, especially for enum-like fields that might serialize differently
+
+### Lessons Learned from Reminder API Migration
+- **Date Type Handling**: Keep Date types in frontend models for consistency; handle conversion to/from ISO strings only in API service layer
+- **RxJS Transformation**: Use map operator from rxjs/operators to transform API response data (converting date strings to Date objects)
+- **Conversion Helper Method**: Create private convertToReminder() helper in API service for consistent date conversion across all endpoints
+- **Model Integrity**: Maintain model type consistency (Date objects) throughout frontend code; API service acts as translation layer
+- **GetActive Endpoint**: Backend provides specialized endpoint for active reminders, but frontend filtering may still be needed for additional business logic
+- **Two Load Methods**: Implemented both loadReminders() and loadActiveReminders() in StorageService for flexibility in different components
+- **Date Field Count**: Reminder has three Date fields (date, createdAt, updatedAt) - ensure all are converted in both directions
+- **ISO String Format**: API expects full ISO 8601 format with timezone (e.g., "2025-11-01T00:00:00Z") - use Date.toISOString() for automatic formatting
+- **Dashboard Integration**: Dashboard uses loadReminders() to get all reminders, then applies its own filtering logic for upcoming reminders widget
+- **Build Verification**: Always run full build after migration to catch any TypeScript compilation errors early
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling
@@ -493,10 +521,11 @@ src/environments/
 Comprehensive Angular 19 expense tracker demonstrating modern development practices:
 - **Architecture**: Standalone components with feature-based organization and lazy loading
 - **State Management**: Reactive service patterns with BehaviorSubject streams
-- **Backend Integration**: REST API communication for Accounts and Categories with hybrid data persistence approach
+- **Backend Integration**: REST API communication for Accounts, Categories, and Reminders with hybrid data persistence approach
 - **User Experience**: Mobile-first responsive design with professional dialog system
 - **Performance**: Optimized change detection, virtual scrolling, lazy data loading, and bundle management
 - **Maintainability**: Consistent patterns, comprehensive TypeScript, and clean organization
-- **Scalability**: Modular API service layer with multiple entity integrations (Accounts, Categories)
+- **Scalability**: Modular API service layer with multiple entity integrations (Accounts, Categories, Reminders)
+- **Data Handling**: Advanced date conversion layer for seamless API communication while maintaining frontend type consistency
 
 Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, and progressive backend API integration in 2025.

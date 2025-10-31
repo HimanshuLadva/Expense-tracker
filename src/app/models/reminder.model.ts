@@ -9,6 +9,11 @@ export interface Reminder {
   updatedAt: Date;
 }
 
+export interface GetRemindersRequest {
+  fromDate?: string;
+  toDate?: string;
+}
+
 export interface CreateReminderRequest {
   title: string;
   date: Date;

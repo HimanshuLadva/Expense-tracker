@@ -176,7 +176,6 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
   `]
 })
 export class RemindersComponent implements OnInit, OnDestroy {
-  allReminders: Reminder[] = [];
   reminders: Reminder[] = [];
   activeReminders = 0;
   dateRangeForm!: FormGroup;
@@ -219,22 +218,26 @@ export class RemindersComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.dateRangeForm.valueChanges.subscribe((value) => {
         this.dateRangeService.updateDateRange(value);
-        this.filterReminders();
+        this.loadRemindersWithDateRange();
       })
     );
 
     // Listen to date range changes from other pages
+    // This will fire immediately on subscribe, loading initial data
     this.subscription.add(
       this.dateRangeService.dateRange$.subscribe((dateRange) => {
         this.dateRangeForm.patchValue(dateRange, { emitEvent: false });
-        this.filterReminders();
+        this.loadRemindersWithDateRange();
       })
     );
 
     this.subscription.add(
       this.storageService.reminders$.subscribe(reminders => {
-        this.allReminders = reminders;
-        this.filterReminders();
+        this.reminders = reminders.map(r => ({
+          ...r,
+          isActive: r.isActive.toString()
+        })) as any[];
+        this.activeReminders = reminders.filter(r => r.isActive).length;
       })
     );
   }
@@ -252,7 +255,8 @@ export class RemindersComponent implements OnInit, OnDestroy {
     dialogRef.closed.subscribe((result) => {
       const dialogResult = result as DialogResult | undefined;
       if (dialogResult?.success) {
-        // Reminder was successfully created
+        // Reload reminders with current date range after successful creation
+        this.loadRemindersWithDateRange();
       }
     });
   }
@@ -267,45 +271,44 @@ export class RemindersComponent implements OnInit, OnDestroy {
     dialogRef.closed.subscribe((result) => {
       const dialogResult = result as DialogResult | undefined;
       if (dialogResult?.success) {
-        // Reminder was successfully updated
+        // Reload reminders with current date range after successful update
+        this.loadRemindersWithDateRange();
       }
     });
   }
 
   deleteReminder(reminder: Reminder): void {
     if (confirm(`Are you sure you want to delete the reminder "${reminder.title}"?`)) {
-      this.storageService.deleteReminder(reminder.id);
+      this.storageService.deleteReminder(reminder.id).subscribe({
+        next: () => {
+          // Reload reminders with current date range after successful deletion
+          this.loadRemindersWithDateRange();
+        },
+        error: (error) => {
+          console.error('Error deleting reminder:', error);
+          alert('Failed to delete reminder. Please try again.');
+        }
+      });
     }
   }
 
-  private filterReminders(): void {
+  private loadRemindersWithDateRange(): void {
     const { fromDate, toDate } = this.dateRangeForm.value;
-    const startDate = fromDate ? new Date(fromDate) : null;
-    const endDate = toDate ? new Date(toDate) : null;
 
-    // Set end date to end of day for inclusive comparison
-    if (endDate) {
-      endDate.setHours(23, 59, 59, 999);
+    // Create date range request with ISO date strings
+    const request: any = {};
+
+    if (fromDate) {
+      // Send date as YYYY-MM-DDT00:00:00.000Z format without timezone conversion
+      request.fromDate = `${fromDate}T00:00:00.000Z`;
     }
 
-    const filtered = this.allReminders.filter(reminder => {
-      const reminderDate = new Date(reminder.date);
-      const afterStart = !startDate || reminderDate >= startDate;
-      const beforeEnd = !endDate || reminderDate <= endDate;
-      return afterStart && beforeEnd;
-    });
+    if (toDate) {
+      // Send date as YYYY-MM-DDT23:59:59.999Z format without timezone conversion
+      request.toDate = `${toDate}T23:59:59.999Z`;
+    }
 
-    this.reminders = filtered.map(r => ({
-      ...r,
-      isActive: r.isActive.toString()
-    })) as any[];
-    this.activeReminders = filtered.filter(r => r.isActive).length;
-  }
-
-  private formatDateForInput(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    // Load reminders from API with date range
+    this.storageService.loadReminders(request);
   }
 }

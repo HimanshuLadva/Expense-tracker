@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Account, Category, Transaction, Reminder, Budget } from '../models';
+import { Account, Category, Transaction, Reminder, Budget, GetRemindersRequest } from '../models';
 import { AccountApiService } from './account-api.service';
 import { CategoryApiService } from './category-api.service';
+import { ReminderApiService } from './reminder-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,14 +13,14 @@ export class StorageService {
     ACCOUNTS: 'expense_tracker_accounts',
     CATEGORIES: 'expense_tracker_categories',
     TRANSACTIONS: 'expense_tracker_transactions',
-    REMINDERS: 'expense_tracker_reminders',
+    // REMINDERS: 'expense_tracker_reminders', // Now using API instead of localStorage
     BUDGETS: 'expense_tracker_budgets'
   };
 
   private accountsSubject = new BehaviorSubject<Account[]>([]);
   private categoriesSubject = new BehaviorSubject<Category[]>([]);
   private transactionsSubject = new BehaviorSubject<Transaction[]>(this.getTransactions());
-  private remindersSubject = new BehaviorSubject<Reminder[]>(this.getReminders());
+  private remindersSubject = new BehaviorSubject<Reminder[]>([]);
   private budgetsSubject = new BehaviorSubject<Budget[]>(this.getBudgets());
 
   public accounts$ = this.accountsSubject.asObservable();
@@ -30,7 +31,8 @@ export class StorageService {
 
   constructor(
     private accountApiService: AccountApiService,
-    private categoryApiService: CategoryApiService
+    private categoryApiService: CategoryApiService,
+    private reminderApiService: ReminderApiService
   ) {}
 
   /**
@@ -59,6 +61,36 @@ export class StorageService {
       error: (error) => {
         console.error('Error loading categories from API:', error);
         this.categoriesSubject.next([]);
+      }
+    });
+  }
+
+  /**
+   * Load all reminders from API - call this from RemindersComponent
+   */
+  loadReminders(request?: GetRemindersRequest): void {
+    this.reminderApiService.getAll(request).subscribe({
+      next: (reminders) => {
+        this.remindersSubject.next(reminders);
+      },
+      error: (error) => {
+        console.error('Error loading reminders from API:', error);
+        this.remindersSubject.next([]);
+      }
+    });
+  }
+
+  /**
+   * Load active reminders from API - call this from DashboardComponent
+   */
+  loadActiveReminders(request?: GetRemindersRequest): void {
+    this.reminderApiService.getActive(request).subscribe({
+      next: (reminders) => {
+        this.remindersSubject.next(reminders);
+      },
+      error: (error) => {
+        console.error('Error loading active reminders from API:', error);
+        this.remindersSubject.next([]);
       }
     });
   }
@@ -331,28 +363,79 @@ export class StorageService {
     }
   }
 
+  /**
+   * Get current reminders value (synchronous)
+   */
   getReminders(): Reminder[] {
-    return this.getFromStorage<Reminder>(this.STORAGE_KEYS.REMINDERS);
+    return this.remindersSubject.value;
   }
 
-  saveReminder(reminder: Reminder): void {
-    const reminders = this.getReminders();
-    const existingIndex = reminders.findIndex(r => r.id === reminder.id);
+  /**
+   * Save reminder (create or update) via API
+   */
+  saveReminder(reminder: Reminder, isUpdate: boolean = false): Observable<Reminder> {
+    return new Observable(observer => {
+      if (isUpdate) {
+        const updateRequest = {
+          id: reminder.id,
+          title: reminder.title,
+          date: reminder.date,
+          beforeDays: reminder.beforeDays,
+          afterDays: reminder.afterDays,
+          isActive: reminder.isActive
+        };
 
-    if (existingIndex >= 0) {
-      reminders[existingIndex] = { ...reminder, updatedAt: new Date() };
-    } else {
-      reminders.push({ ...reminder, createdAt: new Date(), updatedAt: new Date() });
-    }
+        this.reminderApiService.update(updateRequest).subscribe({
+          next: (updatedReminder) => {
+            // Component will handle reload with date range parameters
+            observer.next(updatedReminder);
+            observer.complete();
+          },
+          error: (error) => {
+            console.error('Error updating reminder:', error);
+            observer.error(error);
+          }
+        });
+      } else {
+        const createRequest = {
+          title: reminder.title,
+          date: reminder.date,
+          beforeDays: reminder.beforeDays,
+          afterDays: reminder.afterDays
+        };
 
-    this.saveToStorage(this.STORAGE_KEYS.REMINDERS, reminders);
-    this.remindersSubject.next(reminders);
+        this.reminderApiService.create(createRequest).subscribe({
+          next: (newReminder) => {
+            // Component will handle reload with date range parameters
+            observer.next(newReminder);
+            observer.complete();
+          },
+          error: (error) => {
+            console.error('Error creating reminder:', error);
+            observer.error(error);
+          }
+        });
+      }
+    });
   }
 
-  deleteReminder(id: number): void {
-    const reminders = this.getReminders().filter(r => r.id !== id);
-    this.saveToStorage(this.STORAGE_KEYS.REMINDERS, reminders);
-    this.remindersSubject.next(reminders);
+  /**
+   * Delete reminder via API
+   */
+  deleteReminder(id: number): Observable<void> {
+    return new Observable(observer => {
+      this.reminderApiService.delete(id).subscribe({
+        next: () => {
+          // Component will handle reload with date range parameters
+          observer.next();
+          observer.complete();
+        },
+        error: (error) => {
+          console.error('Error deleting reminder:', error);
+          observer.error(error);
+        }
+      });
+    });
   }
 
   getBudgets(): Budget[] {

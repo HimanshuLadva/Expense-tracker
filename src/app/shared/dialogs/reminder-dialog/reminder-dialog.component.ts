@@ -377,13 +377,22 @@ export class ReminderDialogComponent implements OnInit {
           date: new Date(formValue.date),
           beforeDays: formValue.beforeDays,
           afterDays: formValue.afterDays,
-          isActive: formValue.isActive,
-          updatedAt: new Date()
+          isActive: formValue.isActive
         };
-        this.storageService.saveReminder(updatedReminder);
+
+        this.storageService.saveReminder(updatedReminder, true).subscribe({
+          next: () => {
+            this.dialogRef.close({ success: true } as DialogResult);
+          },
+          error: (error) => {
+            console.error('Error updating reminder:', error);
+            alert('Failed to update reminder. Please try again.');
+            this.isSubmitting = false;
+          }
+        });
       } else {
         const newReminder: Reminder = {
-          id: this.storageService.generateId(),
+          id: 0, // Backend will generate the actual ID
           title: formValue.title,
           date: new Date(formValue.date),
           beforeDays: formValue.beforeDays,
@@ -392,10 +401,18 @@ export class ReminderDialogComponent implements OnInit {
           createdAt: new Date(),
           updatedAt: new Date()
         };
-        this.storageService.saveReminder(newReminder);
-      }
 
-      this.dialogRef.close({ success: true } as DialogResult);
+        this.storageService.saveReminder(newReminder, false).subscribe({
+          next: () => {
+            this.dialogRef.close({ success: true } as DialogResult);
+          },
+          error: (error) => {
+            console.error('Error creating reminder:', error);
+            alert('Failed to create reminder. Please try again.');
+            this.isSubmitting = false;
+          }
+        });
+      }
     }
   }
 
