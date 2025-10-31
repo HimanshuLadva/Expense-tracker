@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } fr
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subscription, combineLatest } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 
 import { StorageService } from '../../services/storage.service';
@@ -730,13 +731,16 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     // Listen to date range changes and update service
+    // Debounce to avoid multiple calculations when user is still typing/selecting dates
     this.subscription.add(
-      this.dateRangeForm.valueChanges.subscribe((value) => {
-        this.dateRangeService.updateDateRange(value);
-        this.calculateStats();
-        this.calculateCategoryBreakdown();
-        setTimeout(() => this.createCharts(), 100);
-      })
+      this.dateRangeForm.valueChanges
+        .pipe(debounceTime(500))
+        .subscribe((value) => {
+          this.dateRangeService.updateDateRange(value);
+          this.calculateStats();
+          this.calculateCategoryBreakdown();
+          setTimeout(() => this.createCharts(), 100);
+        })
     );
 
     this.subscription.add(

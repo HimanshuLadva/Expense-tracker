@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subscription } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 import { StorageService } from '../../services/storage.service';
 import { DateRangeService } from '../../services/date-range.service';
@@ -215,11 +216,14 @@ export class RemindersComponent implements OnInit, OnDestroy {
     });
 
     // Listen to date range changes and update service
+    // Debounce to avoid multiple API calls when user is still typing/selecting dates
     this.subscription.add(
-      this.dateRangeForm.valueChanges.subscribe((value) => {
-        this.dateRangeService.updateDateRange(value);
-        this.loadRemindersWithDateRange();
-      })
+      this.dateRangeForm.valueChanges
+        .pipe(debounceTime(500))
+        .subscribe((value) => {
+          this.dateRangeService.updateDateRange(value);
+          this.loadRemindersWithDateRange();
+        })
     );
 
     // Listen to date range changes from other pages
