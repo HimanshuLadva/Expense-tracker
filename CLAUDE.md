@@ -134,6 +134,9 @@ src/environments/
 - **Change Detection**: OnPush strategy where applicable
 - **Bundle Management**: Build budgets monitoring and tree-shaking
 - **Virtual Scrolling**: For large data sets in tables
+- **Debouncing User Input**: Apply debounceTime operator (500ms) to form valueChanges streams to reduce API calls and calculations
+- **Server-Side Filtering**: Offload filtering logic to backend APIs instead of loading all data and filtering client-side
+- **Prevent Duplicate Loads**: Avoid redundant explicit load calls when BehaviorSubject subscriptions already trigger initial data loading
 
 ### Responsive Design Standards
 - **Breakpoints**: Progressive design (1024px, 768px, 480px)
@@ -201,6 +204,8 @@ src/environments/
 - **BehaviorSubject Maintained**: Keep reactive streams pattern even for API-backed entities
 - **Stream Updates**: After API calls complete, update BehaviorSubject to trigger reactive UI updates
 - **Error Propagation**: Catch API errors, log to console, and propagate to calling component
+- **Component Reload Responsibility**: StorageService does NOT automatically reload data after CRUD operations; components explicitly reload with their specific parameters (e.g., date range)
+- **No Automatic Refresh in Service**: Save and delete methods only perform the operation and return result; component handles reload in success callback
 
 ### Data Consistency Patterns for API-Backed Entities
 - **Single Source of Truth**: BehaviorSubject holds current state, components subscribe to stream for reactive updates
@@ -249,17 +254,19 @@ src/environments/
 - **Components Using Categories**: CategoriesComponent, DashboardComponent, TransactionsComponent, BudgetComponent, TransactionDialogComponent all call loadCategories() in ngOnInit
 
 ### Reminder API Integration Specifics
-- **GetAll Endpoint**: POST with empty object body to retrieve all reminders
-- **GetActive Endpoint**: POST with empty object body to retrieve only active reminders (isActive = true)
+- **GetAll Endpoint**: POST with optional fromDate and toDate in request body to retrieve all reminders within date range
+- **GetActive Endpoint**: POST with optional fromDate and toDate in request body to retrieve only active reminders within date range
 - **GetById Endpoint**: POST with id in request body to retrieve single reminder
 - **Create Endpoint**: POST with title, date, beforeDays, afterDays in request body
 - **Update Endpoint**: POST with id, title, date, beforeDays, afterDays, isActive in request body
 - **Delete Endpoint**: POST with id in request body, returns void
+- **Date Range Filtering**: GetAll and GetActive accept optional GetRemindersRequest with fromDate and toDate for server-side filtering
 - **Date Format**: API expects ISO 8601 string format (e.g., "2025-11-01T00:00:00Z"), frontend converts Date objects to ISO strings before sending
 - **Date Conversion**: ReminderApiService handles conversion between Date objects (frontend) and ISO strings (API) using toISOString() and new Date()
 - **Response Transformation**: API service uses RxJS map operator to convert API response dates from strings to Date objects
 - **Model Consistency**: Reminder model keeps Date type for date, createdAt, updatedAt fields; conversion happens only in API service layer
-- **Components Using Reminders**: RemindersComponent calls loadReminders(), DashboardComponent calls loadReminders() for upcoming reminders widget
+- **Timezone Handling**: Use direct string concatenation for date range parameters to avoid timezone conversion issues (e.g., `${fromDate}T00:00:00.000Z`)
+- **Components Using Reminders**: RemindersComponent calls loadReminders() with date range parameters, DashboardComponent calls loadReminders() without date filtering
 
 ### Entity Migration from localStorage to API - Step-by-Step Pattern
 1. **Update Environment Configuration**: Verify correct API URL in environment.ts and environment.prod.ts
@@ -283,7 +290,7 @@ src/environments/
 - **Type Safety**: Always use strongly typed interfaces for request/response objects
 - **Error Messages**: Provide clear, user-friendly error messages for all API failures
 - **Loading State**: Manage isSubmitting flags in dialogs to prevent duplicate submissions
-- **Data Refresh**: Always call load method after successful CRUD operations to sync with backend
+- **Data Refresh**: Components explicitly call load method with their parameters after successful CRUD operations
 - **Observable Pattern**: Return Observables from StorageService, let components handle subscriptions
 - **Enum Handling**: Use string literal types in DTOs and explicitly convert enum values before sending
 - **ID Management**: Set ID to 0 for create operations, backend generates actual IDs
@@ -292,6 +299,11 @@ src/environments/
 - **Subscription Cleanup**: Always unsubscribe in component ngOnDestroy to prevent memory leaks
 - **Centralized Configuration**: Use environment files for all API URLs, never hardcode endpoints
 - **Consistent Error Handling**: Log to console for debugging, show alerts for user notification
+- **Server-Side Filtering**: Prefer server-side filtering over client-side filtering for scalability; send filter parameters in API requests
+- **Debouncing User Input**: Apply debounceTime (500ms) to form valueChanges for date range filters to prevent excessive API calls
+- **Timezone-Safe Date Handling**: Use direct string concatenation for date parameters to avoid timezone conversion (e.g., `${dateString}T00:00:00.000Z`)
+- **Component Reload Pattern**: Components reload data in dialog close callbacks and after delete operations with their specific filter parameters
+- **Avoid Duplicate Load Calls**: Rely on BehaviorSubject subscriptions for initial data load; don't add redundant explicit calls that duplicate automatic subscription emissions
 
 ### Common API Integration Pitfalls
 - **Missing Load Calls**: Forgetting to add loadEntity() calls to consuming components results in empty data
@@ -306,6 +318,22 @@ src/environments/
 - **Environment Mismatch**: Using wrong API URL or forgetting to update environment files after backend port changes
 - **Component Order Dependencies**: Assuming entity data is available immediately when it requires async API load
 - **Dialog State Bugs**: Not resetting isSubmitting flag on errors prevents retry attempts
+- **Timezone Conversion Issues**: Using new Date() with toISOString() causes timezone shifts; use direct string concatenation for date parameters
+- **Missing Debouncing**: Not debouncing date range inputs causes multiple rapid API calls during user input
+- **Duplicate Initial Load**: Adding explicit load call when BehaviorSubject subscription already triggers initial load results in double API calls
+- **Service Auto-Reload**: Having StorageService automatically reload after CRUD operations prevents components from passing filter parameters
+- **Missing Filter Parameters**: After CRUD operations, reloading without date range or filter parameters returns unfiltered data inconsistent with UI state
+
+### Date and Timezone Handling Patterns
+- **Timezone-Safe String Concatenation**: When sending date range parameters to API, use direct string concatenation instead of Date object conversion
+- **Avoid toISOString() for Filters**: Do NOT use new Date(dateString).toISOString() as it converts local time to UTC causing date shifts
+- **Correct Pattern**: Use template literal concatenation like `${fromDate}T00:00:00.000Z` to preserve the date exactly as selected
+- **Start of Day**: For fromDate/start dates, append T00:00:00.000Z to include beginning of day
+- **End of Day**: For toDate/end dates, append T23:59:59.999Z to include entire day
+- **Why This Matters**: If user is in IST (UTC+5:30) and selects 2025-11-01, using new Date() would convert to 2025-10-31T18:30:00.000Z creating date mismatch
+- **API Date Fields**: For entity date fields (like reminder.date), use Date object with proper conversion in API service layer
+- **Filter Date Fields**: For filter parameters, use string concatenation to avoid timezone issues
+- **Date Input Type**: HTML date inputs return strings in YYYY-MM-DD format, perfect for direct concatenation
 
 ## # Memory: Data Flow and Transaction Patterns
 
@@ -461,6 +489,11 @@ src/environments/
 - **Hybrid Data Strategy**: Accounts, Categories, and Reminders use backend API, Transactions/Budgets continue using localStorage
 - **Category API Migration**: Migrated Categories from localStorage to REST API with CategoryApiService following established patterns
 - **Reminder API Migration**: Migrated Reminders from localStorage to REST API with ReminderApiService including date conversion layer
+- **Server-Side Date Filtering**: Implemented backend date range filtering for Reminders API with fromDate and toDate parameters
+- **Timezone-Safe Date Handling**: Fixed timezone conversion issues using direct string concatenation instead of Date object conversion
+- **Debouncing Pattern**: Added 500ms debouncing to all date range inputs to prevent excessive API calls during user input
+- **Component Reload Responsibility**: Refactored reload pattern so components control when and how to refresh data with their specific parameters
+- **Duplicate API Call Prevention**: Fixed double API calls on page load by removing redundant explicit calls when BehaviorSubject subscriptions handle initial loading
 
 ### Lessons Learned from Category API Migration
 - **Multi-Component Impact**: Categories are consumed by 5+ components - always identify all consuming components before starting migration
@@ -486,6 +519,18 @@ src/environments/
 - **ISO String Format**: API expects full ISO 8601 format with timezone (e.g., "2025-11-01T00:00:00Z") - use Date.toISOString() for automatic formatting
 - **Dashboard Integration**: Dashboard uses loadReminders() to get all reminders, then applies its own filtering logic for upcoming reminders widget
 - **Build Verification**: Always run full build after migration to catch any TypeScript compilation errors early
+
+### Lessons Learned from Server-Side Filtering Implementation
+- **Server-Side vs Client-Side**: Moving date filtering to backend significantly improves performance and scalability compared to loading all data and filtering client-side
+- **Timezone Pitfall**: Using new Date(dateString).toISOString() creates timezone conversion issues; date selected as 2025-11-01 in IST becomes 2025-10-31 in UTC
+- **String Concatenation Solution**: Direct template literal concatenation preserves selected date without timezone conversion
+- **Debouncing Critical**: Without debouncing, each keystroke in date inputs triggers API call; 500ms debounceTime reduces calls from dozens to one
+- **Component Reload Ownership**: StorageService should not auto-reload after CRUD operations; components must reload with their specific filter parameters
+- **Duplicate Load Detection**: BehaviorSubject subscriptions emit immediately on subscribe; adding explicit load call creates duplicate API requests
+- **Filter Parameter Consistency**: After any CRUD operation, must reload with same filters to maintain UI state consistency
+- **HTML Date Input Format**: Date inputs return YYYY-MM-DD strings perfect for concatenation without parsing
+- **Apply Pattern Broadly**: Date filtering debouncing and timezone handling should be applied consistently across all date-filtered pages
+- **Observable Subscription Pattern**: Use pipe(debounceTime(500)) on valueChanges before subscribe to implement debouncing cleanly
 
 ### Future Development Guidelines
 - **Responsive Breakpoints**: Use progressive 1024px, 768px, 480px with appropriate scaling
@@ -515,17 +560,25 @@ src/environments/
 - **Dialog Subscriptions**: Update dialog components to subscribe to save/delete Observables with proper error handling and isSubmitting state management
 - **Type Format Validation**: Verify that enum-like fields are sent as correct string format expected by API, not numeric or other representations
 - **Multi-Component Loading**: When multiple entities are needed, call all relevant load methods in ngOnInit without waiting for sequential completion
+- **Server-Side Filtering**: Prefer backend filtering with request parameters over client-side filtering for better performance
+- **Debounce Date Inputs**: Always apply debounceTime(500) to date range form valueChanges to prevent excessive API calls
+- **Timezone-Safe Dates**: Use string concatenation for date filter parameters, never Date object conversion which causes timezone shifts
+- **Component Reload After CRUD**: Components must explicitly reload data with filter parameters in dialog close and delete success callbacks
+- **Avoid Duplicate Loads**: Do not add explicit load call when BehaviorSubject subscription already handles initial data loading
+- **Filter Consistency**: Maintain UI state consistency by passing same filter parameters when reloading after CRUD operations
 
 ## Application Summary
 
 Comprehensive Angular 19 expense tracker demonstrating modern development practices:
 - **Architecture**: Standalone components with feature-based organization and lazy loading
 - **State Management**: Reactive service patterns with BehaviorSubject streams
-- **Backend Integration**: REST API communication for Accounts, Categories, and Reminders with hybrid data persistence approach
+- **Backend Integration**: REST API communication for Accounts, Categories, and Reminders with hybrid data persistence approach and server-side filtering
 - **User Experience**: Mobile-first responsive design with professional dialog system
-- **Performance**: Optimized change detection, virtual scrolling, lazy data loading, and bundle management
+- **Performance**: Optimized change detection, virtual scrolling, lazy data loading, bundle management, debounced user inputs, and server-side filtering
 - **Maintainability**: Consistent patterns, comprehensive TypeScript, and clean organization
-- **Scalability**: Modular API service layer with multiple entity integrations (Accounts, Categories, Reminders)
+- **Scalability**: Modular API service layer with multiple entity integrations and backend filtering capabilities
 - **Data Handling**: Advanced date conversion layer for seamless API communication while maintaining frontend type consistency
+- **Timezone Safety**: Timezone-aware date handling preventing conversion issues across different time zones
+- **API Optimization**: Debouncing, duplicate call prevention, and efficient component reload patterns
 
-Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, and progressive backend API integration in 2025.
+Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, progressive backend API integration, and production-ready performance optimizations in 2025.
