@@ -5,6 +5,7 @@ import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import { Subscription, combineLatest } from 'rxjs';
 
 import { StorageService } from '../../../services/storage.service';
+import { TransactionApiService } from '../../../services/transaction-api.service';
 import { Transaction, TransactionType, Account, Category, CategoryType, CreateTransactionRequest, UpdateTransactionRequest } from '../../../models';
 import { DialogResult } from '../../dialog/dialog-result.interface';
 
@@ -401,6 +402,7 @@ export class TransactionDialogComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private storageService: StorageService,
+    private transactionApiService: TransactionApiService,
     private dialogRef: DialogRef,
     @Inject(DIALOG_DATA) public data: any
   ) {
@@ -430,7 +432,7 @@ export class TransactionDialogComponent implements OnInit, OnDestroy {
       this.loadTransaction(this.data.transactionId);
     } else {
       this.transactionForm.patchValue({
-        date: new Date().toISOString().slice(0, 16)
+        date: this.formatDateTimeLocal(new Date())
       });
     }
   }
@@ -492,21 +494,56 @@ export class TransactionDialogComponent implements OnInit, OnDestroy {
   }
 
   private loadTransaction(id: number): void {
-    const transactions = this.storageService.getTransactions();
-    const transaction = transactions.find(t => t.id === id);
+    // Fetch transaction from API to ensure latest data
+    this.transactionApiService.getById(id).subscribe({
+      next: (transaction) => {
+        this.transaction = transaction;
+        this.transactionForm.patchValue({
+          type: transaction.type,
+          amount: transaction.amount,
+          date: this.formatDateTimeLocal(new Date(transaction.date)),
+          accountId: transaction.accountId,
+          toAccountId: transaction.toAccountId || '',
+          categoryId: transaction.categoryId || '',
+          narration: transaction.narration || ''
+        });
+      },
+      error: (error) => {
+        console.error('Failed to load transaction:', error);
+        alert('Failed to load transaction. Please try again.');
+        this.dialogRef.close();
+      }
+    });
+  }
 
-    if (transaction) {
-      this.transaction = transaction;
-      this.transactionForm.patchValue({
-        type: transaction.type,
-        amount: transaction.amount,
-        date: new Date(transaction.date).toISOString().slice(0, 16),
-        accountId: transaction.accountId,
-        toAccountId: transaction.toAccountId || '',
-        categoryId: transaction.categoryId || '',
-        narration: transaction.narration || ''
-      });
-    }
+  /**
+   * Format date to datetime-local input format (YYYY-MM-DDTHH:MM) in local timezone
+   */
+  private formatDateTimeLocal(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  /**
+   * Convert datetime-local string to Date object that preserves the selected time
+   * Prevents timezone conversion by treating the input as UTC
+   *
+   * @param dateTimeString - String from datetime-local input (e.g., "2025-11-02T20:20")
+   * @returns Date object that will serialize to the same time when toISOString() is called
+   */
+  private formatDateTimeForAPI(dateTimeString: string): Date {
+    // Parse the datetime-local string
+    const [datePart, timePart] = dateTimeString.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
+
+    // Create Date using UTC to prevent timezone conversion
+    // This ensures that when toISOString() is called, it outputs the time as selected by user
+    return new Date(Date.UTC(year, month - 1, day, hours, minutes, 0, 0));
   }
 
   formatCurrency(value: number): string {
@@ -526,20 +563,30 @@ export class TransactionDialogComponent implements OnInit, OnDestroy {
           ...this.transaction,
           type: formValue.type,
           amount: formValue.amount,
-          date: new Date(formValue.date),
+          date: this.formatDateTimeForAPI(formValue.date),
           accountId: formValue.accountId,
           toAccountId: formValue.toAccountId || undefined,
           categoryId: formValue.categoryId || undefined,
           narration: formValue.narration || undefined,
           updatedAt: new Date()
         };
-        this.storageService.saveTransaction(updatedTransaction);
+
+        this.storageService.saveTransaction(updatedTransaction, true).subscribe({
+          next: () => {
+            this.dialogRef.close({ success: true } as DialogResult);
+          },
+          error: (error) => {
+            console.error('Failed to update transaction:', error);
+            alert('Failed to update transaction. Please try again.');
+            this.isSubmitting = false;
+          }
+        });
       } else {
         const newTransaction: Transaction = {
-          id: this.storageService.generateId(),
+          id: 0, // Backend will generate the actual ID
           type: formValue.type,
           amount: formValue.amount,
-          date: new Date(formValue.date),
+          date: this.formatDateTimeForAPI(formValue.date),
           accountId: formValue.accountId,
           toAccountId: formValue.toAccountId || undefined,
           categoryId: formValue.categoryId || undefined,
@@ -547,10 +594,18 @@ export class TransactionDialogComponent implements OnInit, OnDestroy {
           createdAt: new Date(),
           updatedAt: new Date()
         };
-        this.storageService.saveTransaction(newTransaction);
-      }
 
-      this.dialogRef.close({ success: true } as DialogResult);
+        this.storageService.saveTransaction(newTransaction, false).subscribe({
+          next: () => {
+            this.dialogRef.close({ success: true } as DialogResult);
+          },
+          error: (error) => {
+            console.error('Failed to create transaction:', error);
+            alert('Failed to create transaction. Please try again.');
+            this.isSubmitting = false;
+          }
+        });
+      }
     }
   }
 

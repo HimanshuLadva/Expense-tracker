@@ -354,14 +354,17 @@ export class TransactionsComponent implements OnInit, OnDestroy {
       toDate: [currentRange.toDate]
     });
 
+    // Load transactions with initial date range
+    this.loadTransactionsWithDateRange();
+
     // Listen to date range changes and update service
-    // Debounce to avoid multiple filter operations when user is still typing/selecting dates
+    // Debounce to avoid multiple API calls when user is still typing/selecting dates
     this.subscription.add(
       this.dateRangeForm.valueChanges
         .pipe(debounceTime(500))
         .subscribe((value) => {
           this.dateRangeService.updateDateRange(value);
-          this.filterTransactions();
+          this.loadTransactionsWithDateRange();
         })
     );
 
@@ -369,7 +372,7 @@ export class TransactionsComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.dateRangeService.dateRange$.subscribe((dateRange) => {
         this.dateRangeForm.patchValue(dateRange, { emitEvent: false });
-        this.filterTransactions();
+        this.loadTransactionsWithDateRange();
       })
     );
 
@@ -382,7 +385,10 @@ export class TransactionsComponent implements OnInit, OnDestroy {
         this.accounts = accounts;
         this.categories = categories;
         this.allTransactions = transactions;
-        this.filterTransactions();
+        this.enrichTransactions(this.allTransactions);
+        this.updateTransactionGroups();
+        this.calculateTotals();
+        this.updateFilteredTransactions();
       })
     );
   }
@@ -471,7 +477,8 @@ export class TransactionsComponent implements OnInit, OnDestroy {
     dialogRef.closed.subscribe((result) => {
       const dialogResult = result as DialogResult | undefined;
       if (dialogResult?.success) {
-        // Transaction was successfully created
+        // Reload transactions from API to get the latest data
+        this.loadTransactionsWithDateRange();
       }
     });
   }
@@ -487,38 +494,39 @@ export class TransactionsComponent implements OnInit, OnDestroy {
     dialogRef.closed.subscribe((result) => {
       const dialogResult = result as DialogResult | undefined;
       if (dialogResult?.success) {
-        // Transaction was successfully updated
+        // Reload transactions from API to get the latest data
+        this.loadTransactionsWithDateRange();
       }
     });
   }
 
   deleteTransaction(transaction: Transaction): void {
     if (confirm('Are you sure you want to delete this transaction?')) {
-      this.storageService.deleteTransaction(transaction.id);
+      this.storageService.deleteTransaction(transaction.id).subscribe({
+        next: () => {
+          this.loadTransactionsWithDateRange();
+        },
+        error: (error) => {
+          console.error('Failed to delete transaction:', error);
+          alert('Failed to delete transaction. Please try again.');
+        }
+      });
     }
   }
 
-  private filterTransactions(): void {
+  /**
+   * Load transactions from API with current date range filter
+   */
+  private loadTransactionsWithDateRange(): void {
     const { fromDate, toDate } = this.dateRangeForm.value;
-    const startDate = fromDate ? new Date(fromDate) : null;
-    const endDate = toDate ? new Date(toDate) : null;
 
-    // Set end date to end of day for inclusive comparison
-    if (endDate) {
-      endDate.setHours(23, 59, 59, 999);
-    }
+    // Use timezone-safe string concatenation for date parameters
+    const request = {
+      fromDate: fromDate ? `${fromDate}T00:00:00.000Z` : undefined,
+      toDate: toDate ? `${toDate}T23:59:59.999Z` : undefined
+    };
 
-    const filtered = this.allTransactions.filter(transaction => {
-      const transactionDate = new Date(transaction.date);
-      const afterStart = !startDate || transactionDate >= startDate;
-      const beforeEnd = !endDate || transactionDate <= endDate;
-      return afterStart && beforeEnd;
-    });
-
-    this.enrichTransactions(filtered);
-    this.updateTransactionGroups();
-    this.calculateTotals();
-    this.updateFilteredTransactions();
+    this.storageService.loadTransactions(request);
   }
 
   private formatDateForInput(date: Date): string {

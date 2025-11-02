@@ -717,7 +717,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   ) {}
 
   ngOnInit(): void {
-    // Load accounts and categories from API when dashboard is accessed
+    // Load accounts, categories, and reminders from API when dashboard is accessed
     this.storageService.loadAccounts();
     this.storageService.loadCategories();
     this.storageService.loadReminders();
@@ -730,16 +730,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       toDate: [currentRange.toDate]
     });
 
+    // Load transactions with initial date range
+    this.loadTransactionsWithDateRange();
+
     // Listen to date range changes and update service
-    // Debounce to avoid multiple calculations when user is still typing/selecting dates
+    // Debounce to avoid multiple API calls when user is still typing/selecting dates
     this.subscription.add(
       this.dateRangeForm.valueChanges
         .pipe(debounceTime(500))
         .subscribe((value) => {
           this.dateRangeService.updateDateRange(value);
-          this.calculateStats();
-          this.calculateCategoryBreakdown();
-          setTimeout(() => this.createCharts(), 100);
+          this.loadTransactionsWithDateRange();
         })
     );
 
@@ -1199,5 +1200,20 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  /**
+   * Load transactions from API with current date range filter
+   */
+  private loadTransactionsWithDateRange(): void {
+    const { fromDate, toDate } = this.dateRangeForm.value;
+
+    // Use timezone-safe string concatenation for date parameters
+    const request = {
+      fromDate: fromDate ? `${fromDate}T00:00:00.000Z` : undefined,
+      toDate: toDate ? `${toDate}T23:59:59.999Z` : undefined
+    };
+
+    this.storageService.loadTransactions(request);
   }
 }

@@ -18,9 +18,9 @@ export interface Transaction {
 }
 
 export interface CreateTransactionRequest {
-  type: TransactionType;
+  type: 'income' | 'expense' | 'transfer';
   amount: number;
-  date: Date;
+  date: string; // ISO 8601 format for API
   accountId: number;
   categoryId?: number;
   toAccountId?: number;
@@ -29,11 +29,16 @@ export interface CreateTransactionRequest {
 
 export interface UpdateTransactionRequest {
   id: number;
-  type: TransactionType;
+  type: 'income' | 'expense' | 'transfer';
   amount: number;
-  date: Date;
+  date: string; // ISO 8601 format for API
   accountId: number;
   categoryId?: number;
   toAccountId?: number;
   narration?: string;
+}
+
+export interface GetTransactionsRequest {
+  fromDate?: string;
+  toDate?: string;
 }

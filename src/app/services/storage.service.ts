@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Account, Category, Transaction, Reminder, Budget, GetRemindersRequest } from '../models';
+import { Account, Category, Transaction, Reminder, Budget, GetRemindersRequest, GetTransactionsRequest } from '../models';
 import { AccountApiService } from './account-api.service';
 import { CategoryApiService } from './category-api.service';
 import { ReminderApiService } from './reminder-api.service';
+import { TransactionApiService } from './transaction-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,14 +13,14 @@ export class StorageService {
   private readonly STORAGE_KEYS = {
     ACCOUNTS: 'expense_tracker_accounts',
     CATEGORIES: 'expense_tracker_categories',
-    TRANSACTIONS: 'expense_tracker_transactions',
+    // TRANSACTIONS: 'expense_tracker_transactions', // Now using API instead of localStorage
     // REMINDERS: 'expense_tracker_reminders', // Now using API instead of localStorage
     BUDGETS: 'expense_tracker_budgets'
   };
 
   private accountsSubject = new BehaviorSubject<Account[]>([]);
   private categoriesSubject = new BehaviorSubject<Category[]>([]);
-  private transactionsSubject = new BehaviorSubject<Transaction[]>(this.getTransactions());
+  private transactionsSubject = new BehaviorSubject<Transaction[]>([]);
   private remindersSubject = new BehaviorSubject<Reminder[]>([]);
   private budgetsSubject = new BehaviorSubject<Budget[]>(this.getBudgets());
 
@@ -32,7 +33,8 @@ export class StorageService {
   constructor(
     private accountApiService: AccountApiService,
     private categoryApiService: CategoryApiService,
-    private reminderApiService: ReminderApiService
+    private reminderApiService: ReminderApiService,
+    private transactionApiService: TransactionApiService
   ) {}
 
   /**
@@ -91,6 +93,22 @@ export class StorageService {
       error: (error) => {
         console.error('Error loading active reminders from API:', error);
         this.remindersSubject.next([]);
+      }
+    });
+  }
+
+  /**
+   * Load transactions from API with optional date range filtering
+   * Call this from TransactionsComponent, DashboardComponent, BudgetComponent
+   */
+  loadTransactions(request?: GetTransactionsRequest): void {
+    this.transactionApiService.getAll(request).subscribe({
+      next: (transactions) => {
+        this.transactionsSubject.next(transactions);
+      },
+      error: (error) => {
+        console.error('Error loading transactions from API:', error);
+        this.transactionsSubject.next([]);
       }
     });
   }
@@ -294,37 +312,109 @@ export class StorageService {
     });
   }
 
+  /**
+   * Get current transactions value (synchronous)
+   */
   getTransactions(): Transaction[] {
-    return this.getFromStorage<Transaction>(this.STORAGE_KEYS.TRANSACTIONS);
+    return this.transactionsSubject.value;
   }
 
-  saveTransaction(transaction: Transaction): void {
-    const transactions = this.getTransactions();
-    const existingIndex = transactions.findIndex(t => t.id === transaction.id);
+  /**
+   * Save transaction (create or update) via API
+   */
+  saveTransaction(transaction: Transaction, isUpdate: boolean = false): Observable<Transaction> {
+    return new Observable(observer => {
+      if (isUpdate) {
+        // For updates, first revert the old transaction effect
+        const transactions = this.getTransactions();
+        const oldTransaction = transactions.find(t => t.id === transaction.id);
+        if (oldTransaction) {
+          this.revertTransactionEffect(oldTransaction);
+        }
 
-    if (existingIndex >= 0) {
-      const oldTransaction = transactions[existingIndex];
-      this.revertTransactionEffect(oldTransaction);
-      transactions[existingIndex] = { ...transaction, updatedAt: new Date() };
-    } else {
-      transactions.push({ ...transaction, createdAt: new Date(), updatedAt: new Date() });
-    }
+        const updateRequest = {
+          id: transaction.id,
+          type: transaction.type.toLowerCase() as 'income' | 'expense' | 'transfer',
+          amount: transaction.amount,
+          date: transaction.date.toISOString(),
+          accountId: transaction.accountId,
+          categoryId: transaction.categoryId,
+          toAccountId: transaction.toAccountId,
+          narration: transaction.narration
+        };
 
-    this.applyTransactionEffect(transaction);
-    this.saveToStorage(this.STORAGE_KEYS.TRANSACTIONS, transactions);
-    this.transactionsSubject.next(transactions);
+        this.transactionApiService.update(updateRequest).subscribe({
+          next: (updatedTransaction) => {
+            this.applyTransactionEffect(transaction);
+            // Component will handle reload with date range parameters
+            observer.next(updatedTransaction);
+            observer.complete();
+          },
+          error: (error) => {
+            // Reapply old transaction effect if update fails
+            if (oldTransaction) {
+              this.applyTransactionEffect(oldTransaction);
+            }
+            console.error('Error updating transaction:', error);
+            observer.error(error);
+          }
+        });
+      } else {
+        const createRequest = {
+          type: transaction.type.toLowerCase() as 'income' | 'expense' | 'transfer',
+          amount: transaction.amount,
+          date: transaction.date.toISOString(),
+          accountId: transaction.accountId,
+          categoryId: transaction.categoryId,
+          toAccountId: transaction.toAccountId,
+          narration: transaction.narration
+        };
+
+        this.transactionApiService.create(createRequest).subscribe({
+          next: (newTransaction) => {
+            this.applyTransactionEffect(transaction);
+            // Component will handle reload with date range parameters
+            observer.next(newTransaction);
+            observer.complete();
+          },
+          error: (error) => {
+            console.error('Error creating transaction:', error);
+            observer.error(error);
+          }
+        });
+      }
+    });
   }
 
-  deleteTransaction(id: number): void {
-    const transactions = this.getTransactions();
-    const transaction = transactions.find(t => t.id === id);
+  /**
+   * Delete transaction via API
+   */
+  deleteTransaction(id: number): Observable<void> {
+    return new Observable(observer => {
+      // First revert the transaction effect
+      const transactions = this.getTransactions();
+      const transaction = transactions.find(t => t.id === id);
 
-    if (transaction) {
-      this.revertTransactionEffect(transaction);
-      const updatedTransactions = transactions.filter(t => t.id !== id);
-      this.saveToStorage(this.STORAGE_KEYS.TRANSACTIONS, updatedTransactions);
-      this.transactionsSubject.next(updatedTransactions);
-    }
+      if (transaction) {
+        this.revertTransactionEffect(transaction);
+      }
+
+      this.transactionApiService.delete(id).subscribe({
+        next: () => {
+          // Component will handle reload with date range parameters
+          observer.next();
+          observer.complete();
+        },
+        error: (error) => {
+          // Reapply transaction effect if delete fails
+          if (transaction) {
+            this.applyTransactionEffect(transaction);
+          }
+          console.error('Error deleting transaction:', error);
+          observer.error(error);
+        }
+      });
+    });
   }
 
   private applyTransactionEffect(transaction: Transaction): void {
