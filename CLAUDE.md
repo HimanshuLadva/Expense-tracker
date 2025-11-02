@@ -9,7 +9,7 @@ Modern Angular 19 expense tracking application with comprehensive financial mana
 - **Module Organization**: Feature-based structure with lazy-loaded routes
 - **Component Pattern**: Standalone components with inline templates and styles
 - **State Management**: Service-based reactive patterns using BehaviorSubject
-- **Data Persistence**: Hybrid approach - Backend REST API (Accounts, Categories, Reminders) + Local storage (Transactions, Budgets)
+- **Data Persistence**: Hybrid approach - Backend REST API (Accounts, Categories, Reminders, Transactions) + Local storage (Budgets)
 - **Backend Integration**: HTTP communication via dedicated API service layer
 - **Navigation**: Route-based lazy loading with dynamic imports
 
@@ -158,6 +158,14 @@ src/environments/
 - **Debouncing**: Apply 500ms debounceTime to date range inputs
 - **Timezone Safety**: Use string concatenation for date parameters (`${fromDate}T00:00:00.000Z`)
 
+### DateTime Input Handling
+- **Two Patterns**: Filter dates (string concatenation) vs Form datetime inputs (Date.UTC)
+- **Filter Dates**: Use string concatenation to preserve selected date across timezones
+- **Form DateTime**: Use Date.UTC() to preserve user's selected time when submitting to API
+- **Critical Pitfall**: Avoid using new Date(string) + toISOString() for datetime-local inputs - causes timezone shift
+- **Display Pattern**: Use local timezone methods (getHours, getMinutes) for showing dates in forms
+- **API Submission**: Construct Date with Date.UTC() so toISOString() outputs the exact time user selected
+
 ### Transaction Effect System
 - **Automatic Balance Updates**: Real-time account balance calculation
 - **Transaction Types**: Income (add), Expense (subtract), Transfer (move between accounts)
@@ -182,7 +190,7 @@ For detailed information on specific topics, see the docs/ folder:
 Comprehensive Angular 19 expense tracker demonstrating modern development practices:
 - **Architecture**: Standalone components with feature-based organization and lazy loading
 - **State Management**: Reactive service patterns with BehaviorSubject streams
-- **Backend Integration**: REST API for Accounts, Categories, Reminders with hybrid data persistence
+- **Backend Integration**: REST API for Accounts, Categories, Reminders, Transactions with hybrid data persistence
 - **User Experience**: Mobile-first responsive design with professional dialog system
 - **Performance**: Optimized change detection, lazy data loading, server-side filtering, and debounced inputs
 - **Maintainability**: Consistent patterns, comprehensive TypeScript, and clean organization

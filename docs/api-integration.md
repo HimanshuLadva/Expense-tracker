@@ -45,13 +45,13 @@ This document contains detailed patterns for integrating with the backend REST A
 - **AccountsComponent**: Calls loadAccounts() only
 - **CategoriesComponent**: Calls loadCategories() only
 - **RemindersComponent**: Calls loadReminders() only
-- **DashboardComponent**: Calls loadAccounts(), loadCategories(), and loadReminders()
-- **TransactionsComponent**: Calls both loadAccounts() and loadCategories()
-- **BudgetComponent**: Calls loadCategories() only
-- **TransactionDialogComponent**: Calls both loadAccounts() and loadCategories() when dialog opens
+- **DashboardComponent**: Calls loadAccounts(), loadCategories(), loadReminders(), and loadTransactions()
+- **TransactionsComponent**: Calls loadAccounts(), loadCategories(), and loadTransactions()
+- **BudgetComponent**: Calls loadCategories() and loadTransactions()
+- **TransactionDialogComponent**: Calls loadAccounts() and loadCategories() when dialog opens, uses getById() for edit mode
 - **Dialog Components**: AccountDialog, CategoryDialog, ReminderDialog work with parent's loaded data
 
-**Pattern**: Page components load data, dialog components work with already-loaded data except TransactionDialog which needs fresh data on open.
+**Pattern**: Page components load data dependencies in ngOnInit. Dialog components load their own dependencies independently. Edit mode dialogs fetch individual entities via GetById API for latest data.
 
 ## StorageService Bridge Pattern
 
@@ -74,6 +74,48 @@ This document contains detailed patterns for integrating with the backend REST A
 - **Cross-Component Sync**: Reactive streams automatically propagate changes to all subscribed components
 - **Error State Handling**: On load errors, set empty array to BehaviorSubject to provide consistent fallback state
 - **No Local Caching**: API-backed entities do not cache in localStorage, backend is always source of truth
+
+## Dialog Component Reload Pattern
+
+- **Dialog Independence**: Dialogs load their own data dependencies when opened, reducing coupling with parent components
+- **Parent Reload After Success**: When dialog closes with success, parent component explicitly reloads data from API
+- **Reload With Filters**: Components reload using their current filter parameters (date range, search terms, etc.)
+- **GetById for Edit Mode**: Edit dialogs fetch individual entity via GetById API to ensure displaying latest data
+- **No Automatic Reload**: StorageService does NOT automatically reload after CRUD; components control reload timing
+- **Error Handling in Dialogs**: Show user-friendly alerts on API failures, keep isSubmitting flag for retry capability
+- **Close on Success**: Dialogs close only after successful API response to trigger parent reload flow
+
+**Reload Flow:**
+1. User opens dialog
+2. Dialog loads dependencies independently
+3. User submits form
+4. API operation succeeds
+5. Dialog closes with success flag
+6. Parent component detects success
+7. Parent reloads data with current filters
+8. BehaviorSubject emits new data
+9. All subscribed components update automatically
+
+## Transaction-Specific API Patterns
+
+### Date Range Filtering
+- **GetTransactionsRequest Interface**: Supports optional fromDate and toDate parameters
+- **ISO String Format**: Dates passed as ISO 8601 strings (YYYY-MM-DDTHH:mm:ss.sssZ)
+- **Timezone-Safe Concatenation**: Use direct string concatenation for date range parameters
+- **Start/End Times**: fromDate uses T00:00:00.000Z, toDate uses T23:59:59.999Z for inclusive filtering
+- **Debouncing Required**: Apply 500ms debounceTime to date range form valueChanges to prevent excessive API calls
+
+### Multiple Component Dependencies
+- **Dashboard Pattern**: Loads accounts, categories, reminders, and transactions
+- **Transaction Page Pattern**: Loads accounts, categories, and transactions
+- **Budget Page Pattern**: Loads categories and transactions for calculation
+- **Use combineLatest**: Wait for all dependent streams before rendering to avoid partial data states
+
+### GetById Pattern for Edit Mode
+- **Always Fetch Fresh**: Call GetById API when opening edit dialog to ensure latest data
+- **Error Handling**: Close dialog with error message if GetById fails
+- **Form Population**: Populate form only after successful API response
+- **Prevents Stale Edits**: Avoids conflicts from editing cached data that may have changed
 
 ## API Error Handling Pattern
 
@@ -160,12 +202,28 @@ When migrating an entity from localStorage to backend API, follow these steps:
 
 ## Date and Timezone Handling
 
+### Filter Date Parameters (Date Inputs)
+
 - **Timezone-Safe String Concatenation**: Use direct string concatenation instead of Date object conversion
 - **Avoid toISOString() for Filters**: Do NOT use new Date(dateString).toISOString() as it converts local time to UTC causing date shifts
 - **Correct Pattern**: Use template literal concatenation like `${fromDate}T00:00:00.000Z` to preserve the date
 - **Start of Day**: For fromDate/start dates, append T00:00:00.000Z
 - **End of Day**: For toDate/end dates, append T23:59:59.999Z
 - **Why This Matters**: If user is in IST (UTC+5:30) and selects 2025-11-01, using new Date() would convert to 2025-10-31T18:30:00.000Z
-- **API Date Fields**: For entity date fields (like reminder.date), use Date object with proper conversion in API service layer
-- **Filter Date Fields**: For filter parameters, use string concatenation to avoid timezone issues
 - **Date Input Type**: HTML date inputs return strings in YYYY-MM-DD format, perfect for direct concatenation
+
+### Form DateTime Inputs (datetime-local)
+
+- **Critical Issue**: datetime-local inputs return local time strings (YYYY-MM-DDTHH:mm) without timezone info
+- **Wrong Pattern**: new Date(formValue.date) + toISOString() causes timezone conversion
+- **Example Problem**: User selects 20:20, API receives 14:50 (5.5 hour shift for IST users)
+- **Correct Pattern**: Use Date.UTC() to construct Date object that preserves user's selected time
+- **Implementation**: Parse datetime string components, create Date with Date.UTC(year, month-1, day, hours, minutes, 0, 0)
+- **Why This Works**: Date.UTC() creates Date representing UTC time, so toISOString() outputs exact user selection
+- **Display Pattern**: Use local timezone methods (getFullYear, getMonth, getDate, getHours, getMinutes) when showing dates in forms
+- **Two Patterns Summary**: Filter dates use string concatenation, form datetime uses Date.UTC()
+
+### API Date Fields
+
+- **For Entity Fields**: Use Date object with proper conversion in API service layer
+- **For Filter Parameters**: Use string concatenation to avoid timezone issues

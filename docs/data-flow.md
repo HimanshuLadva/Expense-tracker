@@ -59,9 +59,9 @@ The application uses BehaviorSubject for reactive state management:
 - **Accounts**: Full CRUD via AccountApiService
 - **Categories**: Full CRUD via CategoryApiService
 - **Reminders**: Full CRUD via ReminderApiService with date range filtering
+- **Transactions**: Full CRUD via TransactionApiService with date range filtering
 
 ### Local Storage
-- **Transactions**: Stored in localStorage (localStorage key: 'expense_tracker_transactions')
 - **Budgets**: Stored in localStorage (localStorage key: 'expense_tracker_budgets')
 
 ### StorageService Pattern
@@ -100,9 +100,12 @@ The application uses BehaviorSubject for reactive state management:
 - **Lazy Loading**: Route-based code splitting for all feature pages
 - **Change Detection**: OnPush strategy where applicable
 - **Virtual Scrolling**: For large data sets in tables
-- **Debouncing User Input**: Apply debounceTime operator (500ms) to form valueChanges streams
-- **Server-Side Filtering**: Offload filtering logic to backend APIs
+- **Debouncing User Input**: Apply debounceTime operator (500ms) to form valueChanges streams for date range filters and search inputs
+- **Server-Side Filtering**: Offload filtering logic to backend APIs instead of client-side filtering
 - **Prevent Duplicate Loads**: Avoid redundant API calls through subscription management
+- **Component-Controlled Reload**: Components explicitly reload data with their filter parameters after CRUD operations
+- **No Automatic Service Reload**: Services do NOT auto-reload after CRUD to prevent unnecessary API calls
+- **Bidirectional Date Sync**: DateRangeService synchronizes date range across pages with emitEvent: false to prevent loops
 
 ## Transaction-Account Relationship
 

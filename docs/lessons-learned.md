@@ -23,6 +23,44 @@ This document contains key lessons learned and proven patterns from implementati
 - **Component Reload Ownership**: Components reload with their specific filter parameters
 - **Duplicate Load Detection**: BehaviorSubject subscriptions emit immediately; avoid redundant calls
 
+### Transaction API Migration Outcomes
+
+#### DateTime Form Input Handling
+- **Two Different Patterns Needed**: Filter dates require string concatenation, form datetime inputs require Date.UTC()
+- **Filter Date Pattern**: HTML date inputs return YYYY-MM-DD strings, concatenate with T00:00:00.000Z
+- **Form DateTime Pattern**: HTML datetime-local inputs return local time without timezone, causes conversion issues
+- **Critical Discovery**: new Date(localTimeString) + toISOString() causes 5.5 hour shift for IST users
+- **Correct Solution**: Parse datetime string components, construct with Date.UTC() to preserve user's selected time
+- **Why Date.UTC() Works**: Creates Date representing UTC time so toISOString() outputs exact user selection
+- **Display vs Submit**: Use local methods (getHours, getMinutes) for display, Date.UTC() for API submission
+
+#### Dialog Independence Pattern
+- **Reduced Coupling**: Dialogs load their own dependencies instead of relying on parent's pre-loaded data
+- **Better Reusability**: Same dialog can be used from multiple parent components
+- **Cleaner Separation**: Parent doesn't need to know dialog's data requirements
+- **Trade-off Accepted**: Slight performance cost for additional API calls, but improves maintainability
+
+#### Component Reload Responsibility
+- **Services Don't Auto-Reload**: StorageService does NOT automatically reload after CRUD operations
+- **Components Control Timing**: Components explicitly reload with their specific filter parameters
+- **Prevents Unnecessary Calls**: Avoids reloading data that component doesn't need
+- **Filter Consistency**: Components maintain their UI state (date range, search terms) when reloading
+- **Dialog Success Pattern**: Parent components reload on dialog close with success flag
+
+#### GetById Pattern for Edit Mode
+- **Always Fetch Fresh**: Call GetById API when opening edit dialog instead of using cached data
+- **Prevents Stale Edits**: Ensures user sees latest data before editing
+- **Conflict Avoidance**: Reduces chances of editing data that changed since last load
+- **Error Handling**: Close dialog gracefully if GetById fails with user-friendly message
+- **Performance Note**: Small extra API call is worth the data consistency guarantee
+
+#### Multiple Component Dependencies
+- **Complex Loading**: Some components need multiple entities (e.g., Dashboard needs 4 entities)
+- **combineLatest Pattern**: Wait for all dependent streams before rendering
+- **Load Order**: All load methods called in ngOnInit, combineLatest ensures all data ready
+- **Partial State Prevention**: Avoid rendering with incomplete data by waiting for all streams
+- **Subscription Management**: Single Subscription object collects all subscriptions for cleanup
+
 ## Proven Patterns
 
 ### What Works Well
@@ -36,9 +74,12 @@ This document contains key lessons learned and proven patterns from implementati
 ### Common Pitfalls to Avoid
 - **Service Constructor Loading**: Causes unnecessary duplicate API calls
 - **Enum Serialization**: TypeScript enums don't serialize consistently for APIs
-- **Date Object Conversion**: toISOString() causes timezone issues for filter parameters
+- **Date Object Conversion for Filters**: toISOString() causes timezone issues for filter parameters
+- **DateTime Input Conversion**: new Date(formValue.date) + toISOString() causes timezone shift for datetime-local inputs
 - **Client-Side Filtering**: Poor performance with large datasets
 - **No Debouncing**: Creates excessive API calls during user input
+- **Using Cached Data in Edit Mode**: Always fetch fresh data via GetById when editing
+- **Automatic Service Reload**: Services should not auto-reload, let components control when to reload
 
 ## Architectural Decisions
 
