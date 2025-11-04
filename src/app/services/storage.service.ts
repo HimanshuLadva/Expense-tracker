@@ -461,6 +461,13 @@ export class StorageService {
   }
 
   /**
+   * Get reminder by ID via API
+   */
+  getReminderById(id: number): Observable<Reminder> {
+    return this.reminderApiService.getById(id);
+  }
+
+  /**
    * Save reminder (create or update) via API
    */
   saveReminder(reminder: Reminder, isUpdate: boolean = false): Observable<Reminder> {

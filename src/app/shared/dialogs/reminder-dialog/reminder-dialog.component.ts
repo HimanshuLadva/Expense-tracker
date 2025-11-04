@@ -97,8 +97,8 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
                   formControlName="isActive"
                   class="checkbox-input"
                 />
-                <span class="checkbox-label">Active reminder</span>
-                <span class="help-text">Uncheck to disable this reminder</span>
+                  <span class="checkbox-label">Active reminder</span>
+                  <span class="help-text">Uncheck to disable this reminder</span>
               </label>
             </div>
           }
@@ -256,7 +256,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           }
 
           &:checked + .checkbox-label::after {
-            display: block;
+              display: block;
           }
         }
 
@@ -272,12 +272,12 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             left: 0;
             top: 50%;
             transform: translateY(-50%);
-            width: 1.25rem;
-            height: 1.25rem;
-            border: 2px solid #d1d5db;
-            border-radius: 0.25rem;
-            background-color: white;
-            transition: all 0.2s ease;
+          width: 1.25rem;
+          height: 1.25rem;
+          border: 2px solid #d1d5db;
+          border-radius: 0.25rem;
+          background-color: white;
+          transition: all 0.2s ease;
           }
 
           &::after {
@@ -291,12 +291,12 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             font-weight: bold;
             display: none;
           }
-        }
+          }
 
-        .help-text {
+          .help-text {
           padding-left: 2rem;
-          color: #6b7280;
-          font-size: 0.75rem;
+            color: #6b7280;
+            font-size: 0.75rem;
         }
       }
 
@@ -350,19 +350,31 @@ export class ReminderDialogComponent implements OnInit {
   }
 
   private loadReminder(id: number): void {
-    const reminders = this.storageService.getReminders();
-    const reminder = reminders.find(r => r.id === id);
+    this.storageService.getReminderById(id).subscribe({
+      next: (reminder) => {
+        this.reminder = reminder;
 
-    if (reminder) {
-      this.reminder = reminder;
-      this.reminderForm.patchValue({
-        title: reminder.title,
-        date: new Date(reminder.date).toISOString().split('T')[0],
-        beforeDays: reminder.beforeDays,
-        afterDays: reminder.afterDays,
-        isActive: reminder.isActive
-      });
-    }
+        // Use local timezone methods to extract date for display (avoid timezone shift)
+        const d = new Date(reminder.date);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dateString = `${year}-${month}-${day}`;
+
+        this.reminderForm.patchValue({
+          title: reminder.title,
+          date: dateString,
+          beforeDays: reminder.beforeDays,
+          afterDays: reminder.afterDays,
+          isActive: reminder.isActive
+        });
+      },
+      error: (error) => {
+        console.error('Error loading reminder:', error);
+        alert('Failed to load reminder. Please try again.');
+        this.dialogRef.close();
+      }
+    });
   }
 
   onSubmit(): void {
