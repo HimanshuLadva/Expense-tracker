@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Account, Category, Transaction, Reminder, Budget, GetRemindersRequest, GetTransactionsRequest } from '../models';
+import { Account, Category, Transaction, Reminder, Budget, GetRemindersRequest, GetTransactionsRequest, GetBudgetsRequest } from '../models';
 import { AccountApiService } from './account-api.service';
 import { CategoryApiService } from './category-api.service';
 import { ReminderApiService } from './reminder-api.service';
 import { TransactionApiService } from './transaction-api.service';
+import { BudgetApiService } from './budget-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,17 +13,17 @@ import { TransactionApiService } from './transaction-api.service';
 export class StorageService {
   private readonly STORAGE_KEYS = {
     ACCOUNTS: 'expense_tracker_accounts',
-    CATEGORIES: 'expense_tracker_categories',
-    // TRANSACTIONS: 'expense_tracker_transactions', // Now using API instead of localStorage
-    // REMINDERS: 'expense_tracker_reminders', // Now using API instead of localStorage
-    BUDGETS: 'expense_tracker_budgets'
+    CATEGORIES: 'expense_tracker_categories'
+    // TRANSACTIONS: Now using API instead of localStorage
+    // REMINDERS: Now using API instead of localStorage
+    // BUDGETS: Now using API instead of localStorage
   };
 
   private accountsSubject = new BehaviorSubject<Account[]>([]);
   private categoriesSubject = new BehaviorSubject<Category[]>([]);
   private transactionsSubject = new BehaviorSubject<Transaction[]>([]);
   private remindersSubject = new BehaviorSubject<Reminder[]>([]);
-  private budgetsSubject = new BehaviorSubject<Budget[]>(this.getBudgets());
+  private budgetsSubject = new BehaviorSubject<Budget[]>([]);
 
   public accounts$ = this.accountsSubject.asObservable();
   public categories$ = this.categoriesSubject.asObservable();
@@ -34,7 +35,8 @@ export class StorageService {
     private accountApiService: AccountApiService,
     private categoryApiService: CategoryApiService,
     private reminderApiService: ReminderApiService,
-    private transactionApiService: TransactionApiService
+    private transactionApiService: TransactionApiService,
+    private budgetApiService: BudgetApiService
   ) {}
 
   /**
@@ -535,28 +537,98 @@ export class StorageService {
     });
   }
 
+  /**
+   * Load all budgets from API - call this from BudgetComponent
+   */
+  loadBudgets(request?: GetBudgetsRequest): void {
+    this.budgetApiService.getAll(request).subscribe({
+      next: (budgets) => {
+        this.budgetsSubject.next(budgets);
+      },
+      error: (error) => {
+        console.error('Error loading budgets from API:', error);
+        this.budgetsSubject.next([]);
+      }
+    });
+  }
+
+  /**
+   * Load active budgets from API
+   */
+  loadActiveBudgets(request?: GetBudgetsRequest): void {
+    this.budgetApiService.getActive(request).subscribe({
+      next: (budgets) => {
+        this.budgetsSubject.next(budgets);
+      },
+      error: (error) => {
+        console.error('Error loading active budgets from API:', error);
+        this.budgetsSubject.next([]);
+      }
+    });
+  }
+
+  /**
+   * Get budgets synchronously from current state
+   */
   getBudgets(): Budget[] {
-    return this.getFromStorage<Budget>(this.STORAGE_KEYS.BUDGETS);
+    return this.budgetsSubject.value;
   }
 
-  saveBudget(budget: Budget): void {
-    const budgets = this.getBudgets();
-    const existingIndex = budgets.findIndex(b => b.id === budget.id);
-
-    if (existingIndex >= 0) {
-      budgets[existingIndex] = { ...budget, updatedAt: new Date() };
-    } else {
-      budgets.push({ ...budget, createdAt: new Date(), updatedAt: new Date() });
-    }
-
-    this.saveToStorage(this.STORAGE_KEYS.BUDGETS, budgets);
-    this.budgetsSubject.next(budgets);
+  /**
+   * Create new budget via API
+   */
+  createBudget(request: any): Observable<Budget> {
+    return new Observable(observer => {
+      this.budgetApiService.create(request).subscribe({
+        next: (budget) => {
+          // Component will handle reload with date range parameters
+          observer.next(budget);
+          observer.complete();
+        },
+        error: (error) => {
+          console.error('Error creating budget:', error);
+          observer.error(error);
+        }
+      });
+    });
   }
 
-  deleteBudget(id: number): void {
-    const budgets = this.getBudgets().filter(b => b.id !== id);
-    this.saveToStorage(this.STORAGE_KEYS.BUDGETS, budgets);
-    this.budgetsSubject.next(budgets);
+  /**
+   * Update budget via API
+   */
+  updateBudget(request: any): Observable<Budget> {
+    return new Observable(observer => {
+      this.budgetApiService.update(request).subscribe({
+        next: (budget) => {
+          // Component will handle reload with date range parameters
+          observer.next(budget);
+          observer.complete();
+        },
+        error: (error) => {
+          console.error('Error updating budget:', error);
+          observer.error(error);
+        }
+      });
+    });
+  }
+
+  /**
+   * Delete budget via API
+   */
+  deleteBudget(id: number): Observable<void> {
+    return new Observable(observer => {
+      this.budgetApiService.delete(id).subscribe({
+        next: () => {
+          // Component will handle reload with date range parameters
+          observer.next();
+          observer.complete();
+        },
+        error: (error) => {
+          console.error('Error deleting budget:', error);
+          observer.error(error);
+        }
+      });
+    });
   }
 
   clearAllData(): void {

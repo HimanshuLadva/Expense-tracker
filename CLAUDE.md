@@ -9,7 +9,7 @@ Modern Angular 19 expense tracking application with comprehensive financial mana
 - **Module Organization**: Feature-based structure with lazy-loaded routes
 - **Component Pattern**: Standalone components with inline templates and styles
 - **State Management**: Service-based reactive patterns using BehaviorSubject
-- **Data Persistence**: Hybrid approach - Backend REST API (Accounts, Categories, Reminders, Transactions) + Local storage (Budgets)
+- **Data Persistence**: Full Backend REST API integration - All entities (Accounts, Categories, Reminders, Transactions, Budgets) backed by backend API
 - **Backend Integration**: HTTP communication via dedicated API service layer
 - **Navigation**: Route-based lazy loading with dynamic imports
 
@@ -91,12 +91,12 @@ src/environments/
 ### Data Management Patterns
 - **Central Service**: StorageService as single source of truth for all data
 - **Reactive Streams**: BehaviorSubject for real-time UI updates
-- **Hybrid Storage Strategy**:
-  - **Backend API**: Accounts, Categories, Reminders (via dedicated API services)
-  - **Local Storage**: Transactions, Budgets
-- **API Service Layer**: AccountApiService, CategoryApiService, ReminderApiService
+- **Full API Integration**: All entities backed by backend REST API
+  - **Backend API**: Accounts, Categories, Reminders, Transactions, Budgets (via dedicated API services)
+  - **No Local Storage**: All data persisted in backend database for consistency and scalability
+- **API Service Layer**: AccountApiService, CategoryApiService, ReminderApiService, TransactionApiService, BudgetApiService
 - **ID Type**: All entity IDs are `number` type for better performance and database compatibility
-- **Error Handling**: Try-catch with console logging for storage, user-friendly alerts for API errors
+- **Error Handling**: User-friendly alerts for API errors with console logging for debugging
 
 ### API Integration Essentials
 - **Lazy Loading**: API data loaded on-demand when pages are accessed (call loadEntity() in ngOnInit)
@@ -172,9 +172,13 @@ src/environments/
 - **Effect Application**: Immediate balance updates on create/edit/delete operations
 
 ### Budget Management
-- **Monthly Budgets**: Each category has different limits per month (month + year combination)
-- **Real-time Tracking**: Automatic calculation of spent amounts from expense transactions
-- **Progress Indicators**: Visual progress bars showing percentage of budget used
+- **Named Budgets**: Flexible budget system with custom names, amounts, and date ranges
+- **Multi-Category Support**: Single budget can track spending across multiple categories simultaneously
+- **Period Types**: Support for monthly, weekly, yearly, and custom period budgets
+- **Date Range Tracking**: Budgets have explicit start and end dates for flexible planning
+- **Active/Inactive Status**: Budgets can be toggled active or inactive without deletion
+- **Real-time Tracking**: Automatic calculation of spent amounts from expense transactions across all assigned categories
+- **Progress Indicators**: Visual progress bars showing percentage of budget used with over-budget warnings
 
 ## Quick Reference
 
@@ -190,9 +194,9 @@ For detailed information on specific topics, see the docs/ folder:
 Comprehensive Angular 19 expense tracker demonstrating modern development practices:
 - **Architecture**: Standalone components with feature-based organization and lazy loading
 - **State Management**: Reactive service patterns with BehaviorSubject streams
-- **Backend Integration**: REST API for Accounts, Categories, Reminders, Transactions with hybrid data persistence
+- **Backend Integration**: Full REST API integration for all entities with complete CRUD operations
 - **User Experience**: Mobile-first responsive design with professional dialog system
 - **Performance**: Optimized change detection, lazy data loading, server-side filtering, and debounced inputs
 - **Maintainability**: Consistent patterns, comprehensive TypeScript, and clean organization
 
-Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, and production-ready performance optimizations.
+Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, production-ready performance optimizations, and scalable backend architecture.

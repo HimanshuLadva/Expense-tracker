@@ -5,7 +5,7 @@ import { Subscription } from 'rxjs';
 
 import { StorageService } from '../../services/storage.service';
 import { DateRangeService } from '../../services/date-range.service';
-import { Category, CategoryType, Budget, BudgetWithUsage } from '../../models';
+import { Category, Budget, BudgetWithUsage } from '../../models';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { DialogService } from '../../shared/dialog/dialog.service';
 import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog/set-budget-dialog.component';
@@ -18,7 +18,7 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
     <div class="budget-page">
       <app-page-header
         title="Budget Management"
-        subtitle="Track your spending against monthly budgets"
+        subtitle="Track your spending against budgets"
       >
         <form [formGroup]="dateRangeForm" class="date-range-filter">
           <div class="date-field-wrapper">
@@ -40,19 +40,22 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
             />
           </div>
         </form>
+        <button class="add-budget-btn" (click)="createBudget()">
+          + New Budget
+        </button>
       </app-page-header>
 
-      <!-- Budgeted Categories Section -->
+      <!-- Active Budgets Section -->
       <div class="budget-section">
-        <h3 class="section-title">Budgeted Categories {{ getDisplayMonthYear() }}</h3>
-        @if (budgetedCategories.length > 0) {
+        <h3 class="section-title">Active Budgets</h3>
+        @if (budgetsWithUsage.length > 0) {
           <div class="budgeted-grid">
-            @for (budget of budgetedCategories; track budget.id) {
+            @for (budget of budgetsWithUsage; track budget.id) {
               <div class="budget-card">
                 <div class="budget-card-header">
-                  <div class="category-info">
-                    <span class="category-icon">{{ budget.categoryIcon }}</span>
-                    <span class="category-name">{{ budget.categoryName }}</span>
+                  <div class="budget-info">
+                    <span class="budget-name">{{ budget.name }}</span>
+                    <span class="budget-period">{{ formatPeriod(budget.period) }}</span>
                   </div>
                   <button
                     class="edit-btn"
@@ -63,14 +66,30 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
                   </button>
                 </div>
 
+                <div class="budget-date-range">
+                  <span class="date-label">📅</span>
+                  <span class="date-text">{{ formatDate(budget.startDate) }} - {{ formatDate(budget.endDate) }}</span>
+                </div>
+
+                <div class="budget-categories">
+                  <span class="categories-label">Categories:</span>
+                  <div class="categories-list">
+                    @for (categoryId of budget.categories; track categoryId) {
+                      <span class="category-chip">
+                        {{ getCategoryName(categoryId) }}
+                      </span>
+                    }
+                  </div>
+                </div>
+
                 <div class="budget-stats">
                   <div class="stat-row">
-                    <span class="stat-label">Limit:</span>
-                    <span class="stat-value limit">{{ formatCurrency(budget.limit) }}</span>
+                    <span class="stat-label">Budget:</span>
+                    <span class="stat-value limit">{{ formatCurrency(budget.amount) }}</span>
                   </div>
                   <div class="stat-row">
                     <span class="stat-label">Spent:</span>
-                    <span class="stat-value spent" [class.over-budget]="budget.spent > budget.limit">
+                    <span class="stat-value spent" [class.over-budget]="budget.spent > budget.amount">
                       {{ formatCurrency(budget.spent) }}
                     </span>
                   </div>
@@ -106,35 +125,10 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
         } @else {
           <div class="empty-state">
             <div class="empty-icon">📊</div>
-            <p class="empty-message">No budgets set for this month</p>
-          </div>
-        }
-      </div>
-
-      <!-- Not Budgeted Section -->
-      <div class="budget-section">
-        <h3 class="section-title">Not Budgeted This Month</h3>
-        @if (notBudgetedCategories.length > 0) {
-          <div class="not-budgeted-grid">
-            @for (category of notBudgetedCategories; track category.id) {
-              <div class="category-card">
-                <div class="category-info">
-                  <span class="category-icon">{{ category.icon }}</span>
-                  <span class="category-name">{{ category.name }}</span>
-                  <span class="category-type" [class.income]="category.type === 'income'" [class.expense]="category.type === 'expense'">
-                    {{ category.type }}
-                  </span>
-                </div>
-                <button class="set-budget-btn" (click)="setBudget(category)">
-                  Set Budget
-                </button>
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="empty-state">
-            <div class="empty-icon">✅</div>
-            <p class="empty-message">All categories have budgets set</p>
+            <p class="empty-message">No active budgets for the selected date range</p>
+            <button class="create-first-btn" (click)="createBudget()">
+              Create Your First Budget
+            </button>
           </div>
         }
       </div>
@@ -189,6 +183,22 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
         }
       }
 
+      .add-budget-btn {
+        padding: 0.625rem 1.25rem;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #2563eb;
+        }
+      }
+
       .budget-section {
         margin-bottom: 3rem;
 
@@ -225,14 +235,30 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
           .empty-message {
             color: #6b7280;
             font-size: 1rem;
-            margin: 0;
+            margin: 0 0 1.5rem 0;
+          }
+
+          .create-first-btn {
+            padding: 0.75rem 1.5rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+
+            &:hover {
+              background: #2563eb;
+            }
           }
         }
       }
 
       .budgeted-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: 1.5rem;
 
         .budget-card {
@@ -251,22 +277,25 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
           .budget-card-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 1rem;
 
-            .category-info {
+            .budget-info {
               display: flex;
-              align-items: center;
-              gap: 0.75rem;
+              flex-direction: column;
+              gap: 0.25rem;
 
-              .category-icon {
-                font-size: 2rem;
-              }
-
-              .category-name {
-                font-size: 1.125rem;
+              .budget-name {
+                font-size: 1.25rem;
                 font-weight: 600;
                 color: #111827;
+              }
+
+              .budget-period {
+                font-size: 0.75rem;
+                color: #6b7280;
+                text-transform: uppercase;
+                font-weight: 500;
               }
             }
 
@@ -282,6 +311,54 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
               &:hover {
                 background: #e5e7eb;
                 transform: scale(1.1);
+              }
+            }
+          }
+
+          .budget-date-range {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: #f9fafb;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            color: #4b5563;
+
+            .date-label {
+              font-size: 1rem;
+            }
+
+            .date-text {
+              font-weight: 500;
+            }
+          }
+
+          .budget-categories {
+            margin-bottom: 1rem;
+
+            .categories-label {
+              display: block;
+              font-size: 0.75rem;
+              color: #6b7280;
+              font-weight: 500;
+              margin-bottom: 0.5rem;
+              text-transform: uppercase;
+            }
+
+            .categories-list {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 0.5rem;
+
+              .category-chip {
+                padding: 0.25rem 0.625rem;
+                background: #e0e7ff;
+                color: #3730a3;
+                border-radius: 0.25rem;
+                font-size: 0.75rem;
+                font-weight: 500;
               }
             }
           }
@@ -379,121 +456,25 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
           }
         }
       }
-
-      .not-budgeted-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 1rem;
-
-        .category-card {
-          background: white;
-          padding: 0.75rem 1rem 1rem 1rem;
-          border-radius: 0.5rem;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-          display: grid;
-          grid-template-columns: 1fr auto;
-          grid-template-rows: auto auto;
-          gap: 0.75rem;
-          align-items: start;
-          transition: all 0.2s ease;
-          min-height: 80px;
-
-          &:hover {
-            box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.15);
-          }
-
-          .category-info {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            grid-column: 1 / -1;
-            min-width: 0;
-
-            .category-icon {
-              font-size: 2rem;
-              flex-shrink: 0;
-            }
-
-            .category-name {
-              font-weight: 600;
-              color: #111827;
-              font-size: 1rem;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
-              flex: 1;
-              min-width: 0;
-            }
-
-            .category-type {
-              padding: 0.25rem 0.625rem;
-              border-radius: 0.25rem;
-              font-size: 0.75rem;
-              font-weight: 500;
-              text-transform: uppercase;
-              white-space: nowrap;
-              flex-shrink: 0;
-
-              &.income {
-                background: #d1fae5;
-                color: #065f46;
-              }
-
-              &.expense {
-                background: #fee2e2;
-                color: #991b1b;
-              }
-            }
-          }
-
-          .set-budget-btn {
-            grid-column: 1 / -1;
-            padding: 0.625rem 1.25rem;
-            background: #3b82f6;
-            color: white;
-            border: none;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            width: 100%;
-
-            &:hover {
-              background: #2563eb;
-            }
-          }
-        }
-      }
     }
 
     @media (max-width: 768px) {
       .budget-page {
-        .budgeted-grid,
-        .not-budgeted-grid {
+        .budgeted-grid {
           grid-template-columns: 1fr;
         }
 
-        .not-budgeted-grid .category-card {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 0.75rem;
-
-          .set-budget-btn {
-            width: 100%;
-          }
+        .add-budget-btn {
+          width: 100%;
+          margin-top: 0.5rem;
         }
       }
     }
   `]
 })
 export class BudgetComponent implements OnInit, OnDestroy {
-  currentMonth: number;
-  currentYear: number;
-  currentMonthName: string;
-  budgetedCategories: BudgetWithUsage[] = [];
-  notBudgetedCategories: Category[] = [];
+  budgetsWithUsage: BudgetWithUsage[] = [];
+  categories: Category[] = [];
   dateRangeForm!: FormGroup;
   Math = Math;
 
@@ -504,12 +485,7 @@ export class BudgetComponent implements OnInit, OnDestroy {
     private dialogService: DialogService,
     private fb: FormBuilder,
     private dateRangeService: DateRangeService
-  ) {
-    const now = new Date();
-    this.currentMonth = now.getMonth() + 1;
-    this.currentYear = now.getFullYear();
-    this.currentMonthName = this.getMonthName(this.currentMonth);
-  }
+  ) {}
 
   ngOnInit(): void {
     // Load categories and transactions from API when budget page is accessed
@@ -524,14 +500,10 @@ export class BudgetComponent implements OnInit, OnDestroy {
       toDate: [currentRange.toDate]
     });
 
-    // Update current month/year based on date range
-    this.updateCurrentPeriod();
-
     // Listen to date range changes and update service
     this.subscription.add(
       this.dateRangeForm.valueChanges.subscribe((value) => {
         this.dateRangeService.updateDateRange(value);
-        this.updateCurrentPeriod();
         this.loadBudgetData();
       })
     );
@@ -540,59 +512,32 @@ export class BudgetComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.dateRangeService.dateRange$.subscribe((dateRange) => {
         this.dateRangeForm.patchValue(dateRange, { emitEvent: false });
-        this.updateCurrentPeriod();
         this.loadBudgetData();
       })
     );
 
+    // Load initial data
     this.loadBudgetData();
 
     // Subscribe to changes
     this.subscription.add(
       this.storageService.budgets$.subscribe(() => {
-        this.loadBudgetData();
+        this.calculateBudgetUsage();
       })
     );
 
     this.subscription.add(
-      this.storageService.categories$.subscribe(() => {
-        this.loadBudgetData();
+      this.storageService.categories$.subscribe((categories) => {
+        this.categories = categories;
+        this.calculateBudgetUsage();
       })
     );
 
     this.subscription.add(
       this.storageService.transactions$.subscribe(() => {
-        this.loadBudgetData();
+        this.calculateBudgetUsage();
       })
     );
-  }
-
-  private updateCurrentPeriod(): void {
-    const { fromDate } = this.dateRangeForm.value;
-    if (fromDate) {
-      const date = new Date(fromDate);
-      this.currentMonth = date.getMonth() + 1;
-      this.currentYear = date.getFullYear();
-      this.currentMonthName = this.getMonthName(this.currentMonth);
-    }
-  }
-
-  getDisplayMonthYear(): string {
-    const { fromDate, toDate } = this.dateRangeForm.value;
-    if (fromDate && toDate) {
-      const from = new Date(fromDate);
-      const to = new Date(toDate);
-
-      // If same month and year, show "OCT 2025"
-      if (from.getMonth() === to.getMonth() && from.getFullYear() === to.getFullYear()) {
-        return `${this.getMonthName(from.getMonth() + 1)} ${from.getFullYear()}`;
-      }
-
-      // If different months/years, show range like "OCT 2025 - NOV 2025"
-      return `${this.getMonthName(from.getMonth() + 1)} ${from.getFullYear()} - ${this.getMonthName(to.getMonth() + 1)} ${to.getFullYear()}`;
-    }
-
-    return `${this.currentMonthName} ${this.currentYear}`;
   }
 
   ngOnDestroy(): void {
@@ -600,61 +545,53 @@ export class BudgetComponent implements OnInit, OnDestroy {
   }
 
   private loadBudgetData(): void {
-    const budgets = this.storageService.getBudgets();
-    const categories = this.storageService.getCategories();
-    const transactions = this.storageService.getTransactions();
-
-    // Get date range from form
     const { fromDate, toDate } = this.dateRangeForm.value;
     if (!fromDate || !toDate) return;
+
+    // Load budgets with date range filter
+    this.storageService.loadBudgets({
+      fromDate: `${fromDate}T00:00:00.000Z`,
+      toDate: `${toDate}T23:59:59.999Z`
+    });
+  }
+
+  private calculateBudgetUsage(): void {
+    const budgets = this.storageService.getBudgets();
+    const transactions = this.storageService.getTransactions();
+    const { fromDate, toDate } = this.dateRangeForm.value;
+
+    if (!fromDate || !toDate) {
+      this.budgetsWithUsage = [];
+      return;
+    }
 
     const startDate = new Date(fromDate);
     const endDate = new Date(toDate);
     endDate.setHours(23, 59, 59, 999);
 
-    // Filter budgets that fall within the date range
-    const currentBudgets = budgets.filter(b => {
-      // Create a date for the budget's month (first day of that month)
-      const budgetDate = new Date(b.year, b.month - 1, 1);
-      // Create end of month for the budget
-      const budgetEndDate = new Date(b.year, b.month, 0, 23, 59, 59, 999);
+    this.budgetsWithUsage = budgets
+      .filter(b => b.isActive)
+      .map(budget => {
+        // Calculate spent amount for all categories in this budget within the date range
+        const spent = this.calculateSpent(budget.categories, transactions, startDate, endDate);
+        const remaining = budget.amount - spent;
+        const percentageUsed = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
 
-      // Check if budget month overlaps with selected date range
-      return budgetDate <= endDate && budgetEndDate >= startDate;
-    });
-
-    // Get categories with budgets
-    this.budgetedCategories = currentBudgets.map(budget => {
-      const category = categories.find(c => c.id === budget.categoryId);
-
-      // Calculate spent amount for this category within the selected date range
-      const spent = this.calculateSpent(budget.categoryId, transactions, startDate, endDate);
-      const remaining = budget.limit - spent;
-      const percentageUsed = budget.limit > 0 ? (spent / budget.limit) * 100 : 0;
-
-      return {
-        ...budget,
-        categoryName: category?.name || 'Unknown',
-        categoryIcon: category?.icon || '📁',
-        spent,
-        remaining,
-        percentageUsed
-      };
-    });
-
-    // Get categories without budgets in the selected range
-    const budgetedCategoryIds = new Set(currentBudgets.map(b => b.categoryId));
-    this.notBudgetedCategories = categories.filter(
-      c => !budgetedCategoryIds.has(c.id)
-    );
+        return {
+          ...budget,
+          spent,
+          remaining,
+          percentageUsed
+        };
+      });
   }
 
-  private calculateSpent(categoryId: number, transactions: any[], startDate: Date, endDate: Date): number {
+  private calculateSpent(categoryIds: number[], transactions: any[], startDate: Date, endDate: Date): number {
     return transactions
       .filter(t => {
         const transactionDate = new Date(t.date);
         return (
-          t.categoryId === categoryId &&
+          categoryIds.includes(t.categoryId) &&
           t.type === 'expense' &&
           transactionDate >= startDate &&
           transactionDate <= endDate
@@ -663,49 +600,72 @@ export class BudgetComponent implements OnInit, OnDestroy {
       .reduce((sum, t) => sum + t.amount, 0);
   }
 
-  private getMonthName(month: number): string {
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
-    return months[month - 1] || '';
-  }
-
   formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     }).format(amount);
   }
 
-  setBudget(category: Category): void {
+  formatDate(date: Date): string {
+    return new Date(date).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  formatPeriod(period: string): string {
+    return period.charAt(0).toUpperCase() + period.slice(1);
+  }
+
+  getCategoryName(categoryId: number): string {
+    const category = this.categories.find(c => c.id === categoryId);
+    return category ? category.name : 'Unknown';
+  }
+
+  createBudget(): void {
     this.dialogService.open(SetBudgetDialogComponent, {
-      title: 'Set Budget',
-      width: '500px',
+      title: 'Create Budget',
+      width: '600px',
       data: {
-        category,
-        month: this.currentMonth,
-        year: this.currentYear
+        categories: this.categories
+      }
+    }).closed.subscribe((result: any) => {
+      if (result?.success) {
+        this.loadBudgetData();
       }
     });
   }
 
-  editBudget(budget: BudgetWithUsage): void {
-    const category = this.storageService.getCategories().find(c => c.id === budget.categoryId);
-
+  editBudget(budget: Budget): void {
     this.dialogService.open(SetBudgetDialogComponent, {
       title: 'Edit Budget',
-      width: '500px',
+      width: '600px',
       data: {
-        category,
-        month: this.currentMonth,
-        year: this.currentYear,
-        budgetId: budget.id,
-        currentLimit: budget.limit
+        budget,
+        categories: this.categories
+      }
+    }).closed.subscribe((result: any) => {
+      if (result?.success) {
+        this.loadBudgetData();
       }
     });
   }
 
-  deleteBudget(budget: BudgetWithUsage): void {
-    if (confirm(`Are you sure you want to remove the budget for "${budget.categoryName}"?`)) {
-      this.storageService.deleteBudget(budget.id);
+  deleteBudget(budget: Budget): void {
+    if (confirm(`Are you sure you want to remove the budget "${budget.name}"?`)) {
+      this.storageService.deleteBudget(budget.id).subscribe({
+        next: () => {
+          this.loadBudgetData();
+        },
+        error: (error) => {
+          alert('Failed to delete budget. Please try again.');
+          console.error('Delete error:', error);
+        }
+      });
     }
   }
 }

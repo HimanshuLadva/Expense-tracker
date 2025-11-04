@@ -43,33 +43,39 @@ The application uses BehaviorSubject for reactive state management:
 ## Budget Management System
 
 ### Budget Structure
-- **Monthly Budgets**: Each category can have different budget limits per month (month + year combination)
-- **Budget Model**: Budget entity with categoryId, month, year, limit, and timestamps
+- **Named Budgets**: Flexible budgets with custom names for easy identification
+- **Multi-Category Tracking**: Single budget can monitor spending across multiple categories simultaneously
+- **Flexible Periods**: Support for monthly, weekly, yearly, and custom date range budgets
+- **Date Range Definition**: Explicit start and end dates for precise budget planning
+- **Active Status Management**: Budgets can be marked active or inactive without deletion
+- **Budget Model**: Budget entity with id, name, amount, period, categories array, startDate, endDate, isActive, and timestamps
 
 ### Budget Tracking
-- **Real-time Tracking**: Automatic calculation of spent amounts from expense transactions
-- **Historical Data**: Includes previous spending when setting budgets mid-month
-- **Usage Calculation**: Spent = sum of expense transactions for category in current month
-- **Progress Indicators**: Visual progress bars showing percentage of budget used
-- **Dynamic Sections**: Categories move between "Budgeted" and "Not Budgeted" sections based on budget status
+- **Real-time Tracking**: Automatic calculation of spent amounts from expense transactions across all assigned categories
+- **Date Range Filtering**: Spending calculated only for transactions within budget date range
+- **Multi-Category Aggregation**: Sums expenses from all categories assigned to the budget
+- **Usage Calculation**: Spent = sum of expense transactions for all budget categories within date range
+- **Progress Indicators**: Visual progress bars showing percentage of budget used with over-budget warnings
+- **Percentage Tracking**: Real-time calculation of budget utilization percentage
 
-## Data Persistence Strategy (Hybrid)
+## Data Persistence Strategy
 
 ### Backend API (REST)
+All entities are now fully backed by the backend REST API with complete CRUD operations:
+
 - **Accounts**: Full CRUD via AccountApiService
 - **Categories**: Full CRUD via CategoryApiService
 - **Reminders**: Full CRUD via ReminderApiService with date range filtering
 - **Transactions**: Full CRUD via TransactionApiService with date range filtering
-
-### Local Storage
-- **Budgets**: Stored in localStorage (localStorage key: 'expense_tracker_budgets')
+- **Budgets**: Full CRUD via BudgetApiService with date range filtering and multi-category support
 
 ### StorageService Pattern
-- **Bridge Role**: Acts as bridge between components and both localStorage and API services
-- **Single Interface**: Components interact only with StorageService
-- **Observable Return**: API operations return Observable for async handling
-- **Reactive Streams**: BehaviorSubject maintained for both API-backed and localStorage entities
+- **Bridge Role**: Acts as unified interface between components and API services
+- **Single Interface**: Components interact only with StorageService, never directly with API services
+- **Observable Return**: All API operations return Observable for async handling
+- **Reactive Streams**: BehaviorSubject maintained for all entities to enable reactive UI updates
 - **Component Responsibility**: Components reload data after CRUD operations with their specific filter parameters
+- **No Local Storage**: All data persistence handled by backend database for consistency and scalability
 
 ## Data Loading Patterns
 

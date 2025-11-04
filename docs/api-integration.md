@@ -18,6 +18,7 @@ This document contains detailed patterns for integrating with the backend REST A
 - **Production Config**: environment.prod.ts contains production API URL
 - **Current API Host**: https://localhost:44319 (HTTPS with specific port)
 - **Usage Pattern**: Import environment in API services, use `environment.apiUrl` for base URL
+- **Important**: Verify API URL matches your backend server configuration before testing. Update environment.ts if backend runs on different port or protocol
 
 ## API Request/Response Interfaces
 
@@ -47,7 +48,7 @@ This document contains detailed patterns for integrating with the backend REST A
 - **RemindersComponent**: Calls loadReminders() only
 - **DashboardComponent**: Calls loadAccounts(), loadCategories(), loadReminders(), and loadTransactions()
 - **TransactionsComponent**: Calls loadAccounts(), loadCategories(), and loadTransactions()
-- **BudgetComponent**: Calls loadCategories() and loadTransactions()
+- **BudgetComponent**: Calls loadBudgets(), loadCategories(), and loadTransactions()
 - **TransactionDialogComponent**: Calls loadAccounts() and loadCategories() when dialog opens, uses getById() for edit mode
 - **Dialog Components**: AccountDialog, CategoryDialog, ReminderDialog work with parent's loaded data
 
@@ -157,6 +158,16 @@ This document contains detailed patterns for integrating with the backend REST A
 - API expects ISO 8601 date format
 - ReminderApiService handles Date ↔ ISO string conversion
 - Use direct string concatenation for date parameters to avoid timezone issues
+
+### Budget-Specific
+- GetAll/GetActive accept optional fromDate and toDate for filtering
+- Budget model supports multi-category tracking (categories array field)
+- Period field uses string literal type for monthly, weekly, yearly, or custom
+- Start and end dates define flexible budget periods beyond simple monthly tracking
+- Active/inactive status allows temporary budget disabling without deletion
+- Create request includes name, amount, period, categories array, and date range
+- Update request includes all fields plus isActive boolean for status toggling
+- Frontend calculates spending across all assigned categories within date range
 
 ## Entity Migration from localStorage to API
 

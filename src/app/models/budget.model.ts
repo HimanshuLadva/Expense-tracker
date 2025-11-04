@@ -1,28 +1,42 @@
 export interface Budget {
   id: number;
-  categoryId: number;
-  month: number; // 1-12
-  year: number;
-  limit: number;
+  name: string;
+  amount: number;
+  period: 'monthly' | 'weekly' | 'yearly' | 'custom';
+  categories: number[]; // Array of category IDs
+  startDate: Date;
+  endDate: Date;
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
+export interface GetBudgetsRequest {
+  fromDate?: string;
+  toDate?: string;
+}
+
 export interface CreateBudgetRequest {
-  categoryId: number;
-  month: number;
-  year: number;
-  limit: number;
+  name: string;
+  amount: number;
+  period: 'monthly' | 'weekly' | 'yearly' | 'custom';
+  categories: number[];
+  startDate: string; // ISO string format
+  endDate: string; // ISO string format
 }
 
 export interface UpdateBudgetRequest {
   id: number;
-  limit: number;
+  name: string;
+  amount: number;
+  period: 'monthly' | 'weekly' | 'yearly' | 'custom';
+  categories: number[];
+  startDate: string; // ISO string format
+  endDate: string; // ISO string format
+  isActive: boolean;
 }
 
 export interface BudgetWithUsage extends Budget {
-  categoryName: string;
-  categoryIcon: string;
   spent: number;
   remaining: number;
   percentageUsed: number;
