@@ -45,16 +45,18 @@ The application uses BehaviorSubject for reactive state management:
 ### Budget Structure
 - **Named Budgets**: Flexible budgets with custom names for easy identification
 - **Multi-Category Tracking**: Single budget can monitor spending across multiple categories simultaneously
-- **Flexible Periods**: Support for monthly, weekly, yearly, and custom date range budgets
+- **Flexible Periods**: Support for weekly, monthly, quarterly, yearly, and custom date range budgets
+- **Period Order**: Periods arranged from shortest to longest duration (weekly → monthly → quarterly → yearly → custom)
 - **Date Range Definition**: Explicit start and end dates for precise budget planning
 - **Active Status Management**: Budgets can be marked active or inactive without deletion
 - **Budget Model**: Budget entity with id, name, amount, period, categories array, startDate, endDate, isActive, and timestamps
 
 ### Budget Tracking
 - **Real-time Tracking**: Automatic calculation of spent amounts from expense transactions across all assigned categories
-- **Date Range Filtering**: Spending calculated only for transactions within budget date range
+- **Budget-Specific Date Range**: Spending calculated using each budget's own startDate and endDate, not the page filter date range
+- **Isolated Calculation**: Each budget tracks spending independently within its defined period boundaries
 - **Multi-Category Aggregation**: Sums expenses from all categories assigned to the budget
-- **Usage Calculation**: Spent = sum of expense transactions for all budget categories within date range
+- **Usage Calculation**: Spent = sum of expense transactions for all budget categories within budget's startDate to endDate
 - **Progress Indicators**: Visual progress bars showing percentage of budget used with over-budget warnings
 - **Percentage Tracking**: Real-time calculation of budget utilization percentage
 

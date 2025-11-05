@@ -70,8 +70,9 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               [class.error]="budgetForm.get('period')?.invalid && budgetForm.get('period')?.touched"
             >
               <option value="">Select period</option>
-              <option value="monthly">Monthly</option>
               <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
               <option value="yearly">Yearly</option>
               <option value="custom">Custom</option>
             </select>

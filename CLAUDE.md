@@ -179,8 +179,10 @@ src/environments/
 ### Budget Management
 - **Named Budgets**: Flexible budget system with custom names, amounts, and date ranges
 - **Multi-Category Support**: Single budget can track spending across multiple categories simultaneously
-- **Period Types**: Support for monthly, weekly, yearly, and custom period budgets
+- **Period Types**: Support for weekly, monthly, quarterly, yearly, and custom period budgets
+- **Period Ordering**: Arranged from shortest to longest duration for intuitive selection
 - **Date Range Tracking**: Budgets have explicit start and end dates for flexible planning
+- **Budget-Specific Calculation**: Each budget tracks spending using its own date range, not page filter dates
 - **Active/Inactive Status**: Budgets can be toggled active or inactive without deletion
 - **Real-time Tracking**: Automatic calculation of spent amounts from expense transactions across all assigned categories
 - **Progress Indicators**: Visual progress bars showing percentage of budget used with over-budget warnings

@@ -582,15 +582,16 @@ export class BudgetComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const startDate = new Date(fromDate);
-    const endDate = new Date(toDate);
-    endDate.setHours(23, 59, 59, 999);
-
     this.budgetsWithUsage = budgets
       .filter(b => b.isActive)
       .map(budget => {
-        // Calculate spent amount for all categories in this budget within the date range
-        const spent = this.calculateSpent(budget.categories, transactions, startDate, endDate);
+        // Use budget's own start and end dates for calculating spent amount
+        const budgetStartDate = new Date(budget.startDate);
+        const budgetEndDate = new Date(budget.endDate);
+        budgetEndDate.setHours(23, 59, 59, 999);
+
+        // Calculate spent amount for all categories in this budget within the budget's date range
+        const spent = this.calculateSpent(budget.categories, transactions, budgetStartDate, budgetEndDate);
         const remaining = budget.amount - spent;
         const percentageUsed = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
 

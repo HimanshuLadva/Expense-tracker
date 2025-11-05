@@ -2,7 +2,7 @@ export interface Budget {
   id: number;
   name: string;
   amount: number;
-  period: 'monthly' | 'weekly' | 'yearly' | 'custom';
+  period: 'monthly' | 'weekly' | 'quarterly' | 'yearly' | 'custom';
   categories: number[]; // Array of category IDs
   startDate: Date;
   endDate: Date;
@@ -19,7 +19,7 @@ export interface GetBudgetsRequest {
 export interface CreateBudgetRequest {
   name: string;
   amount: number;
-  period: 'monthly' | 'weekly' | 'yearly' | 'custom';
+  period: 'monthly' | 'weekly' | 'quarterly' | 'yearly' | 'custom';
   categories: number[];
   startDate: string; // ISO string format
   endDate: string; // ISO string format
@@ -29,7 +29,7 @@ export interface UpdateBudgetRequest {
   id: number;
   name: string;
   amount: number;
-  period: 'monthly' | 'weekly' | 'yearly' | 'custom';
+  period: 'monthly' | 'weekly' | 'quarterly' | 'yearly' | 'custom';
   categories: number[];
   startDate: string; // ISO string format
   endDate: string; // ISO string format

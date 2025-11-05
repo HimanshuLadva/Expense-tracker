@@ -78,10 +78,12 @@ This document contains key lessons learned and proven patterns from implementati
 - **Two-Column Layout**: Desktop shows 2 columns, mobile stacks to single column for responsiveness
 
 #### Budget Date Range and Period Handling
-- **Four Period Types**: Support for monthly, weekly, yearly, and custom date range budgets
+- **Five Period Types**: Support for weekly, monthly, quarterly, yearly, and custom date range budgets
+- **Period Ordering**: Arranged from shortest to longest duration for intuitive user experience
 - **Explicit Date Ranges**: Start and end dates provide flexibility beyond fixed monthly periods
 - **Filter Integration**: Budget API accepts date range filters to load relevant budgets for selected period
-- **Spending Calculation**: Frontend aggregates expenses across all budget categories within date range
+- **Budget-Specific Calculation**: Each budget calculates spending using its own startDate/endDate, not page filter range
+- **Isolated Budget Tracking**: Critical fix ensuring budgets only track transactions within their defined period boundaries
 - **Date Concatenation**: Used timezone-safe string concatenation for API date parameters
 
 #### Active Status Management
@@ -119,6 +121,13 @@ This document contains key lessons learned and proven patterns from implementati
 - **User Experience**: Loading indicator provides feedback during API fetch operations
 - **Error Handling**: Dialog closes gracefully with error message if GetById fails
 
+### Budget Calculation Logic (2025-11)
+- **Critical Bug Fixed**: Budget spending calculation was incorrectly using page filter date range instead of budget's own date range
+- **Root Cause**: calculateBudgetUsage method was passing form's fromDate/toDate to calculateSpent instead of budget.startDate/endDate
+- **Correct Pattern**: Each budget must calculate spending using its own startDate and endDate properties
+- **Impact**: Ensures accurate spending tracking for budgets with different date ranges displayed on the same page
+- **Lesson Learned**: When calculating entity-specific metrics, always use the entity's own date boundaries, not external filter ranges
+
 ## Proven Patterns
 
 ### What Works Well
@@ -143,6 +152,7 @@ This document contains key lessons learned and proven patterns from implementati
 - **Automatic Service Reload**: Services should not auto-reload, let components control when to reload
 - **Loading Transactions Without Date Range**: Never call loadTransactions without fromDate and toDate parameters
 - **TypeScript Workarounds**: Don't use type assertions or non-null operators - use proper type narrowing patterns
+- **Using Filter Date Range for Entity Calculations**: When calculating metrics for entities with their own date ranges (like budgets), use the entity's date properties, not the page filter dates
 
 ## Architectural Decisions
 
