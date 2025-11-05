@@ -18,8 +18,14 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
     </div>
 
     <div class="dialog-content">
-      <form [formGroup]="budgetForm" (ngSubmit)="onSubmit()" class="budget-dialog-form">
-        <div class="form-fields">
+      @if (isLoading) {
+        <div class="loading-state">
+          <div class="loading-spinner"></div>
+          <p>Loading budget data...</p>
+        </div>
+      } @else {
+        <form [formGroup]="budgetForm" (ngSubmit)="onSubmit()" class="budget-dialog-form">
+          <div class="form-fields">
           <div class="form-group">
             <label for="name" class="label">Budget Name *</label>
             <input
@@ -154,9 +160,40 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           </button>
         </div>
       </form>
+      }
     </div>
   `,
   styles: [`
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem;
+      min-height: 200px;
+
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f4f6;
+        border-top: 4px solid #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 1rem;
+      }
+
+      p {
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin: 0;
+      }
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     .budget-dialog-form {
       display: flex;
       flex-direction: column;
@@ -391,6 +428,7 @@ export class SetBudgetDialogComponent implements OnInit {
   budgetForm: FormGroup;
   isEditMode = false;
   isSubmitting = false;
+  isLoading = false;
   categories: Category[] = [];
   selectedCategories: number[] = [];
   budget?: Budget;
@@ -408,19 +446,32 @@ export class SetBudgetDialogComponent implements OnInit {
     if (this.data) {
       this.categories = this.data.categories || [];
 
-      if (this.data.budget) {
-        // Edit mode
+      if (this.data.budget && this.data.budget.id) {
+        // Edit mode - fetch fresh data from API
         this.isEditMode = true;
-        this.budget = this.data.budget;
-        this.selectedCategories = [...this.budget.categories];
+        this.isLoading = true;
 
-        this.budgetForm.patchValue({
-          name: this.budget.name,
-          amount: this.budget.amount,
-          period: this.budget.period,
-          startDate: this.formatDateForInput(this.budget.startDate),
-          endDate: this.formatDateForInput(this.budget.endDate),
-          isActive: this.budget.isActive
+        this.storageService.getBudgetById(this.data.budget.id).subscribe({
+          next: (budget) => {
+            this.budget = budget;
+            this.selectedCategories = [...budget.categories];
+
+            this.budgetForm.patchValue({
+              name: budget.name,
+              amount: budget.amount,
+              period: budget.period,
+              startDate: this.formatDateForInput(budget.startDate),
+              endDate: this.formatDateForInput(budget.endDate),
+              isActive: budget.isActive
+            });
+            this.isLoading = false;
+          },
+          error: (error) => {
+            console.error('Error loading budget:', error);
+            alert('Failed to load budget data. Please try again.');
+            this.isLoading = false;
+            this.dialogRef.close();
+          }
         });
       } else {
         // Create mode - set default dates to current month

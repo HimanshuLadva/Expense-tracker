@@ -105,6 +105,8 @@ src/environments/
 - **Observable Pattern**: API operations return Observable for async handling
 - **Component Reload**: Components explicitly reload data after CRUD operations with their filter parameters
 - **No Service Init Loading**: Do NOT load data in service constructor
+- **GetById for Edit Mode**: All edit dialogs must fetch fresh data via GetById API endpoint to prevent stale edits
+- **Server-Side Filtering Required**: ALL loadTransactions calls MUST include fromDate and toDate parameters for performance
 
 ### Form Handling Standards
 - **Form Type**: Reactive forms with FormBuilder and validators
@@ -118,6 +120,8 @@ src/environments/
 - **Size Management**: 600px default width, 650px for complex forms, 85vh max height
 - **Mobile Responsive**: 90vw max width with adjusted padding
 - **Result Handling**: Consistent DialogResult interface with success/data properties
+- **Edit Mode Data Fetching**: Always call getEntityById API in edit mode, show loading state during fetch
+- **Loading States**: Use isLoading flag with spinner for API fetch operations in dialogs
 
 ### State Management Best Practices
 - **Subscription Management**: Manual subscription cleanup in OnDestroy
@@ -144,6 +148,7 @@ src/environments/
 - **No Any Types**: Explicit typing for all data structures
 - **Interface First**: Define interfaces before implementation
 - **Consistent Imports**: Barrel exports for clean import statements
+- **Optional Property Pattern**: Use local constants inside if blocks when accessing optional properties to satisfy TypeScript strict null checking
 
 ## Essential Patterns Reference
 

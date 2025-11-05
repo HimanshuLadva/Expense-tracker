@@ -575,6 +575,13 @@ export class StorageService {
   }
 
   /**
+   * Get budget by ID via API
+   */
+  getBudgetById(id: number): Observable<Budget> {
+    return this.budgetApiService.getById(id);
+  }
+
+  /**
    * Create new budget via API
    */
   createBudget(request: any): Observable<Budget> {

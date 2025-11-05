@@ -96,6 +96,28 @@ This document contains key lessons learned and proven patterns from implementati
 - **No Local Storage**: Eliminated all localStorage dependencies for data persistence
 - **Consistent Architecture**: Uniform API integration patterns across all entities
 - **Scalability Achieved**: Application ready for multi-user environments with backend data source
+- **GetById Universal Coverage**: All entities now have getEntityById methods in StorageService for edit mode data fetching
+
+### TypeScript Strict Mode Patterns (2025-01)
+- **Optional Property Access**: When accessing optional properties inside if blocks, TypeScript strict null checking may still flag errors
+- **Local Constant Solution**: Create local constant from the checked property to satisfy TypeScript type narrowing
+- **Pattern Application**: Applied to budget dialog when accessing this.budget properties after checking this.data.budget exists
+- **Compilation Success**: Fixed TS2532 "Object is possibly 'undefined'" errors without disabling strict mode
+
+### Server-Side Filtering Enforcement (2025-01)
+- **Transaction Loading Issue**: BudgetComponent was calling loadTransactions without date range parameters
+- **Performance Impact**: Loading all transactions from backend is inefficient and slow
+- **Enforcement Rule**: ALL components loading transactions must ALWAYS include fromDate and toDate parameters
+- **Three Components Affected**: Dashboard, Transactions, and Budget pages all must use loadTransactionsWithDateRange pattern
+- **No Exceptions**: Never acceptable to call loadTransactions without date filters - this is a performance-critical requirement
+- **Method Pattern**: Create private loadTransactionsWithDateRange method in each component that uses transactions
+
+### Edit Dialog Data Fetching (2025-01)
+- **Budget GetById Implementation**: Completed GetById pattern for budget edit dialogs
+- **Loading State Required**: All edit dialogs must show loading spinner while fetching fresh data from API
+- **Universal Coverage**: All five entities now support GetById API endpoint and loading states in edit dialogs
+- **User Experience**: Loading indicator provides feedback during API fetch operations
+- **Error Handling**: Dialog closes gracefully with error message if GetById fails
 
 ## Proven Patterns
 
@@ -107,6 +129,8 @@ This document contains key lessons learned and proven patterns from implementati
 - **Gradual Migration Strategy**: Successfully migrated all entities from localStorage to API without breaking features
 - **Environment Configuration**: Easy dev/prod API URL switching
 - **Multi-Category Budgets**: Flexible budget system provides better real-world financial tracking
+- **GetById for Edit Mode**: Prevents stale edits, ensures data consistency, standard across all entities
+- **Server-Side Filtering**: Dramatically improves performance for transaction-heavy operations
 
 ### Common Pitfalls to Avoid
 - **Service Constructor Loading**: Causes unnecessary duplicate API calls
@@ -117,6 +141,8 @@ This document contains key lessons learned and proven patterns from implementati
 - **No Debouncing**: Creates excessive API calls during user input
 - **Using Cached Data in Edit Mode**: Always fetch fresh data via GetById when editing
 - **Automatic Service Reload**: Services should not auto-reload, let components control when to reload
+- **Loading Transactions Without Date Range**: Never call loadTransactions without fromDate and toDate parameters
+- **TypeScript Workarounds**: Don't use type assertions or non-null operators - use proper type narrowing patterns
 
 ## Architectural Decisions
 

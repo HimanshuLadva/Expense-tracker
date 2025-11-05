@@ -488,9 +488,8 @@ export class BudgetComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Load categories and transactions from API when budget page is accessed
+    // Load categories from API when budget page is accessed
     this.storageService.loadCategories();
-    this.storageService.loadTransactions();
 
     // Initialize date range form with values from service
     const currentRange = this.dateRangeService.getCurrentDateRange();
@@ -500,10 +499,14 @@ export class BudgetComponent implements OnInit, OnDestroy {
       toDate: [currentRange.toDate]
     });
 
+    // Load transactions with initial date range
+    this.loadTransactionsWithDateRange();
+
     // Listen to date range changes and update service
     this.subscription.add(
       this.dateRangeForm.valueChanges.subscribe((value) => {
         this.dateRangeService.updateDateRange(value);
+        this.loadTransactionsWithDateRange();
         this.loadBudgetData();
       })
     );
@@ -512,6 +515,7 @@ export class BudgetComponent implements OnInit, OnDestroy {
     this.subscription.add(
       this.dateRangeService.dateRange$.subscribe((dateRange) => {
         this.dateRangeForm.patchValue(dateRange, { emitEvent: false });
+        this.loadTransactionsWithDateRange();
         this.loadBudgetData();
       })
     );
@@ -542,6 +546,19 @@ export class BudgetComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+  }
+
+  private loadTransactionsWithDateRange(): void {
+    const { fromDate, toDate } = this.dateRangeForm.value;
+    if (!fromDate || !toDate) return;
+
+    // Load transactions with date range filter for server-side filtering
+    const request = {
+      fromDate: `${fromDate}T00:00:00.000Z`,
+      toDate: `${toDate}T23:59:59.999Z`
+    };
+
+    this.storageService.loadTransactions(request);
   }
 
   private loadBudgetData(): void {

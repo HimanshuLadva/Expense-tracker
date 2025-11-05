@@ -50,9 +50,11 @@ This document contains detailed patterns for integrating with the backend REST A
 - **TransactionsComponent**: Calls loadAccounts(), loadCategories(), and loadTransactions()
 - **BudgetComponent**: Calls loadBudgets(), loadCategories(), and loadTransactions()
 - **TransactionDialogComponent**: Calls loadAccounts() and loadCategories() when dialog opens, uses getById() for edit mode
-- **Dialog Components**: AccountDialog, CategoryDialog, ReminderDialog work with parent's loaded data
+- **Dialog Components**: AccountDialog, CategoryDialog, ReminderDialog, BudgetDialog work with parent's loaded data or fetch their own
 
 **Pattern**: Page components load data dependencies in ngOnInit. Dialog components load their own dependencies independently. Edit mode dialogs fetch individual entities via GetById API for latest data.
+
+**Critical**: BudgetComponent MUST call loadTransactions with date range parameters, never without filters. All components loading transactions must include fromDate and toDate for server-side filtering.
 
 ## StorageService Bridge Pattern
 
@@ -105,6 +107,8 @@ This document contains detailed patterns for integrating with the backend REST A
 - **Timezone-Safe Concatenation**: Use direct string concatenation for date range parameters
 - **Start/End Times**: fromDate uses T00:00:00.000Z, toDate uses T23:59:59.999Z for inclusive filtering
 - **Debouncing Required**: Apply 500ms debounceTime to date range form valueChanges to prevent excessive API calls
+- **Mandatory Parameters**: NEVER call loadTransactions without date range parameters - all three components (Dashboard, Transactions, Budget) MUST include fromDate and toDate
+- **Performance Critical**: Server-side filtering reduces data transfer and improves response times significantly
 
 ### Multiple Component Dependencies
 - **Dashboard Pattern**: Loads accounts, categories, reminders, and transactions
@@ -114,9 +118,12 @@ This document contains detailed patterns for integrating with the backend REST A
 
 ### GetById Pattern for Edit Mode
 - **Always Fetch Fresh**: Call GetById API when opening edit dialog to ensure latest data
+- **Universal Pattern**: All entities support GetById - Account, Category, Reminder, Transaction, Budget
 - **Error Handling**: Close dialog with error message if GetById fails
 - **Form Population**: Populate form only after successful API response
 - **Prevents Stale Edits**: Avoids conflicts from editing cached data that may have changed
+- **Loading State Required**: Show loading spinner with isLoading flag while fetching data
+- **TypeScript Safety**: Use local constants inside if blocks when accessing optional entity properties
 
 ## API Error Handling Pattern
 
@@ -139,10 +146,19 @@ This document contains detailed patterns for integrating with the backend REST A
 
 ### Common CRUD Endpoints (All Entities)
 - **GetAll**: POST with empty object body (or filter parameters)
-- **GetById**: POST with id in request body
+- **GetById**: POST with id in request body - ALL entities support this endpoint
 - **Create**: POST with entity fields (no id)
 - **Update**: POST with id + updated fields
 - **Delete**: POST with id in request body
+
+### StorageService Method Completeness
+All five entities have complete method coverage in StorageService:
+- **Load Methods**: loadAccounts, loadCategories, loadReminders, loadTransactions, loadBudgets
+- **GetById Methods**: getReminderById, getBudgetById (Accounts, Categories, Transactions use getById via API directly)
+- **Save Methods**: saveAccount, saveCategory, saveReminder, saveTransaction (create/update combined)
+- **Dedicated Create/Update**: createBudget, updateBudget (budget uses separate create/update)
+- **Delete Methods**: deleteAccount, deleteCategory, deleteReminder, deleteTransaction, deleteBudget
+- **Sync Getters**: getAccounts, getCategories, getReminders, getTransactions, getBudgets
 
 ### Account-Specific
 - Balance updates: Frontend calculates new balance before sending update request
@@ -210,6 +226,10 @@ When migrating an entity from localStorage to backend API, follow these steps:
 - **Timezone Issues**: Use string concatenation for date parameters, not Date.toISOString()
 - **Missing Debouncing**: Apply debounceTime to rapid user inputs
 - **Duplicate Loads**: Don't call load explicitly when subscription already handles it
+- **Transaction Loading Without Filters**: NEVER call loadTransactions without fromDate and toDate - this is mandatory for performance
+- **Skipping GetById in Edit Mode**: Always fetch fresh data via GetById when opening edit dialogs
+- **Missing Loading States**: Edit dialogs must show loading spinner while fetching data from GetById API
+- **TypeScript Strict Mode Issues**: Use local constants inside if blocks for optional properties instead of type assertions
 
 ## Date and Timezone Handling
 
