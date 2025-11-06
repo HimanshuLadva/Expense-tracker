@@ -444,6 +444,11 @@ export class SetBudgetDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Subscribe to period changes to auto-populate dates
+    this.budgetForm.get('period')?.valueChanges.subscribe((period) => {
+      this.updateDatesBasedOnPeriod(period);
+    });
+
     if (this.data) {
       this.categories = this.data.categories || [];
 
@@ -506,6 +511,58 @@ export class SetBudgetDialogComponent implements OnInit {
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private updateDatesBasedOnPeriod(period: string): void {
+    if (!period) return;
+
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (period) {
+      case 'weekly':
+        // Start Date: current date, End Date: current date + 7 days
+        startDate = new Date(now);
+        endDate = new Date(now);
+        endDate.setDate(endDate.getDate() + 7);
+        break;
+
+      case 'monthly':
+        // Start Date: current month start, End Date: current month end
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        break;
+
+      case 'quarterly':
+        // Start Date: current month start, End Date: start date + 3 months
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + 3);
+        endDate.setDate(endDate.getDate() - 1); // Last day of the 3rd month
+        break;
+
+      case 'yearly':
+        // Start Date: current month start, End Date: start date + 12 months
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        endDate = new Date(startDate);
+        endDate.setMonth(endDate.getMonth() + 12);
+        endDate.setDate(endDate.getDate() - 1); // Last day of the 12th month
+        break;
+
+      case 'custom':
+        // Don't auto-update dates for custom period
+        return;
+
+      default:
+        return;
+    }
+
+    // Update form with calculated dates
+    this.budgetForm.patchValue({
+      startDate: this.formatDateForInput(startDate),
+      endDate: this.formatDateForInput(endDate)
+    }, { emitEvent: false });
   }
 
   isCategorySelected(categoryId: number): boolean {
