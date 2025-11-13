@@ -74,6 +74,19 @@
   padding: 0.75rem 1.5rem 1.5rem 1.5rem;
   overflow-y: auto;
   background-color: #f8f9fa;
+
+  &.full-width {
+    padding: 0;
+    width: 100%;
+  }
+}
+
+.app-container.auth-layout {
+  background-color: transparent;
+
+  .main-content {
+    background-color: transparent;
+  }
 }
 
 @media (max-width: 768px) {

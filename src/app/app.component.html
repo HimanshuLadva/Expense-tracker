@@ -1,5 +1,5 @@
-<div class="app-container">
-  <nav class="sidebar">
+<div class="app-container" [class.auth-layout]="!showSidebar">
+  <nav class="sidebar" *ngIf="showSidebar">
     <div class="sidebar-header">
       <a routerLink="/dashboard"><h2>Expense Tracker</h2></a>
     </div>
@@ -43,7 +43,7 @@
     </ul>
   </nav>
 
-  <main class="main-content">
+  <main class="main-content" [class.full-width]="!showSidebar">
     <router-outlet />
   </main>
 </div>

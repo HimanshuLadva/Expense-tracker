@@ -3,3 +3,4 @@ export * from './category.model';
 export * from './transaction.model';
 export * from './reminder.model';
 export * from './budget.model';
+export * from './user.model';

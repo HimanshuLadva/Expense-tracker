@@ -1,7 +1,8 @@
 # Expense Tracker - Frontend Data Models, Services & API Specification
 
-> **Document Version**: 1.0
+> **Document Version**: 1.1
 > **Date**: January 2025
+> **Last Updated**: January 2025 (Added Authentication Module)
 > **Project**: Angular 19 Expense Tracker Application
 
 ---
@@ -33,17 +34,104 @@ This document provides comprehensive documentation of the Expense Tracker fronte
 
 ### Key Features
 
-- Account management with automatic balance calculation
-- Transaction tracking (Income, Expense, Transfer)
-- Category-based organization
-- Monthly budget management with real-time tracking
-- Financial reminders with date-based notifications
-- Date range filtering across time-based pages
-- Reactive data synchronization
+- **User Authentication**: Secure signup and login with SHA256 password hashing
+- **Account Management**: Automatic balance calculation with transaction effects
+- **Transaction Tracking**: Income, Expense, and Transfer operations
+- **Category Organization**: Income and expense categorization
+- **Budget Management**: Monthly budget tracking with real-time spending calculations
+- **Financial Reminders**: Date-based notifications with customizable windows
+- **Date Range Filtering**: Synchronized filtering across time-based pages
+- **Reactive Data Synchronization**: BehaviorSubject-based state management
 
 ---
 
 ## Data Models
+
+### 0. User & Authentication Models
+
+**Purpose**: User registration, authentication, and session management
+
+#### User Model
+
+```typescript
+interface User {
+  id: string;                  // Unique identifier (UUID or generated ID)
+  username: string;            // Unique username (min 3 characters)
+  email: string;               // Unique email address
+  password: string;            // Hashed password (SHA256 with secret key)
+  createdAt: Date;             // Account creation timestamp
+  updatedAt: Date;             // Last modification timestamp
+}
+```
+
+#### Authentication DTOs
+
+**Signup Request**:
+```typescript
+interface SignupData {
+  username: string;            // Min 3 characters, unique
+  email: string;               // Valid email format, unique
+  password: string;            // Min 7 chars, 1 uppercase, 1 lowercase, 1 digit, 1 special char
+  confirmPassword: string;     // Must match password
+}
+```
+
+**Signup Response**:
+```typescript
+interface AuthResponse {
+  success: boolean;
+  message: string;
+  user?: Omit<User, 'password'>;  // User object without password
+  token?: string;                  // JWT token (for API-based auth)
+}
+```
+
+**Login Request**:
+```typescript
+interface LoginCredentials {
+  usernameOrEmail: string;     // Accept either username or email
+  password: string;            // Plain text password (hashed before comparison)
+}
+```
+
+**Login Response**:
+```typescript
+interface AuthResponse {
+  success: boolean;
+  message: string;
+  user?: Omit<User, 'password'>;  // User object without password
+  token?: string;                  // JWT token (for API-based auth)
+}
+```
+
+**Field Specifications**:
+
+| Field | Type | Required | Constraints | Notes |
+|-------|------|----------|-------------|-------|
+| `id` | string | Yes | Unique, UUID or timestamp | Auto-generated on server |
+| `username` | string | Yes | Min 3 chars, unique, alphanumeric | Case-sensitive |
+| `email` | string | Yes | Valid email format, unique | Case-insensitive |
+| `password` | string | Yes | Hashed (SHA256) | Never returned in responses |
+| `createdAt` | Date | Yes | ISO 8601 | Auto-generated on creation |
+| `updatedAt` | Date | Yes | ISO 8601 | Auto-updated on modification |
+
+**Password Requirements**:
+- Minimum 7 characters
+- At least 1 uppercase letter (A-Z)
+- At least 1 lowercase letter (a-z)
+- At least 1 digit (0-9)
+- At least 1 special character (!@#$%^&*)
+
+**Business Rules**:
+- Username must be unique (case-sensitive)
+- Email must be unique (case-insensitive comparison)
+- Passwords are hashed using SHA256 with secret key before storage
+- Current implementation uses localStorage with keys:
+  - `expense_tracker_users` - Array of all users
+  - `expense_tracker_current_user` - Currently logged-in user
+- Future API implementation will use JWT tokens for session management
+
+---
 
 ### 1. Account Model
 
@@ -412,6 +500,107 @@ interface DashboardStats {
 
 ## Service Architecture
 
+### 0. AuthService
+
+**Purpose**: User authentication, registration, and session management
+
+**Current Implementation**: localStorage-based with SHA256 password hashing
+**Future**: JWT-based API authentication
+
+**File**: `src/app/services/auth.service.ts`
+
+**Dependencies**:
+- `crypto-js` for SHA256 password hashing
+- `BehaviorSubject` for current user state management
+
+**Key Methods**:
+
+#### Authentication Operations
+```typescript
+signup(data: SignupData): AuthResponse
+login(credentials: LoginCredentials): AuthResponse
+logout(): void
+isLoggedIn(): boolean
+getCurrentUser(): Omit<User, 'password'> | null
+```
+
+#### Validation Operations
+```typescript
+isUsernameExists(username: string): boolean
+isEmailExists(email: string): boolean
+validatePasswordStrength(password: string): { valid: boolean; errors: string[] }
+```
+
+#### Internal Security Operations
+```typescript
+private hashPassword(password: string): string
+private verifyPassword(plainPassword: string, hashedPassword: string): boolean
+private generateId(): string
+```
+
+**Current User State**:
+```typescript
+private currentUserSubject = new BehaviorSubject<Omit<User, 'password'> | null>(null);
+public currentUser$ = this.currentUserSubject.asObservable();
+```
+
+**LocalStorage Keys**:
+- `expense_tracker_users` - Array of all registered users (with hashed passwords)
+- `expense_tracker_current_user` - Currently logged-in user object (without password)
+- `expense_tracker_secret_key` - Secret key for password hashing (auto-generated)
+
+**Security Implementation**:
+1. **Password Hashing**: SHA256 with application-specific secret key
+2. **Password Storage**: Only hashed passwords stored, never plain text
+3. **Uniqueness Checks**: Real-time validation for username and email
+4. **Session Management**: Current user stored in localStorage and BehaviorSubject
+
+**Password Validation Rules**:
+```typescript
+{
+  minLength: 7,
+  requireUppercase: true,
+  requireLowercase: true,
+  requireDigit: true,
+  requireSpecialChar: true,
+  allowedSpecialChars: '!@#$%^&*'
+}
+```
+
+**Response Patterns**:
+
+**Success Response**:
+```typescript
+{
+  success: true,
+  message: 'Registration successful',
+  user: {
+    id: '1234567890',
+    username: 'testuser',
+    email: 'test@example.com',
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }
+}
+```
+
+**Error Response**:
+```typescript
+{
+  success: false,
+  message: 'Username already exists'
+}
+```
+
+**Common Error Messages**:
+- `"Username already exists"`
+- `"Email already exists"`
+- `"Invalid username or password"`
+- `"Password does not meet requirements"`
+- `"Passwords do not match"`
+
+---
+
 ### 1. StorageService
 
 **Purpose**: Central data management service with reactive streams
@@ -563,6 +752,269 @@ interface DialogResult {
 **Authentication**: JWT Bearer token (future implementation)
 **Content-Type**: `application/json`
 **Date Format**: ISO 8601 (`YYYY-MM-DDTHH:mm:ss.sssZ`)
+
+---
+
+### 0. Authentication Endpoints
+
+#### POST /api/v1/auth/signup
+Register a new user account
+
+**Request Body**: `SignupData`
+```json
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "SecureP@ss123",
+  "confirmPassword": "SecureP@ss123"
+}
+```
+
+**Response**: `AuthResponse` (201 Created)
+```json
+{
+  "success": true,
+  "message": "Registration successful. Please login to continue.",
+  "user": {
+    "id": "1704096000000",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "createdAt": "2025-01-01T12:00:00.000Z",
+    "updatedAt": "2025-01-01T12:00:00.000Z"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Validation Rules**:
+- Username: Minimum 3 characters, unique (case-sensitive)
+- Email: Valid email format, unique (case-insensitive)
+- Password: Minimum 7 characters with complexity requirements
+- ConfirmPassword: Must match password field
+
+**Error Responses**:
+
+**400 Bad Request** - Validation Error:
+```json
+{
+  "success": false,
+  "message": "Username already exists"
+}
+```
+
+**422 Unprocessable Entity** - Password Requirements:
+```json
+{
+  "success": false,
+  "message": "Password does not meet requirements",
+  "errors": [
+    "At least 1 uppercase letter required",
+    "At least 1 special character required (!@#$%^&*)"
+  ]
+}
+```
+
+**Business Logic**:
+1. Validate all fields (required, format, constraints)
+2. Check username uniqueness (case-sensitive)
+3. Check email uniqueness (case-insensitive)
+4. Validate password strength
+5. Verify password confirmation matches
+6. Hash password using SHA256 with secret key
+7. Generate unique user ID
+8. Set timestamps (createdAt, updatedAt)
+9. Store user in database
+10. Generate JWT token (if using API-based auth)
+11. Return user object (without password) and token
+
+---
+
+#### POST /api/v1/auth/login
+Authenticate existing user
+
+**Request Body**: `LoginCredentials`
+```json
+{
+  "usernameOrEmail": "johndoe",
+  "password": "SecureP@ss123"
+}
+```
+
+**Alternative with Email**:
+```json
+{
+  "usernameOrEmail": "john@example.com",
+  "password": "SecureP@ss123"
+}
+```
+
+**Response**: `AuthResponse` (200 OK)
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "user": {
+    "id": "1704096000000",
+    "username": "johndoe",
+    "email": "john@example.com",
+    "createdAt": "2025-01-01T12:00:00.000Z",
+    "updatedAt": "2025-01-01T12:00:00.000Z"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Error Responses**:
+
+**401 Unauthorized** - Invalid Credentials:
+```json
+{
+  "success": false,
+  "message": "Invalid username or password"
+}
+```
+
+**Business Logic**:
+1. Accept username OR email in single field
+2. Search user by username first (case-sensitive)
+3. If not found, search by email (case-insensitive)
+4. Verify password hash matches stored hash
+5. Generate JWT token with user ID and expiration
+6. Return user object (without password) and token
+
+**Security Notes**:
+- Never reveal which field (username/email) was incorrect
+- Use generic "Invalid username or password" message
+- Implement rate limiting to prevent brute force attacks
+- Hash passwords using SHA256 with application secret key
+- JWT token should include: userId, username, issued time, expiration time
+
+---
+
+#### POST /api/v1/auth/logout
+Logout current user (client-side token removal)
+
+**Request Headers**:
+```
+Authorization: Bearer {token}
+```
+
+**Response**: (200 OK)
+```json
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+```
+
+**Business Logic**:
+- For localStorage implementation: Clear current user from storage
+- For JWT implementation: Client removes token (server can blacklist if needed)
+- Clear any cached user data
+- Redirect to login page
+
+---
+
+#### GET /api/v1/auth/me
+Get current authenticated user details
+
+**Request Headers**:
+```
+Authorization: Bearer {token}
+```
+
+**Response**: (200 OK)
+```json
+{
+  "id": "1704096000000",
+  "username": "johndoe",
+  "email": "john@example.com",
+  "createdAt": "2025-01-01T12:00:00.000Z",
+  "updatedAt": "2025-01-01T12:00:00.000Z"
+}
+```
+
+**Error Responses**:
+
+**401 Unauthorized**:
+```json
+{
+  "success": false,
+  "message": "Authentication required"
+}
+```
+
+**Business Logic**:
+- Verify JWT token is valid
+- Extract user ID from token
+- Fetch user from database
+- Return user object without password
+
+---
+
+#### POST /api/v1/auth/validate-username
+Check if username is available (for real-time validation)
+
+**Request Body**:
+```json
+{
+  "username": "johndoe"
+}
+```
+
+**Response**: (200 OK)
+```json
+{
+  "available": false,
+  "message": "Username already exists"
+}
+```
+
+**Or if available**:
+```json
+{
+  "available": true,
+  "message": "Username is available"
+}
+```
+
+**Business Logic**:
+- Perform case-sensitive username lookup
+- Return availability status
+- Used for real-time form validation in signup page
+
+---
+
+#### POST /api/v1/auth/validate-email
+Check if email is available (for real-time validation)
+
+**Request Body**:
+```json
+{
+  "email": "john@example.com"
+}
+```
+
+**Response**: (200 OK)
+```json
+{
+  "available": false,
+  "message": "Email already exists"
+}
+```
+
+**Or if available**:
+```json
+{
+  "available": true,
+  "message": "Email is available"
+}
+```
+
+**Business Logic**:
+- Perform case-insensitive email lookup
+- Return availability status
+- Used for real-time form validation in signup page
 
 ---
 
@@ -1585,24 +2037,53 @@ this.apiService.createTransaction(data).subscribe({
 
 This comprehensive specification provides everything needed to implement a backend API for the Expense Tracker application. The frontend is already structured with:
 
-✅ **Well-defined data models** with DTOs
+✅ **User Authentication Module** with secure signup/login functionality
+✅ **Well-defined data models** with complete DTOs for all entities
 ✅ **Reactive service patterns** ready for API integration
 ✅ **Consistent business logic** documented and tested
 ✅ **Clear separation of concerns** for easy migration
+✅ **Password Security** with SHA256 hashing and validation
+✅ **Real-time Form Validation** for authentication fields
 
 ### Next Steps
 
-1. **Backend Setup**: Choose technology stack (.NET Core web api, etc.)
+1. **Backend Setup**: Choose technology stack (.NET Core web api, Node.js, etc.)
 2. **Database Schema**: Create tables based on models with proper relationships
-3. **API Implementation**: Implement endpoints following this specification
-4. **Authentication**: Add JWT-based user authentication
-5. **Testing**: Write comprehensive tests for all endpoints
-6. **Frontend Migration**: Switch from StorageService to API service layer
-7. **Data Migration**: Export localStorage data and import to backend
-8. **Deployment**: Deploy backend API and update frontend
+   - User table with hashed password storage
+   - Account, Category, Transaction, Budget, Reminder tables
+   - Foreign key relationships (userId, accountId, categoryId)
+3. **Authentication Implementation**:
+   - Implement JWT-based authentication endpoints
+   - Password hashing with bcrypt or SHA256
+   - Token generation and validation
+   - Rate limiting for login attempts
+4. **API Implementation**: Implement all CRUD endpoints following this specification
+5. **Testing**: Write comprehensive tests for all endpoints including authentication flow
+6. **Frontend Migration**: Switch from localStorage to API service layer
+7. **Data Migration**: Export localStorage data and import to backend database
+8. **Deployment**: Deploy backend API and update frontend configuration
+
+### Authentication Module Status
+
+✅ **Completed Features**:
+- User registration with validation
+- Login with username OR email
+- Password strength requirements
+- Real-time uniqueness checks
+- SHA256 password hashing
+- Session management via localStorage
+- Responsive UI with modern design
+
+🚧 **Pending for Backend Integration**:
+- JWT token generation
+- Token-based session management
+- Password reset functionality
+- Email verification
+- Multi-factor authentication (optional)
+- OAuth integration (optional)
 
 ---
 
 **Document Maintained By**: Development Team
 **Last Updated**: January 2025
-**Version**: 1.0
+**Version**: 1.1 (Added Authentication Module)
