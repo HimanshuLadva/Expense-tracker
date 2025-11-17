@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { Account, Category, Transaction, Reminder, Budget, GetRemindersRequest, GetTransactionsRequest, GetBudgetsRequest } from '../models';
+import { Account, Category, Transaction, Reminder, Budget, User, GetRemindersRequest, GetTransactionsRequest, GetBudgetsRequest } from '../models';
 import { AccountApiService } from './account-api.service';
 import { CategoryApiService } from './category-api.service';
 import { ReminderApiService } from './reminder-api.service';
 import { TransactionApiService } from './transaction-api.service';
 import { BudgetApiService } from './budget-api.service';
+import { UserApiService } from './user-api.service';
 
 @Injectable({
   providedIn: 'root'
@@ -24,19 +25,22 @@ export class StorageService {
   private transactionsSubject = new BehaviorSubject<Transaction[]>([]);
   private remindersSubject = new BehaviorSubject<Reminder[]>([]);
   private budgetsSubject = new BehaviorSubject<Budget[]>([]);
+  private usersSubject = new BehaviorSubject<User[]>([]);
 
   public accounts$ = this.accountsSubject.asObservable();
   public categories$ = this.categoriesSubject.asObservable();
   public transactions$ = this.transactionsSubject.asObservable();
   public reminders$ = this.remindersSubject.asObservable();
   public budgets$ = this.budgetsSubject.asObservable();
+  public users$ = this.usersSubject.asObservable();
 
   constructor(
     private accountApiService: AccountApiService,
     private categoryApiService: CategoryApiService,
     private reminderApiService: ReminderApiService,
     private transactionApiService: TransactionApiService,
-    private budgetApiService: BudgetApiService
+    private budgetApiService: BudgetApiService,
+    private userApiService: UserApiService
   ) {}
 
   /**
@@ -638,6 +642,121 @@ export class StorageService {
     });
   }
 
+  /**
+   * Load users from API - call this from UserManagementComponent
+   */
+  loadUsers(): void {
+    this.userApiService.getAll().subscribe({
+      next: (users) => {
+        this.usersSubject.next(users);
+      },
+      error: (error) => {
+        console.error('Error loading users from API:', error);
+        this.usersSubject.next([]);
+      }
+    });
+  }
+
+  /**
+   * Get current users value (synchronous)
+   */
+  getUsers(): User[] {
+    return this.usersSubject.value;
+  }
+
+  /**
+   * Get user by ID via API
+   */
+  getUserById(id: number): Observable<User> {
+    return this.userApiService.getById(id);
+  }
+
+  /**
+   * Create new user via API
+   */
+  createUser(user: { username: string; email: string; password: string; isAdmin: boolean }): Observable<User> {
+    return new Observable(observer => {
+      const createRequest = {
+        username: user.username,
+        email: user.email,
+        password: user.password,
+        isAdmin: user.isAdmin
+      };
+
+      this.userApiService.create(createRequest).subscribe({
+        next: (newUser) => {
+          this.loadUsers(); // Refresh users list
+          observer.next(newUser);
+          observer.complete();
+        },
+        error: (error) => {
+          console.error('Error creating user:', error);
+          observer.error(error);
+        }
+      });
+    });
+  }
+
+  /**
+   * Update existing user via API
+   */
+  updateUser(user: { id: number; username: string; email: string; password?: string; isAdmin: boolean }): Observable<User> {
+    return new Observable(observer => {
+      const updateRequest = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        password: user.password,
+        isAdmin: user.isAdmin
+      };
+
+      this.userApiService.update(updateRequest).subscribe({
+        next: (updatedUser) => {
+          this.loadUsers(); // Refresh users list
+          observer.next(updatedUser);
+          observer.complete();
+        },
+        error: (error) => {
+          console.error('Error updating user:', error);
+          observer.error(error);
+        }
+      });
+    });
+  }
+
+  /**
+   * Delete user via API
+   */
+  deleteUser(id: number): Observable<void> {
+    return new Observable(observer => {
+      this.userApiService.delete(id).subscribe({
+        next: () => {
+          this.loadUsers(); // Refresh users list
+          observer.next();
+          observer.complete();
+        },
+        error: (error) => {
+          console.error('Error deleting user:', error);
+          observer.error(error);
+        }
+      });
+    });
+  }
+
+  /**
+   * Check if username is available
+   */
+  checkUsername(username: string, excludeUserId?: number): Observable<{ isAvailable: boolean; message?: string }> {
+    return this.userApiService.checkUsername({ username, excludeUserId });
+  }
+
+  /**
+   * Check if email is available
+   */
+  checkEmail(email: string, excludeUserId?: number): Observable<{ isAvailable: boolean; message?: string }> {
+    return this.userApiService.checkEmail({ email, excludeUserId });
+  }
+
   clearAllData(): void {
     Object.values(this.STORAGE_KEYS).forEach(key => {
       localStorage.removeItem(key);
@@ -648,5 +767,6 @@ export class StorageService {
     this.transactionsSubject.next([]);
     this.remindersSubject.next([]);
     this.budgetsSubject.next([]);
+    this.usersSubject.next([]);
   }
 }

@@ -9,7 +9,7 @@ Modern Angular 19 expense tracking application with comprehensive financial mana
 - **Module Organization**: Feature-based structure with lazy-loaded routes
 - **Component Pattern**: Standalone components with inline templates and styles
 - **State Management**: Service-based reactive patterns using BehaviorSubject
-- **Data Persistence**: Full Backend REST API integration - All entities (Accounts, Categories, Reminders, Transactions, Budgets) backed by backend API
+- **Data Persistence**: Full Backend REST API integration - All entities (Accounts, Categories, Reminders, Transactions, Budgets, Users) backed by backend API
 - **Backend Integration**: HTTP communication via dedicated API service layer
 - **Navigation**: Route-based lazy loading with dynamic imports
 
@@ -18,7 +18,7 @@ Modern Angular 19 expense tracking application with comprehensive financial mana
 src/app/
 ├── models/           # Data entities and DTOs with barrel exports
 ├── services/         # Business logic, state management, API services
-├── pages/           # Feature pages (dashboard, accounts, categories, transactions, budget, reminders)
+├── pages/           # Feature pages (dashboard, accounts, categories, transactions, budget, reminders, user-management)
 ├── shared/          # Reusable components (data-table, dialogs, page-header, icon-selector)
 ├── app.component.*  # Root component with navigation sidebar
 ├── app.config.ts    # Application configuration (includes HttpClient provider)
@@ -92,9 +92,9 @@ src/environments/
 - **Central Service**: StorageService as single source of truth for all data
 - **Reactive Streams**: BehaviorSubject for real-time UI updates
 - **Full API Integration**: All entities backed by backend REST API
-  - **Backend API**: Accounts, Categories, Reminders, Transactions, Budgets (via dedicated API services)
+  - **Backend API**: Accounts, Categories, Reminders, Transactions, Budgets, Users (via dedicated API services)
   - **No Local Storage**: All data persisted in backend database for consistency and scalability
-- **API Service Layer**: AccountApiService, CategoryApiService, ReminderApiService, TransactionApiService, BudgetApiService
+- **API Service Layer**: AccountApiService, CategoryApiService, ReminderApiService, TransactionApiService, BudgetApiService, UserApiService
 - **ID Type**: All entity IDs are `number` type for better performance and database compatibility
 - **Error Handling**: User-friendly alerts for API errors with console logging for debugging
 
@@ -111,8 +111,10 @@ src/environments/
 ### Form Handling Standards
 - **Form Type**: Reactive forms with FormBuilder and validators
 - **Validation**: Dynamic validation based on form state changes
+- **Async Validation**: Use valueChanges subscriptions for real-time async validation (e.g., username/email availability checking)
 - **Error Display**: Real-time validation feedback with custom error messages
 - **Submit Handling**: Separate methods for create vs update operations
+- **Custom Validators**: Implement custom validator functions for complex requirements (e.g., password strength, field matching)
 
 ### Dialog Architecture Standards
 - **Dialog Service**: Centralized DialogService using Angular CDK Dialog
@@ -122,6 +124,7 @@ src/environments/
 - **Result Handling**: Consistent DialogResult interface with success/data properties
 - **Edit Mode Data Fetching**: Always call getEntityById API in edit mode, show loading state during fetch
 - **Loading States**: Use isLoading flag with spinner for API fetch operations in dialogs
+- **Dialog Subscription Pattern**: Do NOT wrap dialogRef.closed.subscribe() with subscription.add() - subscribe directly and cast result type using 'as' operator
 
 ### State Management Best Practices
 - **Subscription Management**: Manual subscription cleanup in OnDestroy
@@ -204,6 +207,8 @@ Comprehensive Angular 19 expense tracker demonstrating modern development practi
 - **Backend Integration**: Full REST API integration for all entities with complete CRUD operations
 - **User Experience**: Mobile-first responsive design with professional dialog system
 - **Performance**: Optimized change detection, lazy data loading, server-side filtering, and debounced inputs
+- **Security**: User management system with role-based access control (admin/user roles)
+- **Validation**: Advanced form validation including async validators for real-time availability checks
 - **Maintainability**: Consistent patterns, comprehensive TypeScript, and clean organization
 
-Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, production-ready performance optimizations, and scalable backend architecture.
+Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, production-ready performance optimizations, scalable backend architecture, and secure user management.

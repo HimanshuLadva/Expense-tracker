@@ -96,7 +96,9 @@ export class AuthService {
       username: signupData.username,
       email: signupData.email,
       password: this.hashPassword(signupData.password),
-      createdAt: new Date()
+      isAdmin: false,
+      createdAt: new Date(),
+      updatedAt: new Date()
     };
 
     // Save user

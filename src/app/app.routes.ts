@@ -10,5 +10,6 @@ export const routes: Routes = [
   { path: 'transactions', loadComponent: () => import('./pages/transactions/transactions.component').then(m => m.TransactionsComponent) },
   { path: 'budget', loadComponent: () => import('./pages/budget/budget.component').then(m => m.BudgetComponent) },
   { path: 'reminders', loadComponent: () => import('./pages/reminders/reminders.component').then(m => m.RemindersComponent) },
-    { path: '**', redirectTo: '/dashboard' }
+  { path: 'admin/usermanagement', loadComponent: () => import('./pages/user-management/user-management.component').then(m => m.UserManagementComponent) },
+  { path: '**', redirectTo: '/dashboard' }
 ];

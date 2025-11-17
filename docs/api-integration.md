@@ -152,13 +152,14 @@ This document contains detailed patterns for integrating with the backend REST A
 - **Delete**: POST with id in request body
 
 ### StorageService Method Completeness
-All five entities have complete method coverage in StorageService:
-- **Load Methods**: loadAccounts, loadCategories, loadReminders, loadTransactions, loadBudgets
-- **GetById Methods**: getReminderById, getBudgetById (Accounts, Categories, Transactions use getById via API directly)
+All six entities have complete method coverage in StorageService:
+- **Load Methods**: loadAccounts, loadCategories, loadReminders, loadTransactions, loadBudgets, loadUsers
+- **GetById Methods**: getReminderById, getBudgetById, getUserById (other entities use getById via API directly)
 - **Save Methods**: saveAccount, saveCategory, saveReminder, saveTransaction (create/update combined)
-- **Dedicated Create/Update**: createBudget, updateBudget (budget uses separate create/update)
-- **Delete Methods**: deleteAccount, deleteCategory, deleteReminder, deleteTransaction, deleteBudget
-- **Sync Getters**: getAccounts, getCategories, getReminders, getTransactions, getBudgets
+- **Dedicated Create/Update**: createBudget, updateBudget, createUser, updateUser (separate create/update methods)
+- **Delete Methods**: deleteAccount, deleteCategory, deleteReminder, deleteTransaction, deleteBudget, deleteUser
+- **Sync Getters**: getAccounts, getCategories, getReminders, getTransactions, getBudgets, getUsers
+- **Validation Methods**: checkUsername, checkEmail (async availability checking for user management)
 
 ### Account-Specific
 - Balance updates: Frontend calculates new balance before sending update request
@@ -184,6 +185,16 @@ All five entities have complete method coverage in StorageService:
 - Create request includes name, amount, period, categories array, and date range
 - Update request includes all fields plus isActive boolean for status toggling
 - Frontend calculates spending across all assigned categories within date range
+
+### User-Specific
+- User model includes isAdmin boolean for role-based access control
+- Create request requires username, email, password, and isAdmin flag
+- Update request makes password optional (only include if changing password)
+- CheckUsername endpoint validates username availability with optional excludeUserId for edit mode
+- CheckEmail endpoint validates email availability with optional excludeUserId for edit mode
+- Both validation endpoints return CheckAvailabilityResponse with isAvailable boolean
+- Password validation enforced client-side: min 7 chars, uppercase, lowercase, number, special char
+- Real-time async validation prevents duplicate usernames and emails
 
 ## Entity Migration from localStorage to API
 

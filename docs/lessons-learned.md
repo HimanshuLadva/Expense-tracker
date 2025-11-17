@@ -153,12 +153,13 @@ This document contains key lessons learned and proven patterns from implementati
 - **Loading Transactions Without Date Range**: Never call loadTransactions without fromDate and toDate parameters
 - **TypeScript Workarounds**: Don't use type assertions or non-null operators - use proper type narrowing patterns
 - **Using Filter Date Range for Entity Calculations**: When calculating metrics for entities with their own date ranges (like budgets), use the entity's date properties, not the page filter dates
+- **Dialog Subscription Wrapping**: Do NOT use subscription.add() with dialogRef.closed.subscribe() - causes TypeScript type compatibility errors with CDK Dialog
 
 ## Architectural Decisions
 
 ### Migration Strategy
 - **Gradual API Migration**: Successfully completed phased migration from localStorage to full REST API backend
-- **Migration Order**: Accounts → Categories → Reminders → Transactions → Budgets
+- **Migration Order**: Accounts → Categories → Reminders → Transactions → Budgets → Users
 - **Zero Downtime**: Each entity migrated independently without breaking existing functionality
 - **Final Architecture**: All entities now fully API-backed for scalability and multi-user support
 
@@ -169,3 +170,19 @@ This document contains key lessons learned and proven patterns from implementati
 - **DateRangeService**: Improves UX by persisting date selection across pages
 - **Named Budgets**: Flexible multi-category budget system over simple per-category tracking
 - **StorageService Bridge**: Unified service interface provides abstraction layer between components and API
+- **Role-Based Access**: User management with isAdmin flag enables future authorization features
+- **Async Validation Pattern**: Real-time availability checking for usernames/emails provides immediate feedback
+
+### User Management Implementation (2025-11)
+- **Complete CRUD System**: Full user management with create, read, update, delete operations
+- **Advanced Form Validation**: Implemented comprehensive password strength validation with custom validators
+- **Real-Time Async Validation**: Username and email availability checked in real-time via valueChanges subscriptions
+- **Role Management**: IsAdmin checkbox enables admin/user role differentiation
+- **Edit Mode Password Handling**: Password field optional in edit mode (only include if changing)
+- **Dialog Pattern Fix**: Discovered dialogRef.closed.subscribe() must NOT be wrapped with subscription.add() - causes TypeScript type errors with CDK Dialog
+- **Type Casting Pattern**: Use 'as' operator to cast dialog result type instead of typed parameter in subscribe
+- **Extended Interfaces for Display**: Created UserDisplay interface extending User with computed 'role' field for table display
+- **Data Table Badge Transform**: Transformed boolean isAdmin to string role field for proper badge display in data table
+- **Validation Feedback**: Added loading indicators (checkingUsername, checkingEmail) during async validation
+- **Custom Validator Functions**: Implemented passwordStrengthValidator and passwordMatchValidator as class methods
+- **Navigation Organization**: Added menu separator to distinguish admin section from regular features

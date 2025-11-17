@@ -1,8 +1,8 @@
 # Expense Tracker - Frontend Data Models, Services & API Specification
 
-> **Document Version**: 1.1
+> **Document Version**: 1.2
 > **Date**: January 2025
-> **Last Updated**: January 2025 (Added Authentication Module)
+> **Last Updated**: November 2025 (Added User Management Module with Role-Based Access)
 > **Project**: Angular 19 Expense Tracker Application
 
 ---
@@ -35,6 +35,7 @@ This document provides comprehensive documentation of the Expense Tracker fronte
 ### Key Features
 
 - **User Authentication**: Secure signup and login with SHA256 password hashing
+- **User Management**: Admin panel for managing users with role-based access control
 - **Account Management**: Automatic balance calculation with transaction effects
 - **Transaction Tracking**: Income, Expense, and Transfer operations
 - **Category Organization**: Income and expense categorization
@@ -42,6 +43,7 @@ This document provides comprehensive documentation of the Expense Tracker fronte
 - **Financial Reminders**: Date-based notifications with customizable windows
 - **Date Range Filtering**: Synchronized filtering across time-based pages
 - **Reactive Data Synchronization**: BehaviorSubject-based state management
+- **Advanced Form Validation**: Real-time async validation for username and email availability
 
 ---
 
@@ -55,10 +57,11 @@ This document provides comprehensive documentation of the Expense Tracker fronte
 
 ```typescript
 interface User {
-  id: string;                  // Unique identifier (UUID or generated ID)
+  id: number;                  // Unique identifier (integer)
   username: string;            // Unique username (min 3 characters)
   email: string;               // Unique email address
   password: string;            // Hashed password (SHA256 with secret key)
+  isAdmin: boolean;            // Admin/user role flag
   createdAt: Date;             // Account creation timestamp
   updatedAt: Date;             // Last modification timestamp
 }
@@ -108,10 +111,11 @@ interface AuthResponse {
 
 | Field | Type | Required | Constraints | Notes |
 |-------|------|----------|-------------|-------|
-| `id` | string | Yes | Unique, UUID or timestamp | Auto-generated on server |
+| `id` | number | Yes | Unique, Integer | Auto-generated on server |
 | `username` | string | Yes | Min 3 chars, unique, alphanumeric | Case-sensitive |
 | `email` | string | Yes | Valid email format, unique | Case-insensitive |
 | `password` | string | Yes | Hashed (SHA256) | Never returned in responses |
+| `isAdmin` | boolean | Yes | true/false | Role-based access control flag |
 | `createdAt` | Date | Yes | ISO 8601 | Auto-generated on creation |
 | `updatedAt` | Date | Yes | ISO 8601 | Auto-updated on modification |
 
@@ -1015,6 +1019,209 @@ Check if email is available (for real-time validation)
 - Perform case-insensitive email lookup
 - Return availability status
 - Used for real-time form validation in signup page
+
+---
+
+### 0.1 User Management Endpoints
+
+#### GET /api/v1/users
+Get all users (Admin only)
+
+**Request Headers**:
+```
+Authorization: Bearer {token}
+```
+
+**Response**: `User[]` (without password field)
+
+**Example Response**:
+```json
+[
+  {
+    "id": 123,
+    "username": "johndoe",
+    "email": "john@example.com",
+    "isAdmin": false,
+    "createdAt": "2025-01-01T00:00:00.000Z",
+    "updatedAt": "2025-01-01T00:00:00.000Z"
+  }
+]
+```
+
+**Business Logic**:
+- Verify requesting user has admin privileges
+- Return all users without password field
+- Sort by username ascending
+
+---
+
+#### GET /api/v1/users/:id
+Get user by ID (Admin only or own profile)
+
+**Request Headers**:
+```
+Authorization: Bearer {token}
+```
+
+**Response**: `User` (without password field)
+
+**Business Logic**:
+- Admin can view any user
+- Non-admin can only view their own profile
+- Return 403 Forbidden if unauthorized
+
+---
+
+#### POST /api/v1/users
+Create new user (Admin only)
+
+**Request Headers**:
+```
+Authorization: Bearer {token}
+```
+
+**Request Body**: `CreateUserRequest`
+```json
+{
+  "username": "newuser",
+  "email": "newuser@example.com",
+  "password": "SecureP@ss123",
+  "isAdmin": false
+}
+```
+
+**Response**: `User` (201 Created, without password)
+
+**Validation**:
+- Username: Min 3 characters, unique (case-sensitive)
+- Email: Valid format, unique (case-insensitive)
+- Password: Min 7 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char
+- isAdmin: Boolean value
+
+**Business Logic**:
+1. Verify requesting user is admin
+2. Validate all fields
+3. Check username uniqueness
+4. Check email uniqueness
+5. Validate password strength
+6. Hash password using SHA256
+7. Generate unique ID
+8. Set timestamps
+9. Store user
+10. Return user without password
+
+---
+
+#### PUT /api/v1/users/:id
+Update existing user (Admin only or own profile)
+
+**Request Headers**:
+```
+Authorization: Bearer {token}
+```
+
+**Request Body**: `UpdateUserRequest`
+```json
+{
+  "id": 123,
+  "username": "updateduser",
+  "email": "updated@example.com",
+  "password": "NewP@ss123",
+  "isAdmin": true
+}
+```
+
+**Response**: `User` (200 OK, without password)
+
+**Business Logic**:
+- Admin can update any user including isAdmin flag
+- Non-admin can only update their own profile (except isAdmin)
+- Password field is optional (only update if provided)
+- If password provided, validate strength and hash before storing
+- Check username/email uniqueness (excluding current user)
+- Update timestamp
+
+---
+
+#### DELETE /api/v1/users/:id
+Delete user (Admin only)
+
+**Request Headers**:
+```
+Authorization: Bearer {token}
+```
+
+**Response**: `{ success: boolean }` (200 OK)
+
+**Business Logic**:
+- Only admin can delete users
+- Cannot delete own account
+- Consider cascade delete or reassign user data
+- Recommended: Soft delete (isDeleted flag) for data integrity
+
+---
+
+#### POST /api/v1/users/check-username
+Check username availability (for user management validation)
+
+**Request Headers**:
+```
+Authorization: Bearer {token}
+```
+
+**Request Body**:
+```json
+{
+  "username": "testuser",
+  "excludeUserId": 123
+}
+```
+
+**Response**: (200 OK)
+```json
+{
+  "isAvailable": false,
+  "message": "Username already exists"
+}
+```
+
+**Business Logic**:
+- Perform case-sensitive username lookup
+- Exclude specified user ID (for edit mode)
+- Return availability status
+- Used for real-time form validation in user dialog
+
+---
+
+#### POST /api/v1/users/check-email
+Check email availability (for user management validation)
+
+**Request Headers**:
+```
+Authorization: Bearer {token}
+```
+
+**Request Body**:
+```json
+{
+  "email": "test@example.com",
+  "excludeUserId": 123
+}
+```
+
+**Response**: (200 OK)
+```json
+{
+  "isAvailable": true,
+  "message": "Email is available"
+}
+```
+
+**Business Logic**:
+- Perform case-insensitive email lookup
+- Exclude specified user ID (for edit mode)
+- Return availability status
+- Used for real-time form validation in user dialog
 
 ---
 
@@ -2038,12 +2245,14 @@ this.apiService.createTransaction(data).subscribe({
 This comprehensive specification provides everything needed to implement a backend API for the Expense Tracker application. The frontend is already structured with:
 
 ✅ **User Authentication Module** with secure signup/login functionality
+✅ **User Management System** with admin panel and role-based access control
 ✅ **Well-defined data models** with complete DTOs for all entities
 ✅ **Reactive service patterns** ready for API integration
 ✅ **Consistent business logic** documented and tested
 ✅ **Clear separation of concerns** for easy migration
 ✅ **Password Security** with SHA256 hashing and validation
-✅ **Real-time Form Validation** for authentication fields
+✅ **Real-time Form Validation** for authentication and user management fields
+✅ **Advanced Async Validation** for username and email availability checking
 
 ### Next Steps
 
@@ -2063,7 +2272,7 @@ This comprehensive specification provides everything needed to implement a backe
 7. **Data Migration**: Export localStorage data and import to backend database
 8. **Deployment**: Deploy backend API and update frontend configuration
 
-### Authentication Module Status
+### Authentication & User Management Status
 
 ✅ **Completed Features**:
 - User registration with validation
@@ -2073,17 +2282,26 @@ This comprehensive specification provides everything needed to implement a backe
 - SHA256 password hashing
 - Session management via localStorage
 - Responsive UI with modern design
+- Admin panel for user management
+- Role-based access control (isAdmin flag)
+- User CRUD operations (create, read, update, delete)
+- Advanced form validation with custom validators
+- Real-time async username/email availability checking
+- Password optional in edit mode
+- Loading states during data fetch and validation
 
 🚧 **Pending for Backend Integration**:
-- JWT token generation
+- JWT token generation and validation
 - Token-based session management
+- Authorization middleware for admin-only endpoints
 - Password reset functionality
 - Email verification
 - Multi-factor authentication (optional)
 - OAuth integration (optional)
+- User activity audit logging
 
 ---
 
 **Document Maintained By**: Development Team
-**Last Updated**: January 2025
-**Version**: 1.1 (Added Authentication Module)
+**Last Updated**: November 2025
+**Version**: 1.2 (Added User Management Module with Role-Based Access)
