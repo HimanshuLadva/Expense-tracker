@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractContro
 import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 
 import { StorageService } from '../../../services/storage.service';
+import { AuthService } from '../../../services/auth.service';
 import { User } from '../../../models';
 import { DialogResult } from '../../dialog/dialog-result.interface';
 
@@ -371,6 +372,7 @@ export class UserDialogComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private storageService: StorageService,
+    private authService: AuthService,
     private dialogRef: DialogRef,
     @Inject(DIALOG_DATA) public data: any
   ) {
@@ -540,9 +542,10 @@ export class UserDialogComponent implements OnInit {
           isAdmin: formValue.isAdmin
         };
 
-        // Only include password if it was changed
+        // Only include password if it was changed - and hash it
         if (formValue.password) {
-          updateData.password = formValue.password;
+          updateData.password = this.authService.hashPassword(formValue.password);
+          console.log('🔐 UPDATE USER - Sending hashed password:', updateData.password);
         }
 
         this.storageService.updateUser(updateData).subscribe({
@@ -556,10 +559,14 @@ export class UserDialogComponent implements OnInit {
           }
         });
       } else {
+        // Hash password before sending to API
+        const hashedPassword = this.authService.hashPassword(formValue.password);
+        console.log('🔐 CREATE USER - Sending hashed password:', hashedPassword);
+
         const createData = {
           username: formValue.username,
           email: formValue.email,
-          password: formValue.password,
+          password: hashedPassword,
           isAdmin: formValue.isAdmin
         };
 

@@ -8,6 +8,15 @@ export interface User {
   updatedAt: Date;
 }
 
+export interface UserResponse {
+  id: number;
+  username: string;
+  email: string;
+  isAdmin: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface LoginCredentials {
   usernameOrEmail: string;
   password: string;
@@ -23,7 +32,8 @@ export interface SignupData {
 export interface AuthResponse {
   success: boolean;
   message: string;
-  user?: Omit<User, 'password'>;
+  user?: UserResponse;
+  token?: string;
 }
 
 export interface CreateUserRequest {

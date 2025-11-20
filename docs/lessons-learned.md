@@ -154,6 +154,8 @@ This document contains key lessons learned and proven patterns from implementati
 - **TypeScript Workarounds**: Don't use type assertions or non-null operators - use proper type narrowing patterns
 - **Using Filter Date Range for Entity Calculations**: When calculating metrics for entities with their own date ranges (like budgets), use the entity's date properties, not the page filter dates
 - **Dialog Subscription Wrapping**: Do NOT use subscription.add() with dialogRef.closed.subscribe() - causes TypeScript type compatibility errors with CDK Dialog
+- **Async Validators with Removed Methods**: When migrating services, check for async validators that depend on removed methods - either remove validators or update them to use new API patterns
+- **Missing Model Exports**: Ensure all interfaces used across services are properly exported from model files to avoid TypeScript compilation errors
 
 ## Architectural Decisions
 
@@ -171,7 +173,8 @@ This document contains key lessons learned and proven patterns from implementati
 - **Named Budgets**: Flexible multi-category budget system over simple per-category tracking
 - **StorageService Bridge**: Unified service interface provides abstraction layer between components and API
 - **Role-Based Access**: User management with isAdmin flag enables future authorization features
-- **Async Validation Pattern**: Real-time availability checking for usernames/emails provides immediate feedback
+- **Backend Validation Strategy**: Username/email uniqueness validated on backend submit rather than client-side async validators
+- **JWT Authentication**: Token-based authentication with HTTP interceptor and route guards for secure API access
 
 ### User Management Implementation (2025-11)
 - **Complete CRUD System**: Full user management with create, read, update, delete operations
@@ -186,3 +189,54 @@ This document contains key lessons learned and proven patterns from implementati
 - **Validation Feedback**: Added loading indicators (checkingUsername, checkingEmail) during async validation
 - **Custom Validator Functions**: Implemented passwordStrengthValidator and passwordMatchValidator as class methods
 - **Navigation Organization**: Added menu separator to distinguish admin section from regular features
+
+### Authentication System Implementation (2025-11)
+
+#### Architecture Decisions
+- **JWT Token Authentication**: Implemented backend API-based authentication replacing localStorage-only approach
+- **Two-Layer Service Pattern**: AuthApiService for API calls, AuthService for state management and password hashing
+- **Functional Patterns**: Used functional interceptors and guards (Angular 19 best practice)
+- **Token Storage Strategy**: JWT stored in localStorage for simplicity (consider httpOnly cookies for production)
+- **Client-Side Password Hashing**: SHA256 applied before sending to backend for additional security layer
+- **Observable-First Approach**: All auth methods return Observables for consistent async handling
+
+#### HTTP Interceptor Implementation
+- **Automatic Token Attachment**: Interceptor adds Authorization header to all non-public API requests
+- **Public Endpoint Detection**: String matching for Signup, Login, CheckUsername, CheckEmail endpoints
+- **401 Auto-Handling**: Automatic token cleanup and login redirect on unauthorized responses
+- **Router Injection**: Used inject() function for router access in functional interceptor
+- **Error Propagation**: Catch and rethrow errors after handling authentication failures
+
+#### Route Protection Strategy
+- **AuthGuard Pattern**: Functional guard checks token existence for route access
+- **Return URL Preservation**: Query parameter captures intended destination for post-login redirect
+- **Lazy Route Protection**: Guard applied to all protected routes in route configuration
+- **Public Routes**: Login and signup explicitly unprotected for accessibility
+
+#### Validation Strategy Changes
+- **Removed Async Validators**: Eliminated client-side username/email existence validators
+- **Backend-First Validation**: Uniqueness checks happen on form submission via API
+- **Simplified Form Logic**: Removed real-time async validation to avoid localStorage dependencies
+- **Error Display**: API errors shown to user on submit with clear messaging
+- **Password Strength**: Kept client-side password strength validation for immediate feedback
+
+#### Component Integration Pattern
+- **Observable Subscriptions**: Login and signup components subscribe to auth Observable responses
+- **Loading States**: isSubmitting flag prevents duplicate submissions during API calls
+- **Error Handling**: Comprehensive error display with console logging for debugging
+- **Success Navigation**: Automatic redirect to dashboard after successful authentication
+- **Timeout Delays**: Brief delay before navigation for user feedback visibility
+
+#### Model Definitions
+- **UserResponse Interface**: Created separate interface for API responses without password field
+- **AuthResponse Enhancement**: Added token field to auth response for JWT inclusion
+- **Type Safety**: Strongly typed request/response models for all authentication endpoints
+
+#### Key Lessons Learned
+- **Validator Dependencies**: Async validators cannot reference removed service methods - remove or reimplement
+- **Backend Validation Preference**: Backend uniqueness validation is more reliable than client-side checks
+- **Interceptor Registration**: Must use withInterceptors() in provideHttpClient configuration
+- **Token Key Naming**: Use consistent keys (auth_token, currentUser) throughout application
+- **Error Connection Reset**: Usually indicates CORS misconfiguration or HTTP/HTTPS protocol mismatch
+- **Guard Return Values**: Guards return boolean or UrlTree for navigation control
+- **State Persistence**: Token and user data in localStorage maintains session across page refreshes

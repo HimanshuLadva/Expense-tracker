@@ -1,20 +1,21 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 import * as CryptoJS from 'crypto-js';
 import { User, LoginCredentials, SignupData, AuthResponse } from '../models';
+import { AuthApiService } from './auth-api.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private readonly STORAGE_KEY = 'expense_tracker_users';
-  private readonly CURRENT_USER_KEY = 'expense_tracker_current_user';
+  private readonly TOKEN_KEY = 'auth_token';
+  private readonly CURRENT_USER_KEY = 'currentUser';
   private readonly ENCRYPTION_KEY = 'expense_tracker_secret_key_2025';
 
   private currentUserSubject = new BehaviorSubject<Omit<User, 'password'> | null>(this.getCurrentUser());
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor() {}
+  constructor(private authApiService: AuthApiService) {}
 
   /**
    * Get current logged-in user from localStorage
@@ -28,141 +29,115 @@ export class AuthService {
   }
 
   /**
-   * Get all users from localStorage
+   * Store JWT token in localStorage
    */
-  private getUsers(): User[] {
-    const usersJson = localStorage.getItem(this.STORAGE_KEY);
-    if (usersJson) {
-      return JSON.parse(usersJson);
-    }
-    return [];
+  private setToken(token: string): void {
+    localStorage.setItem(this.TOKEN_KEY, token);
   }
 
   /**
-   * Save users to localStorage
+   * Get JWT token from localStorage
    */
-  private saveUsers(users: User[]): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(users));
+  getToken(): string | null {
+    return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  /**
+   * Clear JWT token from localStorage
+   */
+  private clearToken(): void {
+    localStorage.removeItem(this.TOKEN_KEY);
+  }
+
+  /**
+   * Store user data in localStorage
+   */
+  private setCurrentUser(user: Omit<User, 'password'>): void {
+    localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(user));
+    this.currentUserSubject.next(user);
+  }
+
+  /**
+   * Clear user data from localStorage
+   */
+  private clearCurrentUser(): void {
+    localStorage.removeItem(this.CURRENT_USER_KEY);
+    this.currentUserSubject.next(null);
   }
 
   /**
    * Hash password using SHA256
    */
-  private hashPassword(password: string): string {
+  hashPassword(password: string): string {
     return CryptoJS.SHA256(password + this.ENCRYPTION_KEY).toString();
   }
 
   /**
-   * Check if username already exists
+   * Register new user via API
    */
-  isUsernameExists(username: string): boolean {
-    const users = this.getUsers();
-    return users.some(user => user.username.toLowerCase() === username.toLowerCase());
-  }
-
-  /**
-   * Check if email already exists
-   */
-  isEmailExists(email: string): boolean {
-    const users = this.getUsers();
-    return users.some(user => user.email.toLowerCase() === email.toLowerCase());
-  }
-
-  /**
-   * Register new user
-   */
-  signup(signupData: SignupData): AuthResponse {
-    const users = this.getUsers();
-
-    // Check if username exists
-    if (this.isUsernameExists(signupData.username)) {
-      return {
-        success: false,
-        message: 'Username already exists'
-      };
-    }
-
-    // Check if email exists
-    if (this.isEmailExists(signupData.email)) {
-      return {
-        success: false,
-        message: 'Email already exists'
-      };
-    }
-
-    // Create new user
-    const newUser: User = {
-      id: this.generateId(),
-      username: signupData.username,
-      email: signupData.email,
-      password: this.hashPassword(signupData.password),
-      isAdmin: false,
-      createdAt: new Date(),
-      updatedAt: new Date()
+  signup(signupData: SignupData): Observable<AuthResponse> {
+    // Hash password before sending to API
+    const hashedPassword = this.hashPassword(signupData.password);
+    const hashedSignupData = {
+      ...signupData,
+      password: hashedPassword,
+      confirmPassword: hashedPassword  // Use same hash for both fields
     };
 
-    // Save user
-    users.push(newUser);
-    this.saveUsers(users);
+    console.log('🔐 SIGNUP - Sending hashed password:', hashedPassword);
+    console.log('🔐 SIGNUP - Full data being sent:', hashedSignupData);
 
-    // Remove password from response
-    const { password, ...userWithoutPassword } = newUser;
-
-    return {
-      success: true,
-      message: 'Registration successful',
-      user: userWithoutPassword
-    };
-  }
-
-  /**
-   * Login user
-   */
-  login(credentials: LoginCredentials): AuthResponse {
-    const users = this.getUsers();
-    const hashedPassword = this.hashPassword(credentials.password);
-
-    // Find user by username or email
-    const user = users.find(u =>
-      (u.username.toLowerCase() === credentials.usernameOrEmail.toLowerCase() ||
-       u.email.toLowerCase() === credentials.usernameOrEmail.toLowerCase()) &&
-      u.password === hashedPassword
+    return this.authApiService.signup(hashedSignupData).pipe(
+      tap((response: AuthResponse) => {
+        if (response.success && response.user && response.token) {
+          // Store token and user data
+          this.setToken(response.token);
+          this.setCurrentUser(response.user);
+        }
+      })
     );
+  }
 
-    if (!user) {
-      return {
-        success: false,
-        message: 'Invalid username/email or password'
-      };
-    }
-
-    // Remove password from user object
-    const { password, ...userWithoutPassword } = user;
-
-    // Store current user
-    localStorage.setItem(this.CURRENT_USER_KEY, JSON.stringify(userWithoutPassword));
-    this.currentUserSubject.next(userWithoutPassword);
-
-    return {
-      success: true,
-      message: 'Login successful',
-      user: userWithoutPassword
+  /**
+   * Login user via API
+   */
+  login(credentials: LoginCredentials): Observable<AuthResponse> {
+    // Hash password before sending to API
+    const hashedPassword = this.hashPassword(credentials.password);
+    const hashedCredentials = {
+      usernameOrEmail: credentials.usernameOrEmail,
+      password: hashedPassword
     };
+
+    console.log('🔑 LOGIN - Sending hashed password:', hashedPassword);
+    console.log('🔑 LOGIN - Full credentials being sent:', hashedCredentials);
+
+    return this.authApiService.login(hashedCredentials).pipe(
+      tap((response: AuthResponse) => {
+        if (response.success && response.user && response.token) {
+          // Store token and user data
+          this.setToken(response.token);
+          this.setCurrentUser(response.user);
+        }
+      })
+    );
   }
 
   /**
    * Logout user
    */
   logout(): void {
-    localStorage.removeItem(this.CURRENT_USER_KEY);
-    this.currentUserSubject.next(null);
+    // Clear token and user data
+    this.clearToken();
+    this.clearCurrentUser();
   }
 
   /**
    * Check if user is logged in
    */
   isLoggedIn(): boolean {
-    return this.getCurrentUser() !== null;
+    // Check if token exists
+    return this.getToken() !== null;
   }
 
   /**
@@ -170,18 +145,6 @@ export class AuthService {
    */
   getCurrentUserValue(): Omit<User, 'password'> | null {
     return this.currentUserSubject.value;
-  }
-
-  /**
-   * Generate unique ID
-   */
-  private generateId(): number {
-    const users = this.getUsers();
-    if (users.length === 0) {
-      return 1;
-    }
-    const maxId = Math.max(...users.map(u => u.id));
-    return maxId + 1;
   }
 
   /**

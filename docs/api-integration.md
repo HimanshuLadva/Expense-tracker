@@ -11,6 +11,58 @@ This document contains detailed patterns for integrating with the backend REST A
 - **HTTP Method**: All API endpoints use POST method regardless of operation type
 - **Request/Response**: Strongly typed using interfaces defined in model files
 
+## Authentication API Patterns
+
+### Authentication Service Architecture
+
+- **Two-Layer Approach**: AuthApiService for API calls, AuthService for state management
+- **AuthApiService**: Handles HTTP communication with authentication endpoints
+- **AuthService**: Manages authentication state, token storage, and password hashing
+- **Observable Pattern**: All authentication methods return Observables for async handling
+- **Token Management**: JWT tokens stored in localStorage with key `auth_token`
+- **User State**: Current user data stored in localStorage with key `currentUser`
+- **BehaviorSubject Stream**: currentUser$ observable for reactive authentication state
+
+### HTTP Interceptor Pattern
+
+- **File Location**: src/app/interceptors/auth.interceptor.ts
+- **Type**: Functional interceptor (HttpInterceptorFn)
+- **Auto Token Attachment**: Automatically adds Authorization header to all requests
+- **Public Endpoints**: Excludes login, signup, and validation endpoints from token requirement
+- **401 Handling**: Automatically clears token and redirects to login on unauthorized responses
+- **Token Format**: Bearer token in Authorization header
+
+### Route Protection Pattern
+
+- **File Location**: src/app/guards/auth.guard.ts
+- **Type**: Functional guard (CanActivateFn)
+- **Protection Logic**: Checks for token existence via AuthService.isLoggedIn()
+- **Redirect Behavior**: Redirects to login with returnUrl query parameter
+- **Protected Routes**: All application routes except login and signup
+- **Route Configuration**: Applied via canActivate property in route definitions
+
+### Authentication Flow
+
+- **Signup**: Password hashed client-side (SHA256), API returns JWT token and user data
+- **Login**: Password hashed client-side, API validates and returns token
+- **Token Storage**: Store token and user data in localStorage on successful auth
+- **Logout**: Clear token and user data from localStorage, navigate to login
+- **Session Check**: isLoggedIn() checks for token existence in localStorage
+
+### Password Security
+
+- **Client-Side Hashing**: SHA256 hash applied before sending to backend
+- **Hash Key**: Uses encryption key for additional security
+- **Backend Validation**: Backend should apply additional hashing (BCrypt/Argon2)
+- **Never Expose**: Password never returned in API responses
+
+### Validation Strategy
+
+- **Backend Validation**: Username/email uniqueness validated on backend submit
+- **No Async Validators**: Removed client-side async validators to rely on backend
+- **Password Strength**: Client-side validation for password complexity requirements
+- **Submit-Time Checking**: Uniqueness errors returned from API on form submission
+
 ## Environment Configuration Pattern
 
 - **Environment Files**: Centralized API URL configuration in src/environments/

@@ -1,31 +1,4 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { AuthService } from './auth.service';
-
-/**
- * Validator to check if username already exists
- */
-export function usernameExistsValidator(authService: AuthService): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    if (!control.value) {
-      return null;
-    }
-    const exists = authService.isUsernameExists(control.value);
-    return exists ? { usernameExists: { value: control.value } } : null;
-  };
-}
-
-/**
- * Validator to check if email already exists
- */
-export function emailExistsValidator(authService: AuthService): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    if (!control.value) {
-      return null;
-    }
-    const exists = authService.isEmailExists(control.value);
-    return exists ? { emailExists: { value: control.value } } : null;
-  };
-}
 
 /**
  * Validator for password strength

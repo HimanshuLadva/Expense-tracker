@@ -18,11 +18,13 @@ Modern Angular 19 expense tracking application with comprehensive financial mana
 src/app/
 ├── models/           # Data entities and DTOs with barrel exports
 ├── services/         # Business logic, state management, API services
-├── pages/           # Feature pages (dashboard, accounts, categories, transactions, budget, reminders, user-management)
+├── pages/           # Feature pages (dashboard, accounts, categories, transactions, budget, reminders, user-management, auth/login, auth/signup)
 ├── shared/          # Reusable components (data-table, dialogs, page-header, icon-selector)
+├── guards/          # Route guards (auth.guard.ts for authentication protection)
+├── interceptors/    # HTTP interceptors (auth.interceptor.ts for JWT token management)
 ├── app.component.*  # Root component with navigation sidebar
-├── app.config.ts    # Application configuration (includes HttpClient provider)
-└── app.routes.ts    # Route definitions with lazy loading
+├── app.config.ts    # Application configuration (includes HttpClient provider and interceptors)
+└── app.routes.ts    # Route definitions with lazy loading and guards
 
 src/environments/
 ├── environment.ts      # Development environment config (API URL: https://localhost:44319)
@@ -94,7 +96,7 @@ src/environments/
 - **Full API Integration**: All entities backed by backend REST API
   - **Backend API**: Accounts, Categories, Reminders, Transactions, Budgets, Users (via dedicated API services)
   - **No Local Storage**: All data persisted in backend database for consistency and scalability
-- **API Service Layer**: AccountApiService, CategoryApiService, ReminderApiService, TransactionApiService, BudgetApiService, UserApiService
+- **API Service Layer**: AccountApiService, CategoryApiService, ReminderApiService, TransactionApiService, BudgetApiService, UserApiService, AuthApiService
 - **ID Type**: All entity IDs are `number` type for better performance and database compatibility
 - **Error Handling**: User-friendly alerts for API errors with console logging for debugging
 
@@ -107,6 +109,18 @@ src/environments/
 - **No Service Init Loading**: Do NOT load data in service constructor
 - **GetById for Edit Mode**: All edit dialogs must fetch fresh data via GetById API endpoint to prevent stale edits
 - **Server-Side Filtering Required**: ALL loadTransactions calls MUST include fromDate and toDate parameters for performance
+
+### Authentication and Security Patterns
+- **JWT Token Authentication**: Backend API-based authentication with JWT tokens
+- **Token Storage**: JWT stored in localStorage with key `auth_token`, user data with key `currentUser`
+- **HTTP Interceptor**: Automatic JWT token attachment to all API requests via authInterceptor
+- **Route Protection**: AuthGuard protects all routes requiring authentication
+- **Password Security**: SHA256 hashing done client-side before sending to backend API
+- **Public Endpoints**: Login and signup endpoints excluded from token requirements
+- **Auth Service Layer**: AuthApiService handles API calls, AuthService manages authentication state
+- **Observable Auth Flow**: All authentication operations return Observables for async handling
+- **401 Handling**: Interceptor automatically clears token and redirects to login on unauthorized responses
+- **Validation Strategy**: Backend validates username/email uniqueness on submit (not client-side async validators)
 
 ### Form Handling Standards
 - **Form Type**: Reactive forms with FormBuilder and validators
@@ -205,10 +219,11 @@ Comprehensive Angular 19 expense tracker demonstrating modern development practi
 - **Architecture**: Standalone components with feature-based organization and lazy loading
 - **State Management**: Reactive service patterns with BehaviorSubject streams
 - **Backend Integration**: Full REST API integration for all entities with complete CRUD operations
+- **Authentication**: JWT token-based authentication with HTTP interceptor and route guards
 - **User Experience**: Mobile-first responsive design with professional dialog system
 - **Performance**: Optimized change detection, lazy data loading, server-side filtering, and debounced inputs
-- **Security**: User management system with role-based access control (admin/user roles)
-- **Validation**: Advanced form validation including async validators for real-time availability checks
+- **Security**: JWT-based authentication, route protection, client-side password hashing, and role-based access control
+- **Validation**: Form validation with backend-based uniqueness checks and password strength requirements
 - **Maintainability**: Consistent patterns, comprehensive TypeScript, and clean organization
 
-Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, production-ready performance optimizations, scalable backend architecture, and secure user management.
+Serves as foundation for financial management applications with emphasis on responsive design, mobile optimization, production-ready performance optimizations, scalable backend architecture, JWT authentication, and secure user management.

@@ -5,9 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import {
   passwordStrengthValidator,
-  passwordMatchValidator,
-  usernameExistsValidator,
-  emailExistsValidator
+  passwordMatchValidator
 } from '../../../services/auth.validators';
 
 @Component({
@@ -38,17 +36,12 @@ import {
                 formControlName="email"
                 class="form-input"
                 [class.input-error]="email?.invalid && email?.touched"
-                [class.input-success]="email?.valid && email?.touched"
                 placeholder="Email"
               />
             </div>
             <div class="validation-messages" *ngIf="email?.invalid && email?.touched">
               <p class="error-message" *ngIf="email?.hasError('required')">Email is required</p>
               <p class="error-message" *ngIf="email?.hasError('email')">Please enter a valid email address</p>
-              <p class="error-message" *ngIf="email?.hasError('emailExists')">This email is already registered</p>
-            </div>
-            <div class="validation-messages" *ngIf="email?.valid && email?.touched">
-              <p class="success-message">Email is available ✓</p>
             </div>
           </div>
 
@@ -67,17 +60,12 @@ import {
                 formControlName="username"
                 class="form-input"
                 [class.input-error]="username?.invalid && username?.touched"
-                [class.input-success]="username?.valid && username?.touched"
                 placeholder="Username"
               />
             </div>
             <div class="validation-messages" *ngIf="username?.invalid && username?.touched">
               <p class="error-message" *ngIf="username?.hasError('required')">Username is required</p>
               <p class="error-message" *ngIf="username?.hasError('minlength')">Username must be at least 3 characters</p>
-              <p class="error-message" *ngIf="username?.hasError('usernameExists')">This username is already taken</p>
-            </div>
-            <div class="validation-messages" *ngIf="username?.valid && username?.touched">
-              <p class="success-message">Username is available ✓</p>
             </div>
           </div>
 
@@ -565,13 +553,11 @@ export class SignupComponent implements OnInit {
     this.signupForm = this.fb.group({
       email: ['', [
         Validators.required,
-        Validators.email,
-        emailExistsValidator(this.authService)
+        Validators.email
       ]],
       username: ['', [
         Validators.required,
-        Validators.minLength(3),
-        usernameExistsValidator(this.authService)
+        Validators.minLength(3)
       ]],
       password: ['', [
         Validators.required,
@@ -636,16 +622,24 @@ export class SignupComponent implements OnInit {
       confirmPassword: this.signupForm.value.confirmPassword
     };
 
-    const response = this.authService.signup(signupData);
-
-    if (response.success) {
-      this.successMessage = response.message + '. Redirecting to login...';
-      setTimeout(() => {
-        this.router.navigate(['/login']);
-      }, 2000);
-    } else {
-      this.errorMessage = response.message;
-      this.isSubmitting = false;
-    }
+    // Call API and subscribe to Observable
+    this.authService.signup(signupData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.successMessage = response.message + '. Redirecting to dashboard...';
+          setTimeout(() => {
+            this.router.navigate(['/dashboard']);
+          }, 1000);
+        } else {
+          this.errorMessage = response.message;
+          this.isSubmitting = false;
+        }
+      },
+      error: (error) => {
+        console.error('Signup error:', error);
+        this.errorMessage = error.error?.message || 'An error occurred during signup. Please try again.';
+        this.isSubmitting = false;
+      }
+    });
   }
 }

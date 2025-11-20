@@ -485,16 +485,24 @@ export class LoginComponent implements OnInit {
       password: this.loginForm.value.password
     };
 
-    const response = this.authService.login(credentials);
-
-    if (response.success) {
-      this.successMessage = response.message + '. Redirecting...';
-      setTimeout(() => {
-        this.router.navigate(['/dashboard']);
-      }, 1500);
-    } else {
-      this.errorMessage = response.message;
-      this.isSubmitting = false;
-    }
+    // Call API and subscribe to Observable
+    this.authService.login(credentials).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.successMessage = response.message + '. Redirecting...';
+          setTimeout(() => {
+            this.router.navigate(['/dashboard']);
+          }, 1000);
+        } else {
+          this.errorMessage = response.message;
+          this.isSubmitting = false;
+        }
+      },
+      error: (error) => {
+        console.error('Login error:', error);
+        this.errorMessage = error.error?.message || 'An error occurred during login. Please try again.';
+        this.isSubmitting = false;
+      }
+    });
   }
 }
