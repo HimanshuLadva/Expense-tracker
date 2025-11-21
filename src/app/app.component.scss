@@ -71,6 +71,22 @@
         background-color: #34495e;
         margin: 0.75rem 1rem;
       }
+
+      &.logout-item {
+        margin-top: auto;
+        border-top: 1px solid #34495e;
+
+        .logout-btn {
+          color: #e74c3c;
+          cursor: pointer;
+
+          &:hover {
+            background-color: #e74c3c;
+            color: white;
+            border-left-color: #c0392b;
+          }
+        }
+      }
     }
   }
 }
@@ -118,6 +134,12 @@
           .icon {
             margin-right: 0.5rem;
           }
+        }
+
+        &.logout-item {
+          margin-top: 0;
+          border-top: none;
+          border-left: 1px solid #34495e;
         }
       }
     }

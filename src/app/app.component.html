@@ -40,11 +40,16 @@
           Reminders
         </a>
       </li>
-      <li class="menu-separator"></li>
       <li>
         <a routerLink="/admin/usermanagement" routerLinkActive="active">
           <span class="icon">👥</span>
           User Management
+        </a>
+      </li>
+      <li class="logout-item">
+        <a (click)="onLogout()" class="logout-btn">
+          <span class="icon">🚪</span>
+          Logout
         </a>
       </li>
     </ul>

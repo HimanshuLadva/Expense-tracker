@@ -126,10 +126,15 @@ export class AuthService {
   /**
    * Logout user
    */
-  logout(): void {
-    // Clear token and user data
-    this.clearToken();
-    this.clearCurrentUser();
+  logout(): Observable<any> {
+    // Call API logout endpoint first, then clear local data
+    return this.authApiService.logout().pipe(
+      tap(() => {
+        // Clear token and user data regardless of API response
+        this.clearToken();
+        this.clearCurrentUser();
+      })
+    );
   }
 
   /**
