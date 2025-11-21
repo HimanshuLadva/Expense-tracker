@@ -46,8 +46,10 @@ This document contains detailed patterns for integrating with the backend REST A
 - **Signup**: Password hashed client-side (SHA256), API returns JWT token and user data
 - **Login**: Password hashed client-side, API validates and returns token
 - **Token Storage**: Store token and user data in localStorage on successful auth
-- **Logout**: Clear token and user data from localStorage, navigate to login
+- **Logout**: Three-step process - call API logout endpoint, clear token and user data from localStorage, navigate to login page
+- **Logout Error Handling**: Navigate to login even if API call fails to ensure user can always log out
 - **Session Check**: isLoggedIn() checks for token existence in localStorage
+- **Return URL Flow**: AuthGuard saves intended destination in returnUrl query parameter, login component redirects to saved URL after successful authentication
 
 ### Password Security
 

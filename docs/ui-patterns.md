@@ -116,6 +116,26 @@ This document contains UI/UX patterns, styling standards, and design conventions
 - **Label Styling**: Verdana font family, 0.875rem size, 500 weight, dark color (#1a1a1a)
 - **Typography Consistency**: Ensure consistent font sizing across similar UI elements using inheritance patterns
 
+## Sidebar Navigation Patterns
+
+- **Menu Organization**: Main features first, admin/user features second, profile and logout at bottom
+- **Logout Button Positioning**: Always last item in navigation menu with `margin-top: auto` to push to bottom
+- **Profile Link Placement**: Positioned above logout button for easy access to user settings
+- **Sidebar Visibility Control**: Hide sidebar on authentication pages by checking URL path without query parameters
+- **URL Path Extraction**: Use string split on query parameter delimiter to handle URLs with returnUrl or other query strings
+- **Mobile Sidebar Adaptation**: Logout button gets left border instead of top border in horizontal mobile layout
+
+## User Profile Page Pattern
+
+- **Route Path**: Use simple `/profile` path for user profile access
+- **Display Fields**: Username, email, password (masked), role badge, member since date
+- **Password Display**: Show masked dots with security note, never display actual password
+- **Role Badge Styling**: Distinct colors for Administrator (yellow) and User (blue) roles
+- **Avatar Design**: Large circular gradient avatar at top of profile card
+- **Future Actions**: Include disabled placeholder buttons for future features (Edit Profile, Change Password)
+- **Reactive Data**: Subscribe to AuthService currentUser$ observable for real-time user data
+- **Date Formatting**: Support both Date and string types in date formatting methods for type flexibility
+
 ## Design Guidelines
 
 - **Component Standards**: Ensure all CRUD operations have corresponding dialog components

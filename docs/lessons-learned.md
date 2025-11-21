@@ -140,6 +140,10 @@ This document contains key lessons learned and proven patterns from implementati
 - **Multi-Category Budgets**: Flexible budget system provides better real-world financial tracking
 - **GetById for Edit Mode**: Prevents stale edits, ensures data consistency, standard across all entities
 - **Server-Side Filtering**: Dramatically improves performance for transaction-heavy operations
+- **Query Parameter Extraction**: Splitting URL on query delimiter prevents route matching failures with query strings
+- **Return URL Pattern**: Preserving intended destination improves post-login user experience
+- **API-First Logout**: Calling logout endpoint before clearing local state ensures proper server-side session cleanup
+- **Type Union for Date Handling**: Accepting both Date and string types in formatting methods provides flexibility for different data sources
 
 ### Common Pitfalls to Avoid
 - **Service Constructor Loading**: Causes unnecessary duplicate API calls
@@ -156,6 +160,10 @@ This document contains key lessons learned and proven patterns from implementati
 - **Dialog Subscription Wrapping**: Do NOT use subscription.add() with dialogRef.closed.subscribe() - causes TypeScript type compatibility errors with CDK Dialog
 - **Async Validators with Removed Methods**: When migrating services, check for async validators that depend on removed methods - either remove validators or update them to use new API patterns
 - **Missing Model Exports**: Ensure all interfaces used across services are properly exported from model files to avoid TypeScript compilation errors
+- **Hardcoded Navigation Paths**: Don't hardcode post-login navigation to dashboard - always check for and use returnUrl parameter
+- **Exact URL Matching with Query Params**: Don't compare full URLs with query parameters against route paths - extract path portion first
+- **Single Date Type in Formatters**: Don't restrict date formatting methods to only string or only Date - use union types for flexibility
+- **Ignoring Logout API Calls**: Always call logout endpoint even if only clearing local storage seems sufficient
 
 ## Architectural Decisions
 
@@ -240,3 +248,41 @@ This document contains key lessons learned and proven patterns from implementati
 - **Error Connection Reset**: Usually indicates CORS misconfiguration or HTTP/HTTPS protocol mismatch
 - **Guard Return Values**: Guards return boolean or UrlTree for navigation control
 - **State Persistence**: Token and user data in localStorage maintains session across page refreshes
+
+### Navigation and Logout Patterns (2025-01)
+
+#### Logout Implementation Pattern
+- **API-First Approach**: Always call logout API endpoint before clearing local state
+- **Graceful Degradation**: Navigate to login even if API call fails to ensure user can always exit
+- **Three-Step Process**: API call, clear localStorage, navigate to login page
+- **Observable Pattern**: Logout method returns Observable for consistent async handling
+- **Error Handling**: Subscribe with both success and error callbacks for comprehensive handling
+
+#### Return URL Preservation
+- **Problem Identified**: Hardcoded dashboard navigation after login ignores intended destination
+- **Solution Pattern**: Read returnUrl query parameter from ActivatedRoute in login component
+- **Default Fallback**: Use dashboard as default if no returnUrl present
+- **User Experience**: Seamless redirect to originally requested page after authentication
+- **Guard Integration**: AuthGuard already sets returnUrl, login component must read and use it
+
+#### Sidebar Visibility with Query Parameters
+- **Bug Discovery**: Exact URL matching failed when query parameters present in login/signup URLs
+- **Root Cause**: Comparing full URL including query string against path-only auth routes
+- **Solution**: Extract path portion of URL using string split before comparison
+- **Pattern**: Split URL on query parameter delimiter, check only path portion against auth routes
+- **Impact**: Sidebar now properly hidden on login/signup regardless of query parameters
+
+#### User Profile Page Implementation
+- **Simple Route**: Use /profile path for straightforward user profile access
+- **Data Source**: Subscribe to AuthService currentUser$ observable for reactive updates
+- **Password Security**: Never display actual password, show masked dots with security note
+- **Type Flexibility**: Date formatting methods should accept both Date and string types
+- **Future Extensibility**: Include disabled placeholder buttons for upcoming features
+- **Subscription Cleanup**: Always unsubscribe in ngOnDestroy to prevent memory leaks
+
+#### Sidebar Navigation Organization
+- **Menu Structure**: Core features, admin features, profile, logout (bottom)
+- **Logout Styling**: Red color scheme with top border separator for visual distinction
+- **Auto-positioning**: Use CSS margin-top auto to push logout to bottom regardless of menu length
+- **Mobile Adaptation**: Border orientation changes from top to left in horizontal mobile layout
+- **Menu Consistency**: Profile link always appears directly above logout button

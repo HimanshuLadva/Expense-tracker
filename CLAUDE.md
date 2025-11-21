@@ -18,11 +18,11 @@ Modern Angular 19 expense tracking application with comprehensive financial mana
 src/app/
 ├── models/           # Data entities and DTOs with barrel exports
 ├── services/         # Business logic, state management, API services
-├── pages/           # Feature pages (dashboard, accounts, categories, transactions, budget, reminders, user-management, auth/login, auth/signup)
+├── pages/           # Feature pages (dashboard, accounts, categories, transactions, budget, reminders, user-management, user-profile, auth/login, auth/signup)
 ├── shared/          # Reusable components (data-table, dialogs, page-header, icon-selector)
 ├── guards/          # Route guards (auth.guard.ts for authentication protection)
 ├── interceptors/    # HTTP interceptors (auth.interceptor.ts for JWT token management)
-├── app.component.*  # Root component with navigation sidebar
+├── app.component.*  # Root component with navigation sidebar and logout functionality
 ├── app.config.ts    # Application configuration (includes HttpClient provider and interceptors)
 └── app.routes.ts    # Route definitions with lazy loading and guards
 
@@ -121,6 +121,10 @@ src/environments/
 - **Observable Auth Flow**: All authentication operations return Observables for async handling
 - **401 Handling**: Interceptor automatically clears token and redirects to login on unauthorized responses
 - **Validation Strategy**: Backend validates username/email uniqueness on submit (not client-side async validators)
+- **Logout Pattern**: Call API logout endpoint first, then clear local token/user data, finally navigate to login page
+- **Return URL Preservation**: AuthGuard captures intended destination in returnUrl query parameter for post-login redirect
+- **Post-Login Navigation**: Login component reads returnUrl query parameter and redirects to intended page instead of always going to dashboard
+- **Sidebar Visibility Logic**: Extract path from URL (removing query parameters) before checking against auth routes to properly hide sidebar on login/signup pages
 
 ### Form Handling Standards
 - **Form Type**: Reactive forms with FormBuilder and validators

@@ -12,5 +12,6 @@ export const routes: Routes = [
   { path: 'budget', loadComponent: () => import('./pages/budget/budget.component').then(m => m.BudgetComponent), canActivate: [authGuard] },
   { path: 'reminders', loadComponent: () => import('./pages/reminders/reminders.component').then(m => m.RemindersComponent), canActivate: [authGuard] },
   { path: 'admin/usermanagement', loadComponent: () => import('./pages/user-management/user-management.component').then(m => m.UserManagementComponent), canActivate: [authGuard] },
+  { path: 'profile', loadComponent: () => import('./pages/user-profile/user-profile.component').then(m => m.UserProfileComponent), canActivate: [authGuard] },
   { path: '**', redirectTo: '/dashboard' }
 ];
