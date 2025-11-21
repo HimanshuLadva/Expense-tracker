@@ -23,7 +23,9 @@ export class AppComponent {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       const authRoutes = ['/login', '/signup'];
-      this.showSidebar = !authRoutes.includes(event.url);
+      // Extract the path without query parameters
+      const urlPath = event.url.split('?')[0];
+      this.showSidebar = !authRoutes.includes(urlPath);
     });
   }
 

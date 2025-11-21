@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 
 @Component({
@@ -438,15 +438,19 @@ export class LoginComponent implements OnInit {
   isSubmitting = false;
   errorMessage = '';
   successMessage = '';
+  private returnUrl: string = '/dashboard';
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.initializeForm();
+    // Get return URL from query parameters or default to '/dashboard'
+    this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
   }
 
   private initializeForm(): void {
@@ -491,7 +495,7 @@ export class LoginComponent implements OnInit {
         if (response.success) {
           this.successMessage = response.message + '. Redirecting...';
           setTimeout(() => {
-            this.router.navigate(['/dashboard']);
+            this.router.navigate([this.returnUrl]);
           }, 1000);
         } else {
           this.errorMessage = response.message;
