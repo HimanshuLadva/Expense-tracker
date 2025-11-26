@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
+import { adminGuard } from './guards/admin.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
@@ -11,7 +12,7 @@ export const routes: Routes = [
   { path: 'transactions', loadComponent: () => import('./pages/transactions/transactions.component').then(m => m.TransactionsComponent), canActivate: [authGuard] },
   { path: 'budget', loadComponent: () => import('./pages/budget/budget.component').then(m => m.BudgetComponent), canActivate: [authGuard] },
   { path: 'reminders', loadComponent: () => import('./pages/reminders/reminders.component').then(m => m.RemindersComponent), canActivate: [authGuard] },
-  { path: 'admin/usermanagement', loadComponent: () => import('./pages/user-management/user-management.component').then(m => m.UserManagementComponent), canActivate: [authGuard] },
+  { path: 'admin/usermanagement', loadComponent: () => import('./pages/user-management/user-management.component').then(m => m.UserManagementComponent), canActivate: [authGuard, adminGuard] },
   { path: 'profile', loadComponent: () => import('./pages/user-profile/user-profile.component').then(m => m.UserProfileComponent), canActivate: [authGuard] },
   { path: '**', redirectTo: '/dashboard' }
 ];

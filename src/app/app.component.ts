@@ -16,7 +16,7 @@ export class AppComponent {
 
   constructor(
     private router: Router,
-    private authService: AuthService
+    public authService: AuthService
   ) {
     // Hide sidebar on auth pages
     this.router.events.pipe(

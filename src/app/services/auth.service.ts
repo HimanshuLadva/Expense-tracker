@@ -153,6 +153,14 @@ export class AuthService {
   }
 
   /**
+   * Check if current user is an administrator
+   */
+  isAdmin(): boolean {
+    const user = this.getCurrentUserValue();
+    return user?.isAdmin ?? false;
+  }
+
+  /**
    * Validate password strength
    * Must contain: 1 uppercase, 1 lowercase, 1 digit, 1 special char, min 7 chars
    */
