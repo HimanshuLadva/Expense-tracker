@@ -525,8 +525,25 @@ import {
         font-size: 0.875rem;
       }
 
+      .auth-form {
+        gap: 1.25rem;
+      }
+
+      .input-wrapper {
+        margin-top: 0;
+      }
+
+      .input-icon {
+        left: 0.875rem;
+      }
+
       .form-input {
-        padding: 0.75rem 3rem 0.75rem 0.875rem;
+        padding: 0.875rem 3rem 0.875rem 2.75rem;
+        font-size: 0.9375rem;
+      }
+
+      .password-toggle {
+        right: 0.875rem;
       }
     }
   `]
