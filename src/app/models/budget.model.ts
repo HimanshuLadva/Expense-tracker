@@ -1,5 +1,6 @@
 export interface Budget {
   id: number;
+  userId: number;
   name: string;
   amount: number;
   period: 'monthly' | 'weekly' | 'quarterly' | 'yearly' | 'custom';

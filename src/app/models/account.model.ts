@@ -1,11 +1,12 @@
 export interface Account {
   id: number;
+  userId?: number;
   name: string;
   initialAmount: number;
   currentBalance: number;
   icon: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface CreateAccountRequest {

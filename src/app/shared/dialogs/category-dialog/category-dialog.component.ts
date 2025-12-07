@@ -337,6 +337,7 @@ export class CategoryDialogComponent implements OnInit {
       } else {
         const newCategory: Category = {
           id: 0, // Backend will generate the ID
+          userId: 0, // UserId will be set by the backend from JWT token
           type: formValue.type,
           name: formValue.name,
           icon: formValue.icon,

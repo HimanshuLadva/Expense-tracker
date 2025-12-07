@@ -79,6 +79,7 @@ export class BudgetApiService {
   private convertToBudget(data: any): Budget {
     return {
       id: data.id,
+      userId: data.userId,
       name: data.name,
       amount: data.amount,
       period: data.period,

@@ -95,6 +95,7 @@ export class ReminderApiService {
   private convertToReminder(data: any): Reminder {
     return {
       id: data.id,
+      userId: data.userId,
       title: data.title,
       date: new Date(data.date),
       beforeDays: data.beforeDays,

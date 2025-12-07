@@ -584,6 +584,7 @@ export class TransactionDialogComponent implements OnInit, OnDestroy {
       } else {
         const newTransaction: Transaction = {
           id: 0, // Backend will generate the actual ID
+          userId: 0, // UserId will be set by the backend from JWT token
           type: formValue.type,
           amount: formValue.amount,
           date: this.formatDateTimeForAPI(formValue.date),

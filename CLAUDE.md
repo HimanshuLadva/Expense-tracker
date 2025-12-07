@@ -98,6 +98,10 @@ src/environments/
   - **No Local Storage**: All data persisted in backend database for consistency and scalability
 - **API Service Layer**: AccountApiService, CategoryApiService, ReminderApiService, TransactionApiService, BudgetApiService, UserApiService, AuthApiService
 - **ID Type**: All entity IDs are `number` type for better performance and database compatibility
+- **User-Based Data Isolation**: All entities include userId field; backend automatically filters data by logged-in user's ID from JWT token
+- **Ownership Validation**: Backend validates user ownership on Update/Delete operations to prevent unauthorized access
+- **Auto-Set UserId**: Backend automatically sets userId from JWT token on Create operations (no need to include in request body)
+- **Cross-Entity Validation**: Backend ensures transactions only reference user's own accounts and categories
 - **Error Handling**: User-friendly alerts for API errors with console logging for debugging
 
 ### API Integration Essentials

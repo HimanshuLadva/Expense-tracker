@@ -6,6 +6,7 @@ export enum TransactionType {
 
 export interface Transaction {
   id: number;
+  userId: number;
   type: TransactionType;
   amount: number;
   date: Date;

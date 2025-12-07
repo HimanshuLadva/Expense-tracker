@@ -405,6 +405,7 @@ export class ReminderDialogComponent implements OnInit {
       } else {
         const newReminder: Reminder = {
           id: 0, // Backend will generate the actual ID
+          userId: 0, // UserId will be set by the backend from JWT token
           title: formValue.title,
           date: new Date(formValue.date),
           beforeDays: formValue.beforeDays,

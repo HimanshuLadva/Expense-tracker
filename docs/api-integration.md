@@ -11,6 +11,62 @@ This document contains detailed patterns for integrating with the backend REST A
 - **HTTP Method**: All API endpoints use POST method regardless of operation type
 - **Request/Response**: Strongly typed using interfaces defined in model files
 
+## User-Based Data Isolation
+
+### Overview
+All CRUD endpoints (except User authentication endpoints) now implement user-based data isolation. This ensures each user can only access and modify their own data.
+
+### Key Features
+
+- **JWT Authentication Required**: All CRUD endpoints require valid JWT token in Authorization header
+- **Automatic User Filtering**: Backend automatically filters all data by the logged-in user's ID extracted from JWT token
+- **UserId in Responses**: All entity response DTOs include userId field (Account, Category, Transaction, Reminder, Budget)
+- **Auto-Set UserId on Create**: Backend automatically sets userId from JWT token when creating new entities (no need to include in request body)
+- **Ownership Validation**: Backend validates user ownership on Update and Delete operations to prevent unauthorized access
+- **Cross-Entity Validation**: Backend ensures transactions can only reference accounts and categories owned by the user
+
+### Entity Model Updates
+
+All entity interfaces now include `userId: number` field:
+- Account
+- Category
+- Transaction
+- Reminder
+- Budget
+
+### Request/Response Patterns
+
+**Create Operations:**
+- Request DTOs do NOT need to include userId (backend sets it automatically from JWT token)
+- Response includes the created entity with userId field populated
+
+**Read Operations:**
+- GetAll endpoints automatically filter results by logged-in user's ID
+- GetById endpoints validate ownership and return 404 if entity doesn't belong to user
+
+**Update Operations:**
+- Request DTOs do NOT need to include userId in body
+- Backend validates that entity being updated belongs to logged-in user
+- Returns 404 if entity doesn't exist or doesn't belong to user
+
+**Delete Operations:**
+- Backend validates ownership before deletion
+- Returns 404 if entity doesn't exist or doesn't belong to user
+
+### Multi-User Testing Considerations
+
+When testing with multiple user accounts:
+1. Create separate user accounts via signup
+2. Login with different accounts to test data isolation
+3. Verify each user only sees their own data
+4. Verify cross-entity operations only work with user's own entities (e.g., transactions with user's accounts/categories)
+
+### Security Benefits
+
+- **Data Privacy**: Users cannot access other users' financial data
+- **Data Integrity**: Users cannot modify or delete other users' entities
+- **Referential Integrity**: Cross-entity operations (like transactions) are validated to ensure all referenced entities belong to the same user
+
 ## Authentication API Patterns
 
 ### Authentication Service Architecture

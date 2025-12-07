@@ -280,9 +280,8 @@ export class AccountDialogComponent implements OnInit {
           name: formValue.name,
           initialAmount: formValue.initialAmount,
           currentBalance: formValue.initialAmount,
-          icon: formValue.icon,
-          createdAt: new Date(),
-          updatedAt: new Date()
+          icon: formValue.icon
+          // userId, createdAt, updatedAt will be set by the backend
         };
 
         this.storageService.saveAccount(newAccount, false).subscribe({

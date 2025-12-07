@@ -1,5 +1,6 @@
 export interface Reminder {
   id: number;
+  userId: number;
   title: string;
   date: Date;
   beforeDays: number;
