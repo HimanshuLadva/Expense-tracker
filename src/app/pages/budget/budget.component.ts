@@ -41,7 +41,10 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
           </div>
         </form>
         <button class="add-budget-btn" (click)="createBudget()">
-          + New Budget
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          New Budget
         </button>
       </app-page-header>
 
@@ -61,13 +64,23 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
                     class="edit-btn"
                     (click)="editBudget(budget)"
                     title="Edit Budget"
+                    aria-label="Edit Budget"
                   >
-                    ✏️
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12.5 5.5l4 4L7 19H3v-4z"/>
+                      <path d="M15 3.5l4.5 4.5"/>
+                    </svg>
                   </button>
                 </div>
 
                 <div class="budget-date-range">
-                  <span class="date-label">📅</span>
+                  <span class="date-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4.5" width="18" height="16" rx="2"/>
+                      <path d="M3 9.5h18"/>
+                      <path d="M8 3v3M16 3v3"/>
+                    </svg>
+                  </span>
                   <span class="date-text">{{ formatDate(budget.startDate) }} - {{ formatDate(budget.endDate) }}</span>
                 </div>
 
@@ -124,7 +137,12 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
           </div>
         } @else {
           <div class="empty-state">
-            <div class="empty-icon">📊</div>
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-9-9"/>
+                <path d="M21 12H12V3"/>
+              </svg>
+            </div>
             <p class="empty-message">No active budgets for the selected date range</p>
             <button class="create-first-btn" (click)="createBudget()">
               Create Your First Budget
@@ -153,27 +171,26 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
             transform: translateY(-50%);
             font-size: 0.875rem;
             font-weight: 500;
-            font-family: Verdana, sans-serif;
-            color: #1a1a1a;
+            color: var(--text-primary);
             pointer-events: none;
-            background: white;
+            background: var(--surface);
             padding: 0 0.25rem;
           }
 
           .date-input {
             padding: 0.5rem 0.5rem 0.5rem 2.7rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
             font-size: 0.875rem;
-            color: #111827;
-            background: white;
+            color: var(--text-primary);
+            background: var(--surface);
             width: 170px;
             outline: none;
             transition: border-color 0.2s ease;
 
             &:focus {
-              border-color: #3b82f6;
-              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+              border-color: var(--color-primary-light);
+              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
             }
 
             &::-webkit-calendar-picker-indicator {
@@ -184,18 +201,34 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
       }
 
       .add-budget-btn {
-        padding: 0.625rem 1.25rem;
-        background: #3b82f6;
-        color: white;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.1rem;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+        color: var(--text-on-primary);
         border: none;
-        border-radius: 0.375rem;
+        border-radius: var(--radius-md);
         font-size: 0.875rem;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
 
         &:hover {
-          background: #2563eb;
+          filter: brightness(1.06);
+          box-shadow: var(--shadow-md);
+          transform: translateY(-1px);
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--color-primary-light);
+          outline-offset: 2px;
         }
       }
 
@@ -203,54 +236,65 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
         margin-bottom: 3rem;
 
         .section-title {
-          font-size: 1.5rem;
+          font-family: var(--font-heading);
+          font-size: 1.3rem;
           font-weight: 700;
-          color: #111827;
+          color: var(--text-primary);
           margin-bottom: 1.5rem;
           display: flex;
           align-items: center;
-          gap: 0.5rem;
+          gap: 0.6rem;
 
           &::before {
             content: '';
             width: 4px;
-            height: 1.5rem;
-            background: #3b82f6;
+            height: 1.3rem;
+            background: var(--color-primary);
             border-radius: 2px;
           }
         }
 
         .empty-state {
-          background: white;
+          background: var(--surface);
           padding: 3rem;
-          border-radius: 0.75rem;
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-md);
           text-align: center;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+          box-shadow: var(--shadow-sm);
 
           .empty-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
+            width: 52px;
+            height: 52px;
+            margin: 0 auto 1rem;
+            color: var(--text-muted);
+
+            svg {
+              width: 100%;
+              height: 100%;
+            }
           }
 
           .empty-message {
-            color: #6b7280;
+            color: var(--text-muted);
             font-size: 1rem;
             margin: 0 0 1.5rem 0;
           }
 
           .create-first-btn {
             padding: 0.75rem 1.5rem;
-            background: #3b82f6;
-            color: white;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+            color: var(--text-on-primary);
             border: none;
-            border-radius: 0.5rem;
+            border-radius: var(--radius-md);
             font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
 
             &:hover {
-              background: #2563eb;
+              box-shadow: var(--shadow-md);
+              transform: translateY(-1px);
             }
           }
         }
@@ -262,15 +306,16 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
         gap: 1.5rem;
 
         .budget-card {
-          background: white;
-          padding: 1rem 1.5rem 1.5rem 1.5rem;
-          border-radius: 0.75rem;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-          border-left: 4px solid #3b82f6;
+          background: var(--surface);
+          padding: 1.1rem 1.4rem 1.4rem 1.4rem;
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-sm);
+          border-top: 3px solid var(--color-primary);
           transition: all 0.2s ease;
 
           &:hover {
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            box-shadow: var(--shadow-md);
             transform: translateY(-2px);
           }
 
@@ -286,31 +331,42 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
               gap: 0.25rem;
 
               .budget-name {
-                font-size: 1.25rem;
+                font-family: var(--font-heading);
+                font-size: 1.15rem;
                 font-weight: 600;
-                color: #111827;
+                color: var(--text-primary);
               }
 
               .budget-period {
-                font-size: 0.75rem;
-                color: #6b7280;
+                font-size: 0.72rem;
+                color: var(--text-muted);
                 text-transform: uppercase;
-                font-weight: 500;
+                letter-spacing: 0.04em;
+                font-weight: 600;
               }
             }
 
             .edit-btn {
-              background: #f3f4f6;
-              border: none;
-              border-radius: 0.375rem;
-              padding: 0.5rem;
+              background: var(--color-primary-tint);
+              border: 1px solid color-mix(in srgb, var(--color-primary-light) 35%, white);
+              color: var(--color-primary);
+              border-radius: var(--radius-sm);
+              width: 32px;
+              height: 32px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
               cursor: pointer;
-              font-size: 1rem;
-              transition: all 0.2s ease;
+              transition: all 0.15s ease;
+
+              svg {
+                width: 15px;
+                height: 15px;
+              }
 
               &:hover {
-                background: #e5e7eb;
-                transform: scale(1.1);
+                background: color-mix(in srgb, var(--color-primary-light) 22%, white);
+                transform: translateY(-1px);
               }
             }
           }
@@ -319,15 +375,24 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem;
-            background: #f9fafb;
-            border-radius: 0.375rem;
+            padding: 0.5rem 0.65rem;
+            background: var(--surface-muted);
+            border-radius: var(--radius-sm);
             margin-bottom: 1rem;
-            font-size: 0.875rem;
-            color: #4b5563;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
 
             .date-label {
-              font-size: 1rem;
+              width: 16px;
+              height: 16px;
+              flex-shrink: 0;
+              display: flex;
+              color: var(--text-muted);
+
+              svg {
+                width: 100%;
+                height: 100%;
+              }
             }
 
             .date-text {
@@ -340,25 +405,26 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
 
             .categories-label {
               display: block;
-              font-size: 0.75rem;
-              color: #6b7280;
-              font-weight: 500;
+              font-size: 0.7rem;
+              color: var(--text-muted);
+              font-weight: 600;
               margin-bottom: 0.5rem;
               text-transform: uppercase;
+              letter-spacing: 0.04em;
             }
 
             .categories-list {
               display: flex;
               flex-wrap: wrap;
-              gap: 0.5rem;
+              gap: 0.4rem;
 
               .category-chip {
                 padding: 0.25rem 0.625rem;
-                background: #e0e7ff;
-                color: #3730a3;
-                border-radius: 0.25rem;
-                font-size: 0.75rem;
-                font-weight: 500;
+                background: var(--color-primary-tint);
+                color: var(--color-primary);
+                border-radius: var(--radius-sm);
+                font-size: 0.72rem;
+                font-weight: 600;
               }
             }
           }
@@ -371,39 +437,40 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
               justify-content: space-between;
               align-items: center;
               padding: 0.5rem 0;
-              border-bottom: 1px solid #f3f4f6;
+              border-bottom: 1px solid var(--border-subtle);
 
               &:last-child {
                 border-bottom: none;
               }
 
               .stat-label {
-                color: #6b7280;
-                font-size: 0.875rem;
+                color: var(--text-muted);
+                font-size: 0.85rem;
                 font-weight: 500;
               }
 
               .stat-value {
                 font-size: 1rem;
                 font-weight: 600;
+                font-variant-numeric: tabular-nums;
 
                 &.limit {
-                  color: #3b82f6;
+                  color: var(--color-primary);
                 }
 
                 &.spent {
-                  color: #f59e0b;
+                  color: var(--color-warning);
 
                   &.over-budget {
-                    color: #ef4444;
+                    color: var(--color-destructive);
                   }
                 }
 
                 &.remaining {
-                  color: #10b981;
+                  color: var(--color-accent);
 
                   &.negative {
-                    color: #ef4444;
+                    color: var(--color-destructive);
                   }
                 }
               }
@@ -412,19 +479,19 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
 
           .progress-bar-container {
             height: 8px;
-            background: #e5e7eb;
+            background: var(--surface-sunken);
             border-radius: 4px;
             overflow: hidden;
             margin-bottom: 0.5rem;
 
             .progress-bar {
               height: 100%;
-              background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+              background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-primary-light) 100%);
               border-radius: 4px;
               transition: width 0.3s ease;
 
               &.over-budget {
-                background: linear-gradient(90deg, #f59e0b 0%, #ef4444 100%);
+                background: linear-gradient(90deg, var(--color-warning) 0%, var(--color-destructive) 100%);
               }
             }
           }
@@ -432,7 +499,7 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
           .progress-label {
             text-align: center;
             font-size: 0.75rem;
-            color: #6b7280;
+            color: var(--text-muted);
             font-weight: 500;
             margin-bottom: 1rem;
           }
@@ -440,18 +507,22 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
           .delete-budget-btn {
             width: 100%;
             padding: 0.625rem;
-            background: #fee2e2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
-            border-radius: 0.375rem;
+            background: var(--color-destructive-tint);
+            color: var(--color-destructive);
+            border: 1px solid color-mix(in srgb, var(--color-destructive) 30%, white);
+            border-radius: var(--radius-sm);
             font-size: 0.875rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
 
             &:hover {
-              background: #fecaca;
-              border-color: #fca5a5;
+              background: color-mix(in srgb, var(--color-destructive) 18%, white);
+            }
+
+            &:focus-visible {
+              outline: 2px solid var(--color-destructive);
+              outline-offset: 2px;
             }
           }
         }

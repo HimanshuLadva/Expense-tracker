@@ -9,7 +9,9 @@ import { RouterModule } from '@angular/router';
   template: `
     <div class="page-header">
       <div class="header-content">
-        <h1 class="page-title">{{ title }}</h1>
+        @if (title) {
+          <h1 class="page-title">{{ title }}</h1>
+        }
         @if (subtitle) {
           <p class="page-subtitle">{{ subtitle }}</p>
         }
@@ -18,7 +20,9 @@ import { RouterModule } from '@angular/router';
         <ng-content></ng-content>
         @if (showAddButton) {
           <button type="button" class="add-button" (click)="onAddClick()">
-            <span class="plus-icon">+</span>
+            <svg class="plus-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
             Add {{ addButtonText }}
           </button>
         }
@@ -31,51 +35,66 @@ import { RouterModule } from '@angular/router';
       justify-content: space-between;
       align-items: flex-start;
       margin-bottom: 1.5rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid #e5e7eb;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-subtle);
 
       .header-content {
         .page-title {
           margin: 0 0 0.25rem 0;
-          font-size: 1.5rem;
+          font-family: var(--font-heading);
+          font-size: 1.625rem;
           font-weight: 700;
-          color: #111827;
+          color: var(--text-primary);
+          letter-spacing: -0.01em;
         }
 
         .page-subtitle {
           margin: 0;
-          color: #6b7280;
-          font-size: 1rem;
+          color: var(--text-secondary);
+          font-size: 0.95rem;
         }
       }
 
       .header-actions {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .add-button {
         display: inline-flex;
         align-items: center;
-        gap: 0.375rem;
-        padding: 0.5rem 1rem;
-        background-color: #3b82f6;
-        color: white;
+        gap: 0.5rem;
+        padding: 0.6rem 1.1rem;
+        background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+        color: var(--text-on-primary);
         border: none;
-        border-radius: 0.375rem;
+        border-radius: var(--radius-md);
         font-size: 0.875rem;
-        font-weight: 500;
+        font-weight: 600;
         cursor: pointer;
-        transition: background-color 0.2s ease;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
 
         &:hover {
-          background-color: #2563eb;
+          filter: brightness(1.06);
+          box-shadow: var(--shadow-md);
+          transform: translateY(-1px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--color-primary-light);
+          outline-offset: 2px;
         }
 
         .plus-icon {
-          font-size: 1rem;
-          font-weight: bold;
+          width: 16px;
+          height: 16px;
+          flex-shrink: 0;
         }
       }
     }

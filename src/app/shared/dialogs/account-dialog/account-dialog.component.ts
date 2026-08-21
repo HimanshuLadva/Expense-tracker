@@ -15,7 +15,11 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
   template: `
     <div class="dialog-header">
       <h3 class="dialog-title">{{ isEditMode ? 'Edit Account' : 'Add Account' }}</h3>
-      <button type="button" class="dialog-close-btn" (click)="onCancel()">✕</button>
+      <button type="button" class="dialog-close-btn" (click)="onCancel()" aria-label="Close dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
     </div>
 
     <div class="dialog-content">
@@ -32,7 +36,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               [class.error]="accountForm.get('name')?.invalid && accountForm.get('name')?.touched"
             />
             @if (accountForm.get('name')?.hasError('required') && accountForm.get('name')?.touched) {
-              <span class="error-message">Account name is required</span>
+              <span class="error-message" role="alert">Account name is required</span>
             }
           </div>
 
@@ -48,10 +52,10 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               [class.error]="accountForm.get('initialAmount')?.invalid && accountForm.get('initialAmount')?.touched"
             />
             @if (accountForm.get('initialAmount')?.hasError('required') && accountForm.get('initialAmount')?.touched) {
-              <span class="error-message">Initial amount is required</span>
+              <span class="error-message" role="alert">Initial amount is required</span>
             }
             @if (accountForm.get('initialAmount')?.hasError('min') && accountForm.get('initialAmount')?.touched) {
-              <span class="error-message">Amount must be at least 0</span>
+              <span class="error-message" role="alert">Amount must be at least 0</span>
             }
           </div>
 
@@ -62,7 +66,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           />
 
           @if (accountForm.get('icon')?.hasError('required') && accountForm.get('icon')?.touched) {
-            <span class="error-message">Please select an icon</span>
+            <span class="error-message" role="alert">Please select an icon</span>
           }
         </div>
 
@@ -108,32 +112,34 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
-            color: #374151;
+            color: var(--text-secondary);
             font-size: 0.875rem;
           }
 
           .form-input {
             width: 100%;
             padding: 0.875rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
             font-size: 1rem;
+            color: var(--text-primary);
+            background: var(--surface);
             transition: all 0.2s ease;
             box-sizing: border-box;
 
             &:focus {
               outline: none;
-              border-color: #3b82f6;
-              box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
+              border-color: var(--color-primary-light);
+              box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 16%, transparent);
             }
 
             &.error {
-              border-color: #ef4444;
-              box-shadow: 0 0 0 3px rgb(239 68 68 / 0.1);
+              border-color: var(--color-destructive);
+              box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-destructive) 16%, transparent);
             }
 
             &::placeholder {
-              color: #9ca3af;
+              color: var(--text-muted);
             }
           }
 
@@ -141,7 +147,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             display: block;
             margin-top: 0.5rem;
             font-size: 0.875rem;
-            color: #ef4444;
+            color: var(--color-destructive);
             font-weight: 500;
           }
         }
@@ -152,14 +158,14 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         gap: 1rem;
         margin-top: 1rem;
         padding-top: 1.5rem;
-        border-top: 1px solid #e5e7eb;
+        border-top: 1px solid var(--border-subtle);
         flex-shrink: 0;
 
         .btn {
           flex: 1;
           padding: 0.875rem 1.5rem;
           border: none;
-          border-radius: 0.5rem;
+          border-radius: var(--radius-sm);
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -174,26 +180,31 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             cursor: not-allowed;
           }
 
+          &:focus-visible {
+            outline: 2px solid var(--color-primary-light);
+            outline-offset: 2px;
+          }
+
           &.btn-primary {
-            background-color: #3b82f6;
-            color: white;
-            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+            color: var(--text-on-primary);
+            box-shadow: var(--shadow-sm);
 
             &:hover:not(:disabled) {
-              background-color: #2563eb;
-              box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.1);
+              filter: brightness(1.06);
+              box-shadow: var(--shadow-md);
             }
           }
 
           &.btn-secondary {
-            background-color: #f8fafc;
-            color: #374151;
-            border: 1px solid #d1d5db;
-            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            background-color: var(--surface);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-default);
+            box-shadow: var(--shadow-sm);
 
             &:hover {
-              background-color: #f1f5f9;
-              border-color: #9ca3af;
+              background-color: var(--surface-sunken);
+              border-color: var(--border-default);
             }
           }
         }

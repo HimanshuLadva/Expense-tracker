@@ -15,7 +15,11 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
   template: `
     <div class="dialog-header">
       <h3 class="dialog-title">{{ isEditMode ? 'Edit Category' : 'Add Category' }}</h3>
-      <button type="button" class="dialog-close-btn" (click)="onCancel()">✕</button>
+      <button type="button" class="dialog-close-btn" (click)="onCancel()" aria-label="Close dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
     </div>
 
     <div class="dialog-content">
@@ -50,7 +54,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               </label>
             </div>
             @if (categoryForm.get('type')?.hasError('required') && categoryForm.get('type')?.touched) {
-              <span class="error-message">Please select a category type</span>
+              <span class="error-message" role="alert">Please select a category type</span>
             }
           </div>
 
@@ -65,7 +69,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               [class.error]="categoryForm.get('name')?.invalid && categoryForm.get('name')?.touched"
             />
             @if (categoryForm.get('name')?.hasError('required') && categoryForm.get('name')?.touched) {
-              <span class="error-message">Category name is required</span>
+              <span class="error-message" role="alert">Category name is required</span>
             }
           </div>
 
@@ -76,7 +80,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           />
 
           @if (categoryForm.get('icon')?.hasError('required') && categoryForm.get('icon')?.touched) {
-            <span class="error-message">Please select an icon</span>
+            <span class="error-message" role="alert">Please select an icon</span>
           }
         </div>
 
@@ -112,17 +116,17 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         }
 
         &::-webkit-scrollbar-track {
-          background: #f1f1f1;
+          background: var(--surface-muted);
           border-radius: 3px;
         }
 
         &::-webkit-scrollbar-thumb {
-          background: #c1c1c1;
+          background: var(--border-default);
           border-radius: 3px;
         }
 
         &::-webkit-scrollbar-thumb:hover {
-          background: #a1a1a1;
+          background: var(--text-muted);
         }
 
         .form-group {
@@ -138,34 +142,39 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         display: flex;
         gap: 0.75rem;
         padding-top: 1rem;
-        border-top: 1px solid #e5e7eb;
+        border-top: 1px solid var(--border-subtle);
 
         .btn {
           flex: 1;
           padding: 0.75rem 1rem;
-          border-radius: 0.5rem;
+          border-radius: var(--radius-sm);
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
           border: 1px solid;
 
+          &:focus-visible {
+            outline: 2px solid var(--color-primary-light);
+            outline-offset: 2px;
+          }
+
           &.btn-secondary {
-            background-color: #f3f4f6;
-            border-color: #d1d5db;
-            color: #374151;
+            background-color: var(--surface);
+            border-color: var(--border-default);
+            color: var(--text-secondary);
 
             &:hover {
-              background-color: #e5e7eb;
+              background-color: var(--surface-sunken);
             }
           }
 
           &.btn-primary {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
-            color: white;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+            border-color: transparent;
+            color: var(--text-on-primary);
 
             &:hover:not(:disabled) {
-              background-color: #2563eb;
+              filter: brightness(1.06);
             }
 
             &:disabled {
@@ -189,9 +198,9 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             display: none;
 
             &:checked + .radio-label {
-              background-color: #dbeafe;
-              border-color: #3b82f6;
-              color: #1e40af;
+              background-color: var(--color-primary-tint);
+              border-color: var(--color-primary);
+              color: var(--color-primary-dark);
             }
           }
 
@@ -200,15 +209,16 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             align-items: center;
             gap: 0.5rem;
             padding: 0.875rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
+            border: 2px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
             transition: all 0.2s ease;
             width: 100%;
             font-weight: 500;
+            color: var(--text-primary);
 
             &:hover {
-              border-color: #3b82f6;
-              background-color: #f8fafc;
+              border-color: var(--color-primary-light);
+              background-color: var(--color-primary-tint);
             }
 
             .radio-icon {
@@ -221,7 +231,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       .label {
         display: block;
         font-weight: 600;
-        color: #374151;
+        color: var(--text-secondary);
         margin-bottom: 0.5rem;
         font-size: 0.875rem;
       }
@@ -229,36 +239,38 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       .form-input {
         width: 100%;
         padding: 0.75rem;
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-sm);
         font-size: 0.875rem;
+        color: var(--text-primary);
+        background: var(--surface);
         transition: border-color 0.2s ease;
 
         &:focus {
           outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          border-color: var(--color-primary-light);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 16%, transparent);
         }
 
         &.error {
-          border-color: #ef4444;
+          border-color: var(--color-destructive);
         }
 
         &::placeholder {
-          color: #9ca3af;
+          color: var(--text-muted);
         }
       }
 
       .error-message {
         display: block;
-        color: #ef4444;
+        color: var(--color-destructive);
         font-size: 0.75rem;
         margin-top: 0.25rem;
       }
 
       .help-text {
         display: block;
-        color: #6b7280;
+        color: var(--text-muted);
         font-size: 0.75rem;
         margin-top: 0.25rem;
       }

@@ -25,21 +25,35 @@ import { CategoryDialogComponent } from '../../shared/dialogs/category-dialog/ca
 
       <div class="categories-stats">
         <div class="stat-card total">
-          <div class="stat-icon">📁</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6.5a1.5 1.5 0 0 1 1.5-1.5h4.4a1.5 1.5 0 0 1 1.2.6l1.1 1.4a1.5 1.5 0 0 0 1.2.6h7.1a1.5 1.5 0 0 1 1.5 1.5v8.4a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Total Categories</div>
             <div class="stat-value">{{ categories.length }}</div>
           </div>
         </div>
         <div class="stat-card income">
-          <div class="stat-icon">💰</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 19V5"/>
+              <path d="M6 11l6-6 6 6"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Income Categories</div>
             <div class="stat-value">{{ incomeCategories.length }}</div>
           </div>
         </div>
         <div class="stat-card expense">
-          <div class="stat-icon">💸</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14"/>
+              <path d="M18 13l-6 6-6-6"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Expense Categories</div>
             <div class="stat-value">{{ expenseCategories.length }}</div>
@@ -94,44 +108,70 @@ import { CategoryDialogComponent } from '../../shared/dialogs/category-dialog/ca
         margin-bottom: 2rem;
 
         .stat-card {
-          background: white;
-          padding: 1rem;
-          border-radius: 0.5rem;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+          background: var(--surface);
+          padding: 1.1rem;
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-sm);
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.9rem;
+          border-top: 3px solid var(--color-primary);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-          &.total {
-            border-left: 4px solid #6366f1;
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
           }
 
           &.income {
-            border-left: 4px solid #10b981;
+            border-top-color: var(--color-accent);
           }
 
           &.expense {
-            border-left: 4px solid #ef4444;
+            border-top-color: var(--color-destructive);
           }
 
           .stat-icon {
-            font-size: 2rem;
-            background: #f3f4f6;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-primary-tint);
+            color: var(--color-primary);
+            border-radius: var(--radius-md);
+
+            svg {
+              width: 20px;
+              height: 20px;
+            }
+          }
+
+          &.income .stat-icon {
+            background: var(--color-accent-tint);
+            color: var(--color-accent);
+          }
+
+          &.expense .stat-icon {
+            background: var(--color-destructive-tint);
+            color: var(--color-destructive);
           }
 
           .stat-content {
             .stat-label {
-              color: #6b7280;
-              font-size: 0.875rem;
+              color: var(--text-muted);
+              font-size: 0.8rem;
+              font-weight: 500;
               margin-bottom: 0.25rem;
             }
 
             .stat-value {
-              font-size: 1.875rem;
+              font-family: var(--font-heading);
+              font-size: 1.6rem;
               font-weight: 700;
-              color: #111827;
+              color: var(--text-primary);
             }
           }
         }
@@ -139,31 +179,38 @@ import { CategoryDialogComponent } from '../../shared/dialogs/category-dialog/ca
 
       .category-tabs {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.25rem;
         margin-bottom: 1.5rem;
-        background: white;
-        padding: 0.5rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        background: var(--surface-sunken);
+        padding: 0.35rem;
+        border-radius: var(--radius-md);
+        width: fit-content;
 
         .tab-button {
-          padding: 0.75rem 1.5rem;
+          padding: 0.6rem 1.25rem;
           border: none;
           background: transparent;
-          color: #6b7280;
-          border-radius: 0.375rem;
+          color: var(--text-secondary);
+          border-radius: var(--radius-sm);
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.15s ease;
           font-weight: 500;
+          font-size: 0.875rem;
 
           &:hover {
-            background: #f3f4f6;
-            color: #374151;
+            color: var(--text-primary);
           }
 
           &.active {
-            background: #3b82f6;
-            color: white;
+            background: var(--surface);
+            color: var(--color-primary);
+            font-weight: 600;
+            box-shadow: var(--shadow-sm);
+          }
+
+          &:focus-visible {
+            outline: 2px solid var(--color-primary-light);
+            outline-offset: 2px;
           }
         }
       }
@@ -173,13 +220,14 @@ import { CategoryDialogComponent } from '../../shared/dialogs/category-dialog/ca
       .categories-page {
         .category-tabs {
           flex-wrap: wrap;
-          gap: 0.375rem;
+          gap: 0.25rem;
+          width: 100%;
 
           .tab-button {
             flex: 1;
             min-width: calc(33.33% - 0.25rem);
             padding: 0.625rem 0.75rem;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             text-align: center;
           }
         }
@@ -196,7 +244,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   private subscription = new Subscription();
 
   tableColumns: TableColumn[] = [
-    { key: 'icon', label: 'Icon', type: 'text' },
+    { key: 'icon', label: 'Icon', type: 'icon' },
     { key: 'name', label: 'Category Name', type: 'text' },
     {
       key: 'type',

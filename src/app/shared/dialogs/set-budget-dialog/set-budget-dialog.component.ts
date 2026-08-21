@@ -6,6 +6,7 @@ import { DialogRef, DIALOG_DATA } from '@angular/cdk/dialog';
 import { StorageService } from '../../../services/storage.service';
 import { Budget, Category, CreateBudgetRequest, UpdateBudgetRequest } from '../../../models';
 import { DialogResult } from '../../dialog/dialog-result.interface';
+import { getIconBadgeColor } from '../../icon-badge-color.util';
 
 @Component({
   selector: 'app-set-budget-dialog',
@@ -14,7 +15,11 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
   template: `
     <div class="dialog-header">
       <h3 class="dialog-title">{{ isEditMode ? 'Edit Budget' : 'Create Budget' }}</h3>
-      <button type="button" class="dialog-close-btn" (click)="onCancel()">✕</button>
+      <button type="button" class="dialog-close-btn" (click)="onCancel()" aria-label="Close dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
     </div>
 
     <div class="dialog-content">
@@ -37,7 +42,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               [class.error]="budgetForm.get('name')?.invalid && budgetForm.get('name')?.touched"
             />
             @if (budgetForm.get('name')?.hasError('required') && budgetForm.get('name')?.touched) {
-              <span class="error-message">Budget name is required</span>
+              <span class="error-message" role="alert">Budget name is required</span>
             }
           </div>
 
@@ -54,10 +59,10 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               [class.error]="budgetForm.get('amount')?.invalid && budgetForm.get('amount')?.touched"
             />
             @if (budgetForm.get('amount')?.hasError('required') && budgetForm.get('amount')?.touched) {
-              <span class="error-message">Budget amount is required</span>
+              <span class="error-message" role="alert">Budget amount is required</span>
             }
             @if (budgetForm.get('amount')?.hasError('min') && budgetForm.get('amount')?.touched) {
-              <span class="error-message">Budget amount must be greater than 0</span>
+              <span class="error-message" role="alert">Budget amount must be greater than 0</span>
             }
           </div>
 
@@ -77,7 +82,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               <option value="custom">Custom</option>
             </select>
             @if (budgetForm.get('period')?.hasError('required') && budgetForm.get('period')?.touched) {
-              <span class="error-message">Period is required</span>
+              <span class="error-message" role="alert">Period is required</span>
             }
           </div>
 
@@ -92,7 +97,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
                 [class.error]="budgetForm.get('startDate')?.invalid && budgetForm.get('startDate')?.touched"
               />
               @if (budgetForm.get('startDate')?.hasError('required') && budgetForm.get('startDate')?.touched) {
-                <span class="error-message">Start date is required</span>
+                <span class="error-message" role="alert">Start date is required</span>
               }
             </div>
 
@@ -106,7 +111,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
                 [class.error]="budgetForm.get('endDate')?.invalid && budgetForm.get('endDate')?.touched"
               />
               @if (budgetForm.get('endDate')?.hasError('required') && budgetForm.get('endDate')?.touched) {
-                <span class="error-message">End date is required</span>
+                <span class="error-message" role="alert">End date is required</span>
               }
             </div>
           </div>
@@ -114,7 +119,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           <div class="form-group">
             <label class="label">Categories * (Select at least one)</label>
             <div class="categories-grid">
-              @for (category of categories; track category.id) {
+              @for (category of categories; track category.id; let i = $index) {
                 <label class="category-checkbox">
                   <input
                     type="checkbox"
@@ -123,14 +128,14 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
                     (change)="toggleCategory(category.id)"
                   />
                   <span class="category-label">
-                    <span class="category-icon">{{ category.icon }}</span>
+                    <span class="category-icon" [style.background-color]="iconBadgeColor(i)">{{ category.icon }}</span>
                     <span class="category-name">{{ category.name }}</span>
                   </span>
                 </label>
               }
             </div>
             @if (selectedCategories.length === 0 && budgetForm.touched) {
-              <span class="error-message">Please select at least one category</span>
+              <span class="error-message" role="alert">Please select at least one category</span>
             }
           </div>
 
@@ -176,15 +181,15 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       .loading-spinner {
         width: 40px;
         height: 40px;
-        border: 4px solid #f3f4f6;
-        border-top: 4px solid #3b82f6;
+        border: 4px solid var(--surface-muted);
+        border-top: 4px solid var(--color-primary);
         border-radius: 50%;
         animation: spin 1s linear infinite;
         margin-bottom: 1rem;
       }
 
       p {
-        color: #6b7280;
+        color: var(--text-secondary);
         font-size: 0.875rem;
         margin: 0;
       }
@@ -211,17 +216,17 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         }
 
         &::-webkit-scrollbar-track {
-          background: #f1f1f1;
+          background: var(--surface-muted);
           border-radius: 3px;
         }
 
         &::-webkit-scrollbar-thumb {
-          background: #c1c1c1;
+          background: var(--border-default);
           border-radius: 3px;
         }
 
         &::-webkit-scrollbar-thumb:hover {
-          background: #a1a1a1;
+          background: var(--text-muted);
         }
 
         .form-group {
@@ -245,21 +250,21 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           max-height: 200px;
           overflow-y: auto;
           padding: 0.5rem;
-          border: 1px solid #e5e7eb;
-          border-radius: 0.5rem;
-          background: #f9fafb;
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-sm);
+          background: var(--surface-muted);
 
           &::-webkit-scrollbar {
             width: 4px;
           }
 
           &::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: var(--surface-muted);
             border-radius: 2px;
           }
 
           &::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
+            background: var(--border-default);
             border-radius: 2px;
           }
 
@@ -268,19 +273,20 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             align-items: center;
             cursor: pointer;
             padding: 0.5rem;
-            background: white;
-            border: 1px solid #e5e7eb;
+            background: var(--surface);
+            border: 1px solid var(--border-subtle);
             border-radius: 0.375rem;
             transition: all 0.2s ease;
 
             &:hover {
-              background: #f3f4f6;
-              border-color: #3b82f6;
+              background: var(--color-primary-tint);
+              border-color: var(--color-primary-light);
             }
 
             input[type="checkbox"] {
               margin-right: 0.5rem;
               cursor: pointer;
+              accent-color: var(--color-primary);
             }
 
             .category-label {
@@ -290,18 +296,25 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               flex: 1;
 
               .category-icon {
-                font-size: 1.25rem;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 30px;
+                height: 30px;
+                flex-shrink: 0;
+                border-radius: 50%;
+                font-size: 1rem;
               }
 
               .category-name {
                 font-size: 0.875rem;
                 font-weight: 500;
-                color: #111827;
+                color: var(--text-primary);
               }
             }
 
             input[type="checkbox"]:checked + .category-label {
-              color: #3b82f6;
+              color: var(--color-primary-dark);
             }
           }
         }
@@ -312,10 +325,11 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           gap: 0.5rem;
           cursor: pointer;
           font-weight: 500;
-          color: #374151;
+          color: var(--text-secondary);
 
           input[type="checkbox"] {
             cursor: pointer;
+            accent-color: var(--color-primary);
           }
         }
       }
@@ -324,34 +338,39 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         display: flex;
         gap: 0.75rem;
         padding-top: 1rem;
-        border-top: 1px solid #e5e7eb;
+        border-top: 1px solid var(--border-subtle);
 
         .btn {
           flex: 1;
           padding: 0.75rem 1rem;
-          border-radius: 0.5rem;
+          border-radius: var(--radius-sm);
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
           border: 1px solid;
 
+          &:focus-visible {
+            outline: 2px solid var(--color-primary-light);
+            outline-offset: 2px;
+          }
+
           &.btn-secondary {
-            background-color: #f3f4f6;
-            border-color: #d1d5db;
-            color: #374151;
+            background-color: var(--surface);
+            border-color: var(--border-default);
+            color: var(--text-secondary);
 
             &:hover {
-              background-color: #e5e7eb;
+              background-color: var(--surface-sunken);
             }
           }
 
           &.btn-primary {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
-            color: white;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+            border-color: transparent;
+            color: var(--text-on-primary);
 
             &:hover:not(:disabled) {
-              background-color: #2563eb;
+              filter: brightness(1.06);
             }
 
             &:disabled {
@@ -365,7 +384,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       .label {
         display: block;
         font-weight: 600;
-        color: #374151;
+        color: var(--text-secondary);
         margin-bottom: 0.5rem;
         font-size: 0.875rem;
       }
@@ -373,23 +392,25 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       .form-input {
         width: 100%;
         padding: 0.75rem;
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-sm);
         font-size: 0.875rem;
+        color: var(--text-primary);
+        background: var(--surface);
         transition: border-color 0.2s ease;
 
         &:focus {
           outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          border-color: var(--color-primary-light);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 16%, transparent);
         }
 
         &.error {
-          border-color: #ef4444;
+          border-color: var(--color-destructive);
         }
 
         &::placeholder {
-          color: #9ca3af;
+          color: var(--text-muted);
         }
       }
 
@@ -399,14 +420,14 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
 
       .error-message {
         display: block;
-        color: #ef4444;
+        color: var(--color-destructive);
         font-size: 0.75rem;
         margin-top: 0.25rem;
       }
 
       .help-text {
         display: block;
-        color: #6b7280;
+        color: var(--text-muted);
         font-size: 0.75rem;
         margin-top: 0.25rem;
       }
@@ -414,11 +435,11 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
 
     @media (max-width: 640px) {
       .budget-dialog-form {
-        .form-row {
+        .form-fields .form-row {
           grid-template-columns: 1fr;
         }
 
-        .categories-grid {
+        .form-fields .categories-grid {
           grid-template-columns: 1fr;
         }
       }
@@ -567,6 +588,10 @@ export class SetBudgetDialogComponent implements OnInit {
 
   isCategorySelected(categoryId: number): boolean {
     return this.selectedCategories.includes(categoryId);
+  }
+
+  iconBadgeColor(index: number): string {
+    return getIconBadgeColor(index);
   }
 
   toggleCategory(categoryId: number): void {

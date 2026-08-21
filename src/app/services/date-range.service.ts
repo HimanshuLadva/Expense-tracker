@@ -14,7 +14,7 @@ export class DateRangeService {
   public dateRange$: Observable<DateRange>;
 
   constructor() {
-    // Initialize with current month
+    // Initialize with the current month's first and last date
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);

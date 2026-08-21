@@ -27,14 +27,26 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
 
       <div class="accounts-stats">
         <div class="stat-card">
-          <div class="stat-icon">🏦</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9.5l9-5.5 9 5.5"/>
+              <path d="M5 9.5v9M10 9.5v9M14 9.5v9M19 9.5v9"/>
+              <path d="M3 18.5h18"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Total Accounts</div>
             <div class="stat-value">{{ accounts.length }}</div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon">💰</div>
+        <div class="stat-card accent">
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/>
+              <path d="M3 7v10a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1H5a2 2 0 0 1-2-2z"/>
+              <circle cx="16.5" cy="14" r="1.5" fill="currentColor" stroke="none"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Total Balance</div>
             <div class="stat-value">{{ formatCurrency(totalBalance) }}</div>
@@ -60,24 +72,46 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
     .accounts-page {
       .accounts-stats {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
         gap: 1rem;
         margin-bottom: 2rem;
 
         .stat-card {
-          background: white;
-          padding: 1rem;
-          border-radius: 0.5rem;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+          background: var(--surface);
+          padding: 1.1rem;
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-sm);
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.9rem;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+          }
 
           .stat-icon {
-            font-size: 2rem;
-            background: #f3f4f6;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-primary-tint);
+            color: var(--color-primary);
+            border-radius: var(--radius-md);
+
+            svg {
+              width: 20px;
+              height: 20px;
+            }
+          }
+
+          &.accent .stat-icon {
+            background: var(--color-accent-tint);
+            color: var(--color-accent);
           }
 
           .stat-content {
@@ -85,8 +119,9 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
             min-width: 0;
 
             .stat-label {
-              color: #6b7280;
-              font-size: 0.875rem;
+              color: var(--text-muted);
+              font-size: 0.8rem;
+              font-weight: 500;
               margin-bottom: 0.25rem;
               white-space: nowrap;
               overflow: hidden;
@@ -94,28 +129,12 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
             }
 
             .stat-value {
-              font-size: 1.5rem;
+              font-family: var(--font-heading);
+              font-size: 1.4rem;
               font-weight: 700;
-              color: #111827;
+              color: var(--text-primary);
               white-space: nowrap;
               line-height: 1.2;
-            }
-          }
-        }
-      }
-    }
-
-    @media (max-width: 1024px) {
-      .accounts-page {
-        .accounts-stats {
-          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-          gap: 1rem;
-
-          .stat-card {
-            padding: 1rem;
-
-            .stat-content .stat-value {
-              font-size: 1.25rem;
             }
           }
         }
@@ -129,26 +148,10 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
           gap: 0.75rem;
 
           .stat-card {
-            padding: 0.875rem;
-            flex-direction: column;
-            text-align: center;
-            gap: 0.75rem;
+            padding: 0.9rem;
 
-            .stat-icon {
-              font-size: 2rem;
-              padding: 0.625rem;
-            }
-
-            .stat-content {
-              .stat-label {
-                white-space: normal;
-                text-overflow: unset;
-                overflow: visible;
-              }
-
-              .stat-value {
-                font-size: 1.125rem;
-              }
+            .stat-content .stat-value {
+              font-size: 1.2rem;
             }
           }
         }
@@ -160,19 +163,6 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
         .accounts-stats {
           grid-template-columns: 1fr;
           gap: 0.5rem;
-
-          .stat-card {
-            padding: 0.75rem;
-
-            .stat-icon {
-              font-size: 1.75rem;
-              padding: 0.5rem;
-            }
-
-            .stat-content .stat-value {
-              font-size: 1rem;
-            }
-          }
         }
       }
     }
@@ -184,7 +174,7 @@ export class AccountsComponent implements OnInit, OnDestroy {
   private subscription = new Subscription();
 
   tableColumns: TableColumn[] = [
-    { key: 'icon', label: 'Icon', type: 'text' },
+    { key: 'icon', label: 'Icon', type: 'icon' },
     { key: 'name', label: 'Account Name', type: 'text' },
     { key: 'initialAmount', label: 'Initial', type: 'currency' },
     { key: 'currentBalance', label: 'Current Balance', type: 'currency' },

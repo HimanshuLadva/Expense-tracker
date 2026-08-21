@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } fro
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './services/auth.service';
+import { User } from './models';
 
 @Component({
   selector: 'app-root',
@@ -13,6 +14,8 @@ import { AuthService } from './services/auth.service';
 export class AppComponent {
   title = 'Expense-tracker';
   showSidebar = true;
+  sidebarCollapsed = false;
+  currentUser: Omit<User, 'password'> | null = null;
 
   constructor(
     private router: Router,
@@ -27,6 +30,17 @@ export class AppComponent {
       const urlPath = event.url.split('?')[0];
       this.showSidebar = !authRoutes.includes(urlPath);
     });
+
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+    });
+  }
+
+  /**
+   * Toggle sidebar between expanded and icon-only collapsed state
+   */
+  toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 
   /**

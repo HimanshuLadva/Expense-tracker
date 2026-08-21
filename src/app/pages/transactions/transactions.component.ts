@@ -16,6 +16,7 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
 interface EnrichedTransaction extends Transaction {
   accountName?: string;
   categoryName?: string;
+  categoryIcon?: string;
   toAccountName?: string;
 }
 
@@ -56,21 +57,37 @@ interface EnrichedTransaction extends Transaction {
 
       <div class="transactions-stats">
         <div class="stat-card">
-          <div class="stat-icon">📊</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2.5" y="5.5" width="19" height="13.5" rx="2.2"/>
+              <path d="M2.5 10h19"/>
+              <path d="M6.5 14.7h4"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Total Transactions</div>
             <div class="stat-value">{{ transactions.length }}</div>
           </div>
         </div>
         <div class="stat-card income">
-          <div class="stat-icon">💰</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 19V5"/>
+              <path d="M6 11l6-6 6 6"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Total Income</div>
             <div class="stat-value">{{ formatCompactCurrency(totalIncome) }}</div>
           </div>
         </div>
         <div class="stat-card expense">
-          <div class="stat-icon">💸</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14"/>
+              <path d="M18 13l-6 6-6-6"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Total Expenses</div>
             <div class="stat-value">{{ formatCompactCurrency(totalExpenses) }}</div>
@@ -144,27 +161,26 @@ interface EnrichedTransaction extends Transaction {
             transform: translateY(-50%);
             font-size: 0.875rem;
             font-weight: 500;
-            font-family: Verdana, sans-serif;
-            color: #1a1a1a;
+            color: var(--text-primary);
             pointer-events: none;
-            background: white;
+            background: var(--surface);
             padding: 0 0.25rem;
           }
 
           .date-input {
             padding: 0.5rem 0.5rem 0.5rem 2.7rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
             font-size: 0.875rem;
-            color: #111827;
-            background: white;
+            color: var(--text-primary);
+            background: var(--surface);
             width: 170px;
             outline: none;
             transition: border-color 0.2s ease;
 
             &:focus {
-              border-color: #3b82f6;
-              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+              border-color: var(--color-primary-light);
+              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
             }
 
             &::-webkit-calendar-picker-indicator {
@@ -181,40 +197,70 @@ interface EnrichedTransaction extends Transaction {
         margin-bottom: 2rem;
 
         .stat-card {
-          background: white;
-          padding: 1rem;
-          border-radius: 0.5rem;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+          background: var(--surface);
+          padding: 1.1rem;
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-sm);
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.9rem;
+          border-top: 3px solid var(--color-primary);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+          }
 
           &.income {
-            border-left: 4px solid #10b981;
+            border-top-color: var(--color-accent);
           }
 
           &.expense {
-            border-left: 4px solid #ef4444;
+            border-top-color: var(--color-destructive);
           }
 
           .stat-icon {
-            font-size: 2rem;
-            background: #f3f4f6;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-primary-tint);
+            color: var(--color-primary);
+            border-radius: var(--radius-md);
+
+            svg {
+              width: 20px;
+              height: 20px;
+            }
+          }
+
+          &.income .stat-icon {
+            background: var(--color-accent-tint);
+            color: var(--color-accent);
+          }
+
+          &.expense .stat-icon {
+            background: var(--color-destructive-tint);
+            color: var(--color-destructive);
           }
 
           .stat-content {
             .stat-label {
-              color: #6b7280;
-              font-size: 0.875rem;
+              color: var(--text-muted);
+              font-size: 0.8rem;
+              font-weight: 500;
               margin-bottom: 0.25rem;
             }
 
             .stat-value {
-              font-size: 1.875rem;
+              font-family: var(--font-heading);
+              font-size: 1.6rem;
               font-weight: 700;
-              color: #111827;
+              color: var(--text-primary);
             }
           }
         }
@@ -225,30 +271,37 @@ interface EnrichedTransaction extends Transaction {
 
         .filter-tabs {
           display: flex;
-          gap: 0.5rem;
-          background: white;
-          padding: 0.5rem;
-          border-radius: 0.5rem;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+          gap: 0.25rem;
+          background: var(--surface-sunken);
+          padding: 0.35rem;
+          border-radius: var(--radius-md);
+          width: fit-content;
 
           .tab-button {
-            padding: 0.625rem 1.25rem;
+            padding: 0.6rem 1.15rem;
             border: none;
             background: transparent;
-            color: #6b7280;
-            border-radius: 0.375rem;
+            color: var(--text-secondary);
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.15s ease;
             font-weight: 500;
+            font-size: 0.875rem;
 
             &:hover {
-              background: #f3f4f6;
-              color: #374151;
+              color: var(--text-primary);
             }
 
             &.active {
-              background: #3b82f6;
-              color: white;
+              background: var(--surface);
+              color: var(--color-primary);
+              font-weight: 600;
+              box-shadow: var(--shadow-sm);
+            }
+
+            &:focus-visible {
+              outline: 2px solid var(--color-primary-light);
+              outline-offset: 2px;
             }
           }
         }
@@ -264,7 +317,8 @@ interface EnrichedTransaction extends Transaction {
             gap: 0.25rem;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
-            padding: 0.5rem;
+            padding: 0.35rem;
+            width: 100%;
 
             .tab-button {
               flex: 1;
@@ -317,6 +371,13 @@ export class TransactionsComponent implements OnInit, OnDestroy {
 
   tableColumns: TableColumn[] = [
     {
+      key: 'categoryName',
+      label: 'Category',
+      type: 'icon-text',
+      iconKey: 'categoryIcon',
+      colorSeedKey: 'categoryId'
+    },
+    {
       key: 'type',
       label: 'Type',
       type: 'badge',
@@ -328,7 +389,6 @@ export class TransactionsComponent implements OnInit, OnDestroy {
     },
     { key: 'amount', label: 'Amount', type: 'currency' },
     { key: 'accountName', label: 'Account', type: 'text' },
-    { key: 'categoryName', label: 'Category', type: 'text' },
     { key: 'toAccountName', label: 'To Account', type: 'text' },
     { key: 'narration', label: 'Narration', type: 'text' },
     { key: 'date', label: 'Date', type: 'date' }
@@ -408,6 +468,7 @@ export class TransactionsComponent implements OnInit, OnDestroy {
         ...transaction,
         accountName: account?.name || 'Unknown Account',
         categoryName: transaction.type === TransactionType.TRANSFER ? 'Transfer' : (category?.name || 'Unknown Category'),
+        categoryIcon: transaction.type === TransactionType.TRANSFER ? '🔄' : (category?.icon || '❓'),
         toAccountName: toAccount?.name || ''
       };
     });

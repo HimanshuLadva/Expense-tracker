@@ -37,7 +37,7 @@ import { AuthService } from '../../../services/auth.service';
               />
             </div>
             <div class="validation-messages" *ngIf="usernameOrEmail?.invalid && usernameOrEmail?.touched">
-              <p class="error-message" *ngIf="usernameOrEmail?.hasError('required')">Username or email is required</p>
+              <p class="error-message" role="alert" *ngIf="usernameOrEmail?.hasError('required')">Username or email is required</p>
             </div>
           </div>
 
@@ -63,7 +63,7 @@ import { AuthService } from '../../../services/auth.service';
                 type="button"
                 class="password-toggle"
                 (click)="togglePasswordVisibility()"
-                tabindex="-1"
+                [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -72,7 +72,7 @@ import { AuthService } from '../../../services/auth.service';
               </button>
             </div>
             <div class="validation-messages" *ngIf="password?.invalid && password?.touched">
-              <p class="error-message" *ngIf="password?.hasError('required')">Password is required</p>
+              <p class="error-message" role="alert" *ngIf="password?.hasError('required')">Password is required</p>
             </div>
           </div>
 
@@ -93,12 +93,12 @@ import { AuthService } from '../../../services/auth.service';
           </button>
 
           <!-- Error Message -->
-          <div class="alert alert-error" *ngIf="errorMessage">
+          <div class="alert alert-error" role="alert" *ngIf="errorMessage">
             {{ errorMessage }}
           </div>
 
           <!-- Success Message -->
-          <div class="alert alert-success" *ngIf="successMessage">
+          <div class="alert alert-success" role="status" *ngIf="successMessage">
             {{ successMessage }}
           </div>
 
@@ -117,9 +117,10 @@ import { AuthService } from '../../../services/auth.service';
       align-items: center;
       justify-content: center;
       padding: 2rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
       position: relative;
       overflow: hidden;
+      font-family: var(--font-body);
     }
 
     .auth-container::before {
@@ -140,10 +141,10 @@ import { AuthService } from '../../../services/auth.service';
     }
 
     .auth-card {
-      background: rgba(255, 255, 255, 0.95);
+      background: var(--surface);
       backdrop-filter: blur(10px);
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
       padding: 3rem;
       width: 100%;
       max-width: 480px;
@@ -169,9 +170,10 @@ import { AuthService } from '../../../services/auth.service';
     }
 
     .auth-title {
+      font-family: var(--font-heading);
       font-size: 2rem;
       font-weight: 700;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -179,7 +181,7 @@ import { AuthService } from '../../../services/auth.service';
     }
 
     .auth-subtitle {
-      color: #6b7280;
+      color: var(--text-secondary);
       font-size: 0.95rem;
       margin: 0;
     }
@@ -199,7 +201,7 @@ import { AuthService } from '../../../services/auth.service';
     .form-label {
       font-size: 0.875rem;
       font-weight: 600;
-      color: #374151;
+      color: var(--text-secondary);
       margin-bottom: 0.25rem;
     }
 
@@ -213,7 +215,7 @@ import { AuthService } from '../../../services/auth.service';
     .input-icon {
       position: absolute;
       left: 1rem;
-      color: #7c3aed;
+      color: var(--color-primary);
       display: flex;
       align-items: center;
       pointer-events: none;
@@ -223,33 +225,34 @@ import { AuthService } from '../../../services/auth.service';
     .form-input {
       width: 100%;
       padding: 0.875rem 3rem 0.875rem 3rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
+      border: 2px solid var(--border-default);
+      border-radius: var(--radius-sm);
       font-size: 1rem;
+      color: var(--text-primary);
       transition: all 0.3s ease;
-      background: #ffffff;
+      background: var(--surface);
     }
 
     .form-input::placeholder {
-      color: #9ca3af;
+      color: var(--text-muted);
       font-weight: 400;
       opacity: 1;
     }
 
     .form-input:focus {
       outline: none;
-      border-color: #667eea;
-      background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: var(--color-primary-light);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 16%, transparent);
     }
 
     .form-input.input-error {
-      border-color: #ef4444;
-      background: #fef2f2;
+      border-color: var(--color-destructive);
+      background: var(--color-destructive-tint);
     }
 
     .form-input.input-error:focus {
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-destructive) 16%, transparent);
     }
 
     .password-toggle {
@@ -260,13 +263,19 @@ import { AuthService } from '../../../services/auth.service';
       cursor: pointer;
       padding: 0.25rem;
       transition: transform 0.2s ease;
-      color: #7c3aed;
+      color: var(--color-primary);
       display: flex;
       align-items: center;
     }
 
     .password-toggle:hover {
       transform: scale(1.1);
+    }
+
+    .password-toggle:focus-visible {
+      outline: 2px solid var(--color-primary-light);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
     }
 
     .validation-messages {
@@ -278,7 +287,7 @@ import { AuthService } from '../../../services/auth.service';
     }
 
     .error-message {
-      color: #ef4444;
+      color: var(--color-destructive);
       margin: 0;
       display: flex;
       align-items: center;
@@ -296,7 +305,7 @@ import { AuthService } from '../../../services/auth.service';
     }
 
     .forgot-link {
-      color: #667eea;
+      color: var(--color-primary);
       text-decoration: none;
       font-size: 0.875rem;
       font-weight: 500;
@@ -304,32 +313,37 @@ import { AuthService } from '../../../services/auth.service';
     }
 
     .forgot-link:hover {
-      color: #764ba2;
+      color: var(--color-primary-dark);
       text-decoration: underline;
     }
 
     .submit-button {
       width: 100%;
       padding: 1rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+      color: var(--text-on-primary);
       border: none;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
       margin-top: 0.5rem;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 4px 15px color-mix(in srgb, var(--color-primary) 40%, transparent);
     }
 
     .submit-button:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+      box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary) 50%, transparent);
     }
 
     .submit-button:active:not(:disabled) {
       transform: translateY(0);
+    }
+
+    .submit-button:focus-visible {
+      outline: 2px solid var(--color-primary-dark);
+      outline-offset: 3px;
     }
 
     .submit-button:disabled {
@@ -373,39 +387,39 @@ import { AuthService } from '../../../services/auth.service';
     }
 
     .alert-error {
-      background: #fef2f2;
-      color: #ef4444;
-      border: 1px solid #fecaca;
+      background: var(--color-destructive-tint);
+      color: var(--color-destructive);
+      border: 1px solid color-mix(in srgb, var(--color-destructive) 30%, transparent);
     }
 
     .alert-success {
-      background: #f0fdf4;
-      color: #10b981;
-      border: 1px solid #bbf7d0;
+      background: var(--color-accent-tint);
+      color: var(--color-accent);
+      border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
     }
 
     .auth-footer {
       text-align: center;
       margin-top: 1rem;
       padding-top: 1.5rem;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid var(--border-subtle);
     }
 
     .auth-footer p {
-      color: #6b7280;
+      color: var(--text-secondary);
       font-size: 0.875rem;
       margin: 0;
     }
 
     .auth-link {
-      color: #667eea;
+      color: var(--color-primary);
       text-decoration: none;
       font-weight: 600;
       transition: color 0.2s ease;
     }
 
     .auth-link:hover {
-      color: #764ba2;
+      color: var(--color-primary-dark);
       text-decoration: underline;
     }
 

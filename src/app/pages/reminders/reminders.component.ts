@@ -50,14 +50,23 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
 
       <div class="reminders-stats">
         <div class="stat-card total">
-          <div class="stat-icon">🔔</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18.5 8.5a6.5 6.5 0 1 0-13 0c0 3.8-1 5.4-2.2 7h17.4c-1.2-1.6-2.2-3.2-2.2-7z"/>
+              <path d="M9.3 18.5a2.7 2.7 0 0 0 5.4 0"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Total Reminders</div>
             <div class="stat-value">{{ reminders.length }}</div>
           </div>
         </div>
         <div class="stat-card active">
-          <div class="stat-icon">✅</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 6.5L9 17.5l-5-5"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Active Reminders</div>
             <div class="stat-value">{{ activeReminders }}</div>
@@ -98,27 +107,26 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
             transform: translateY(-50%);
             font-size: 0.875rem;
             font-weight: 500;
-            font-family: Verdana, sans-serif;
-            color: #1a1a1a;
+            color: var(--text-primary);
             pointer-events: none;
-            background: white;
+            background: var(--surface);
             padding: 0 0.25rem;
           }
 
           .date-input {
             padding: 0.5rem 0.5rem 0.5rem 2.7rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.375rem;
+            border: 1px solid var(--border-default);
+            border-radius: var(--radius-sm);
             font-size: 0.875rem;
-            color: #111827;
-            background: white;
+            color: var(--text-primary);
+            background: var(--surface);
             width: 170px;
             outline: none;
             transition: border-color 0.2s ease;
 
             &:focus {
-              border-color: #3b82f6;
-              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+              border-color: var(--color-primary-light);
+              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
             }
 
             &::-webkit-calendar-picker-indicator {
@@ -135,40 +143,61 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
         margin-bottom: 2rem;
 
         .stat-card {
-          background: white;
-          padding: 1rem;
-          border-radius: 0.5rem;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+          background: var(--surface);
+          padding: 1.1rem;
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-sm);
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.9rem;
+          border-top: 3px solid var(--color-warning);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-          &.total {
-            border-left: 4px solid #f59e0b;
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
           }
 
           &.active {
-            border-left: 4px solid #10b981;
+            border-top-color: var(--color-accent);
           }
 
           .stat-icon {
-            font-size: 2rem;
-            background: #f3f4f6;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-warning-tint);
+            color: var(--color-warning);
+            border-radius: var(--radius-md);
+
+            svg {
+              width: 20px;
+              height: 20px;
+            }
+          }
+
+          &.active .stat-icon {
+            background: var(--color-accent-tint);
+            color: var(--color-accent);
           }
 
           .stat-content {
             .stat-label {
-              color: #6b7280;
-              font-size: 0.875rem;
+              color: var(--text-muted);
+              font-size: 0.8rem;
+              font-weight: 500;
               margin-bottom: 0.25rem;
             }
 
             .stat-value {
-              font-size: 1.875rem;
+              font-family: var(--font-heading);
+              font-size: 1.6rem;
               font-weight: 700;
-              color: #111827;
+              color: var(--text-primary);
             }
           }
         }

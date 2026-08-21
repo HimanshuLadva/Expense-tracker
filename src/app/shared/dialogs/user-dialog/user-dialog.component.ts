@@ -15,7 +15,11 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
   template: `
     <div class="dialog-header">
       <h3 class="dialog-title">{{ isEditMode ? 'Edit User' : 'Add User' }}</h3>
-      <button type="button" class="dialog-close-btn" (click)="onCancel()">✕</button>
+      <button type="button" class="dialog-close-btn" (click)="onCancel()" aria-label="Close dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
     </div>
 
     <div class="dialog-content">
@@ -38,13 +42,13 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
                 [class.error]="userForm.get('username')?.invalid && userForm.get('username')?.touched"
               />
               @if (userForm.get('username')?.hasError('required') && userForm.get('username')?.touched) {
-                <span class="error-message">Username is required</span>
+                <span class="error-message" role="alert">Username is required</span>
               }
               @if (userForm.get('username')?.hasError('minlength') && userForm.get('username')?.touched) {
-                <span class="error-message">Username must be at least 3 characters</span>
+                <span class="error-message" role="alert">Username must be at least 3 characters</span>
               }
               @if (userForm.get('username')?.hasError('usernameExists') && userForm.get('username')?.touched) {
-                <span class="error-message">This username is already taken</span>
+                <span class="error-message" role="alert">This username is already taken</span>
               }
               @if (checkingUsername) {
                 <span class="help-text">Checking username availability...</span>
@@ -62,13 +66,13 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
                 [class.error]="userForm.get('email')?.invalid && userForm.get('email')?.touched"
               />
               @if (userForm.get('email')?.hasError('required') && userForm.get('email')?.touched) {
-                <span class="error-message">Email is required</span>
+                <span class="error-message" role="alert">Email is required</span>
               }
               @if (userForm.get('email')?.hasError('email') && userForm.get('email')?.touched) {
-                <span class="error-message">Please enter a valid email address</span>
+                <span class="error-message" role="alert">Please enter a valid email address</span>
               }
               @if (userForm.get('email')?.hasError('emailExists') && userForm.get('email')?.touched) {
-                <span class="error-message">This email is already registered</span>
+                <span class="error-message" role="alert">This email is already registered</span>
               }
               @if (checkingEmail) {
                 <span class="help-text">Checking email availability...</span>
@@ -86,13 +90,13 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
                 [class.error]="userForm.get('password')?.invalid && userForm.get('password')?.touched"
               />
               @if (userForm.get('password')?.hasError('required') && userForm.get('password')?.touched) {
-                <span class="error-message">Password is required</span>
+                <span class="error-message" role="alert">Password is required</span>
               }
               @if (userForm.get('password')?.hasError('minlength') && userForm.get('password')?.touched) {
-                <span class="error-message">Password must be longer than 6 characters</span>
+                <span class="error-message" role="alert">Password must be longer than 6 characters</span>
               }
               @if (userForm.get('password')?.hasError('passwordStrength') && userForm.get('password')?.touched) {
-                <span class="error-message">Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character</span>
+                <span class="error-message" role="alert">Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character</span>
               }
               <span class="help-text">Min 7 characters, 1 uppercase, 1 lowercase, 1 number, 1 special character</span>
             </div>
@@ -108,10 +112,10 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
                 [class.error]="userForm.get('confirmPassword')?.invalid && userForm.get('confirmPassword')?.touched"
               />
               @if (userForm.get('confirmPassword')?.hasError('required') && userForm.get('confirmPassword')?.touched) {
-                <span class="error-message">Please confirm your password</span>
+                <span class="error-message" role="alert">Please confirm your password</span>
               }
               @if (userForm.get('confirmPassword')?.hasError('passwordMismatch') && userForm.get('confirmPassword')?.touched) {
-                <span class="error-message">Passwords do not match</span>
+                <span class="error-message" role="alert">Passwords do not match</span>
               }
             </div>
 
@@ -164,17 +168,17 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         }
 
         &::-webkit-scrollbar-track {
-          background: #f1f1f1;
+          background: var(--surface-muted);
           border-radius: 3px;
         }
 
         &::-webkit-scrollbar-thumb {
-          background: #c1c1c1;
+          background: var(--border-default);
           border-radius: 3px;
         }
 
         &::-webkit-scrollbar-thumb:hover {
-          background: #a1a1a1;
+          background: var(--text-muted);
         }
 
         .form-group {
@@ -190,34 +194,39 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         display: flex;
         gap: 0.75rem;
         padding-top: 1rem;
-        border-top: 1px solid #e5e7eb;
+        border-top: 1px solid var(--border-subtle);
 
         .btn {
           flex: 1;
           padding: 0.75rem 1rem;
-          border-radius: 0.5rem;
+          border-radius: var(--radius-sm);
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
           border: 1px solid;
 
+          &:focus-visible {
+            outline: 2px solid var(--color-primary-light);
+            outline-offset: 2px;
+          }
+
           &.btn-secondary {
-            background-color: #f3f4f6;
-            border-color: #d1d5db;
-            color: #374151;
+            background-color: var(--surface);
+            border-color: var(--border-default);
+            color: var(--text-secondary);
 
             &:hover {
-              background-color: #e5e7eb;
+              background-color: var(--surface-sunken);
             }
           }
 
           &.btn-primary {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
-            color: white;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+            border-color: transparent;
+            color: var(--text-on-primary);
 
             &:hover:not(:disabled) {
-              background-color: #2563eb;
+              filter: brightness(1.06);
             }
 
             &:disabled {
@@ -233,13 +242,13 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         align-items: center;
         cursor: pointer;
         padding: 1rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 0.5rem;
+        border: 2px solid var(--border-subtle);
+        border-radius: var(--radius-sm);
         transition: all 0.2s ease;
 
         &:hover {
-          border-color: #3b82f6;
-          background-color: #f9fafb;
+          border-color: var(--color-primary-light);
+          background-color: var(--color-primary-tint);
         }
 
         .checkbox-input {
@@ -247,9 +256,10 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           width: 1.25rem;
           height: 1.25rem;
           cursor: pointer;
+          accent-color: var(--color-primary);
 
           &:checked ~ .checkbox-text {
-            color: #1e40af;
+            color: var(--color-primary-dark);
             font-weight: 600;
           }
         }
@@ -259,7 +269,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           align-items: center;
           gap: 0.5rem;
           font-size: 0.9375rem;
-          color: #374151;
+          color: var(--text-secondary);
 
           .checkbox-icon {
             font-size: 1.25rem;
@@ -271,7 +281,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
     .label {
       display: block;
       font-weight: 500;
-      color: #374151;
+      color: var(--text-secondary);
       margin-bottom: 0.5rem;
       font-size: 0.875rem;
     }
@@ -279,40 +289,42 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
     .form-input {
       width: 100%;
       padding: 0.75rem;
-      border: 1px solid #d1d5db;
-      border-radius: 0.5rem;
+      border: 1px solid var(--border-default);
+      border-radius: var(--radius-sm);
       font-size: 0.9375rem;
+      color: var(--text-primary);
+      background: var(--surface);
       transition: all 0.2s ease;
 
       &:focus {
         outline: none;
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        border-color: var(--color-primary-light);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 16%, transparent);
       }
 
       &.error {
-        border-color: #ef4444;
+        border-color: var(--color-destructive);
 
         &:focus {
-          box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-destructive) 16%, transparent);
         }
       }
 
       &::placeholder {
-        color: #9ca3af;
+        color: var(--text-muted);
       }
     }
 
     .error-message {
       display: block;
-      color: #ef4444;
+      color: var(--color-destructive);
       font-size: 0.75rem;
       margin-top: 0.25rem;
     }
 
     .help-text {
       display: block;
-      color: #6b7280;
+      color: var(--text-muted);
       font-size: 0.75rem;
       margin-top: 0.25rem;
     }
@@ -323,13 +335,13 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       align-items: center;
       justify-content: center;
       padding: 3rem 1rem;
-      color: #6b7280;
+      color: var(--text-secondary);
 
       .spinner {
         width: 3rem;
         height: 3rem;
-        border: 3px solid #e5e7eb;
-        border-top-color: #3b82f6;
+        border: 3px solid var(--border-subtle);
+        border-top-color: var(--color-primary);
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
         margin-bottom: 1rem;

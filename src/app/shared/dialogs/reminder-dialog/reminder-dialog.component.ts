@@ -14,7 +14,11 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
   template: `
     <div class="dialog-header">
       <h3 class="dialog-title">{{ isEditMode ? 'Edit Reminder' : 'Add Reminder' }}</h3>
-      <button type="button" class="dialog-close-btn" (click)="onCancel()">✕</button>
+      <button type="button" class="dialog-close-btn" (click)="onCancel()" aria-label="Close dialog">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
     </div>
 
     <div class="dialog-content">
@@ -31,7 +35,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               [class.error]="reminderForm.get('title')?.invalid && reminderForm.get('title')?.touched"
             />
             @if (reminderForm.get('title')?.hasError('required') && reminderForm.get('title')?.touched) {
-              <span class="error-message">Reminder title is required</span>
+              <span class="error-message" role="alert">Reminder title is required</span>
             }
           </div>
 
@@ -45,7 +49,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
               [class.error]="reminderForm.get('date')?.invalid && reminderForm.get('date')?.touched"
             />
             @if (reminderForm.get('date')?.hasError('required') && reminderForm.get('date')?.touched) {
-              <span class="error-message">Date is required</span>
+              <span class="error-message" role="alert">Date is required</span>
             }
           </div>
 
@@ -62,10 +66,10 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
                 [class.error]="reminderForm.get('beforeDays')?.invalid && reminderForm.get('beforeDays')?.touched"
               />
               @if (reminderForm.get('beforeDays')?.hasError('required') && reminderForm.get('beforeDays')?.touched) {
-                <span class="error-message">Before days is required</span>
+                <span class="error-message" role="alert">Before days is required</span>
               }
               @if (reminderForm.get('beforeDays')?.hasError('min') && reminderForm.get('beforeDays')?.touched) {
-                <span class="error-message">Days must be 0 or more</span>
+                <span class="error-message" role="alert">Days must be 0 or more</span>
               }
             </div>
 
@@ -81,10 +85,10 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
                 [class.error]="reminderForm.get('afterDays')?.invalid && reminderForm.get('afterDays')?.touched"
               />
               @if (reminderForm.get('afterDays')?.hasError('required') && reminderForm.get('afterDays')?.touched) {
-                <span class="error-message">After days is required</span>
+                <span class="error-message" role="alert">After days is required</span>
               }
               @if (reminderForm.get('afterDays')?.hasError('min') && reminderForm.get('afterDays')?.touched) {
-                <span class="error-message">Days must be 0 or more</span>
+                <span class="error-message" role="alert">Days must be 0 or more</span>
               }
             </div>
           </div>
@@ -137,17 +141,17 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         }
 
         &::-webkit-scrollbar-track {
-          background: #f1f1f1;
+          background: var(--surface-muted);
           border-radius: 3px;
         }
 
         &::-webkit-scrollbar-thumb {
-          background: #c1c1c1;
+          background: var(--border-default);
           border-radius: 3px;
         }
 
         &::-webkit-scrollbar-thumb:hover {
-          background: #a1a1a1;
+          background: var(--text-muted);
         }
 
         .form-group {
@@ -170,34 +174,39 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
         display: flex;
         gap: 0.75rem;
         padding-top: 1rem;
-        border-top: 1px solid #e5e7eb;
+        border-top: 1px solid var(--border-subtle);
 
         .btn {
           flex: 1;
           padding: 0.75rem 1rem;
-          border-radius: 0.5rem;
+          border-radius: var(--radius-sm);
           font-weight: 500;
           cursor: pointer;
           transition: all 0.2s ease;
           border: 1px solid;
 
+          &:focus-visible {
+            outline: 2px solid var(--color-primary-light);
+            outline-offset: 2px;
+          }
+
           &.btn-secondary {
-            background-color: #f3f4f6;
-            border-color: #d1d5db;
-            color: #374151;
+            background-color: var(--surface);
+            border-color: var(--border-default);
+            color: var(--text-secondary);
 
             &:hover {
-              background-color: #e5e7eb;
+              background-color: var(--surface-sunken);
             }
           }
 
           &.btn-primary {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
-            color: white;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-light));
+            border-color: transparent;
+            color: var(--text-on-primary);
 
             &:hover:not(:disabled) {
-              background-color: #2563eb;
+              filter: brightness(1.06);
             }
 
             &:disabled {
@@ -211,7 +220,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       .label {
         display: block;
         font-weight: 600;
-        color: #374151;
+        color: var(--text-secondary);
         margin-bottom: 0.5rem;
         font-size: 0.875rem;
       }
@@ -219,23 +228,25 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
       .form-input {
         width: 100%;
         padding: 0.75rem;
-        border: 1px solid #d1d5db;
-        border-radius: 0.5rem;
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-sm);
         font-size: 0.875rem;
+        color: var(--text-primary);
+        background: var(--surface);
         transition: border-color 0.2s ease;
 
         &:focus {
           outline: none;
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          border-color: var(--color-primary-light);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 16%, transparent);
         }
 
         &.error {
-          border-color: #ef4444;
+          border-color: var(--color-destructive);
         }
 
         &::placeholder {
-          color: #9ca3af;
+          color: var(--text-muted);
         }
       }
 
@@ -251,12 +262,17 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           cursor: pointer;
 
           &:checked + .checkbox-label::before {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
           }
 
           &:checked + .checkbox-label::after {
               display: block;
+          }
+
+          &:focus-visible + .checkbox-label::before {
+            outline: 2px solid var(--color-primary-light);
+            outline-offset: 2px;
           }
         }
 
@@ -264,7 +280,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
           position: relative;
           padding-left: 2rem;
           font-weight: 500;
-          color: #374151;
+          color: var(--text-secondary);
 
           &::before {
             content: '';
@@ -274,9 +290,9 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             transform: translateY(-50%);
           width: 1.25rem;
           height: 1.25rem;
-          border: 2px solid #d1d5db;
+          border: 2px solid var(--border-default);
           border-radius: 0.25rem;
-          background-color: white;
+          background-color: var(--surface);
           transition: all 0.2s ease;
           }
 
@@ -286,7 +302,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
             left: 0.25rem;
             top: 50%;
             transform: translateY(-50%);
-            color: white;
+            color: var(--text-on-primary);
             font-size: 0.75rem;
             font-weight: bold;
             display: none;
@@ -295,14 +311,14 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
 
           .help-text {
           padding-left: 2rem;
-            color: #6b7280;
+            color: var(--text-muted);
             font-size: 0.75rem;
         }
       }
 
       .error-message {
         display: block;
-        color: #ef4444;
+        color: var(--color-destructive);
         font-size: 0.75rem;
         margin-top: 0.25rem;
       }
@@ -310,7 +326,7 @@ import { DialogResult } from '../../dialog/dialog-result.interface';
 
     @media (max-width: 768px) {
       .reminder-dialog-form {
-        .form-row {
+        .form-fields .form-row {
           grid-template-columns: 1fr;
         }
       }

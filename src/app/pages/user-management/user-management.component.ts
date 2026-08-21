@@ -30,21 +30,40 @@ interface UserDisplay extends User {
 
       <div class="user-stats">
         <div class="stat-card total">
-          <div class="stat-icon">👥</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="9" cy="8" r="3.3"/>
+              <path d="M2.3 19.2c0-3.4 3-5.7 6.7-5.7s6.7 2.3 6.7 5.7"/>
+              <circle cx="17.3" cy="8.6" r="2.5"/>
+              <path d="M15.6 13.8c2.6.5 4.6 2.4 4.6 5.4"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Total Users</div>
             <div class="stat-value">{{ users.length }}</div>
           </div>
         </div>
         <div class="stat-card admin">
-          <div class="stat-icon">🔑</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="8" cy="15.5" r="3.5"/>
+              <path d="M10.5 13l8-8"/>
+              <path d="M15.5 8.5l2 2"/>
+              <path d="M18 6l2 2"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Administrators</div>
             <div class="stat-value">{{ adminUsers.length }}</div>
           </div>
         </div>
         <div class="stat-card regular">
-          <div class="stat-icon">👤</div>
+          <div class="stat-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="8" r="3.5"/>
+              <path d="M4.5 20c0-4 3.4-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/>
+            </svg>
+          </div>
           <div class="stat-content">
             <div class="stat-label">Regular Users</div>
             <div class="stat-value">{{ regularUsers.length }}</div>
@@ -75,44 +94,70 @@ interface UserDisplay extends User {
         margin-bottom: 2rem;
 
         .stat-card {
-          background: white;
-          padding: 1rem;
-          border-radius: 0.5rem;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+          background: var(--surface);
+          padding: 1.1rem;
+          border: 1px solid var(--border-subtle);
+          border-radius: var(--radius-md);
+          box-shadow: var(--shadow-sm);
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.9rem;
+          border-top: 3px solid var(--color-primary);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-          &.total {
-            border-left: 4px solid #6366f1;
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
           }
 
           &.admin {
-            border-left: 4px solid #f59e0b;
+            border-top-color: var(--color-warning);
           }
 
           &.regular {
-            border-left: 4px solid #3b82f6;
+            border-top-color: var(--color-primary-light);
           }
 
           .stat-icon {
-            font-size: 2rem;
-            background: #f3f4f6;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
+            width: 42px;
+            height: 42px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-primary-tint);
+            color: var(--color-primary);
+            border-radius: var(--radius-md);
+
+            svg {
+              width: 20px;
+              height: 20px;
+            }
+          }
+
+          &.admin .stat-icon {
+            background: var(--color-warning-tint);
+            color: var(--color-warning);
+          }
+
+          &.regular .stat-icon {
+            background: color-mix(in srgb, var(--color-primary-light) 14%, white);
+            color: var(--color-primary-light);
           }
 
           .stat-content {
             .stat-label {
-              color: #6b7280;
-              font-size: 0.875rem;
+              color: var(--text-muted);
+              font-size: 0.8rem;
+              font-weight: 500;
               margin-bottom: 0.25rem;
             }
 
             .stat-value {
-              font-size: 1.875rem;
+              font-family: var(--font-heading);
+              font-size: 1.6rem;
               font-weight: 700;
-              color: #111827;
+              color: var(--text-primary);
             }
           }
         }

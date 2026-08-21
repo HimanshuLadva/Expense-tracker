@@ -40,8 +40,8 @@ import {
               />
             </div>
             <div class="validation-messages" *ngIf="email?.invalid && email?.touched">
-              <p class="error-message" *ngIf="email?.hasError('required')">Email is required</p>
-              <p class="error-message" *ngIf="email?.hasError('email')">Please enter a valid email address</p>
+              <p class="error-message" role="alert" *ngIf="email?.hasError('required')">Email is required</p>
+              <p class="error-message" role="alert" *ngIf="email?.hasError('email')">Please enter a valid email address</p>
             </div>
           </div>
 
@@ -64,8 +64,8 @@ import {
               />
             </div>
             <div class="validation-messages" *ngIf="username?.invalid && username?.touched">
-              <p class="error-message" *ngIf="username?.hasError('required')">Username is required</p>
-              <p class="error-message" *ngIf="username?.hasError('minlength')">Username must be at least 3 characters</p>
+              <p class="error-message" role="alert" *ngIf="username?.hasError('required')">Username is required</p>
+              <p class="error-message" role="alert" *ngIf="username?.hasError('minlength')">Username must be at least 3 characters</p>
             </div>
           </div>
 
@@ -91,7 +91,7 @@ import {
                 type="button"
                 class="password-toggle"
                 (click)="togglePasswordVisibility()"
-                tabindex="-1"
+                [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -103,12 +103,12 @@ import {
               <div class="strength-bar" [class]="getPasswordStrengthClass()"></div>
             </div>
             <div class="validation-messages" *ngIf="password?.invalid && password?.touched">
-              <p class="error-message" *ngIf="password?.hasError('required')">Password is required</p>
-              <p class="error-message" *ngIf="password?.hasError('minLength')">At least 7 characters required</p>
-              <p class="error-message" *ngIf="password?.hasError('uppercase')">At least 1 uppercase letter required</p>
-              <p class="error-message" *ngIf="password?.hasError('lowercase')">At least 1 lowercase letter required</p>
-              <p class="error-message" *ngIf="password?.hasError('digit')">At least 1 number required</p>
-              <p class="error-message" *ngIf="password?.hasError('specialChar')">At least 1 special character required (!&#64;#$%^&*)</p>
+              <p class="error-message" role="alert" *ngIf="password?.hasError('required')">Password is required</p>
+              <p class="error-message" role="alert" *ngIf="password?.hasError('minLength')">At least 7 characters required</p>
+              <p class="error-message" role="alert" *ngIf="password?.hasError('uppercase')">At least 1 uppercase letter required</p>
+              <p class="error-message" role="alert" *ngIf="password?.hasError('lowercase')">At least 1 lowercase letter required</p>
+              <p class="error-message" role="alert" *ngIf="password?.hasError('digit')">At least 1 number required</p>
+              <p class="error-message" role="alert" *ngIf="password?.hasError('specialChar')">At least 1 special character required (!&#64;#$%^&*)</p>
             </div>
             <div class="validation-messages" *ngIf="password?.valid && password?.touched">
               <p class="success-message">Strong password ✓</p>
@@ -137,7 +137,7 @@ import {
                 type="button"
                 class="password-toggle"
                 (click)="toggleConfirmPasswordVisibility()"
-                tabindex="-1"
+                [attr.aria-label]="showConfirmPassword ? 'Hide password' : 'Show password'"
               >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -146,8 +146,8 @@ import {
               </button>
             </div>
             <div class="validation-messages" *ngIf="confirmPassword?.invalid && confirmPassword?.touched">
-              <p class="error-message" *ngIf="confirmPassword?.hasError('required')">Please confirm your password</p>
-              <p class="error-message" *ngIf="confirmPassword?.hasError('passwordMismatch')">Passwords do not match</p>
+              <p class="error-message" role="alert" *ngIf="confirmPassword?.hasError('required')">Please confirm your password</p>
+              <p class="error-message" role="alert" *ngIf="confirmPassword?.hasError('passwordMismatch')">Passwords do not match</p>
             </div>
             <div class="validation-messages" *ngIf="confirmPassword?.valid && confirmPassword?.touched">
               <p class="success-message">Passwords match ✓</p>
@@ -166,12 +166,12 @@ import {
           </button>
 
           <!-- Error Message -->
-          <div class="alert alert-error" *ngIf="errorMessage">
+          <div class="alert alert-error" role="alert" *ngIf="errorMessage">
             {{ errorMessage }}
           </div>
 
           <!-- Success Message -->
-          <div class="alert alert-success" *ngIf="successMessage">
+          <div class="alert alert-success" role="status" *ngIf="successMessage">
             {{ successMessage }}
           </div>
 
@@ -190,9 +190,10 @@ import {
       align-items: center;
       justify-content: center;
       padding: 2rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
       position: relative;
       overflow: hidden;
+      font-family: var(--font-body);
     }
 
     .auth-container::before {
@@ -213,10 +214,10 @@ import {
     }
 
     .auth-card {
-      background: rgba(255, 255, 255, 0.95);
+      background: var(--surface);
       backdrop-filter: blur(10px);
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
       padding: 3rem;
       width: 100%;
       max-width: 500px;
@@ -242,9 +243,10 @@ import {
     }
 
     .auth-title {
+      font-family: var(--font-heading);
       font-size: 2rem;
       font-weight: 700;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -252,7 +254,7 @@ import {
     }
 
     .auth-subtitle {
-      color: #6b7280;
+      color: var(--text-secondary);
       font-size: 0.95rem;
       margin: 0;
     }
@@ -272,7 +274,7 @@ import {
     .form-label {
       font-size: 0.875rem;
       font-weight: 600;
-      color: #374151;
+      color: var(--text-secondary);
       margin-bottom: 0.25rem;
     }
 
@@ -286,7 +288,7 @@ import {
     .input-icon {
       position: absolute;
       left: 1rem;
-      color: #7c3aed;
+      color: var(--color-primary);
       display: flex;
       align-items: center;
       pointer-events: none;
@@ -296,42 +298,43 @@ import {
     .form-input {
       width: 100%;
       padding: 0.875rem 3rem 0.875rem 3rem;
-      border: 2px solid #e5e7eb;
-      border-radius: 10px;
+      border: 2px solid var(--border-default);
+      border-radius: var(--radius-sm);
       font-size: 1rem;
+      color: var(--text-primary);
       transition: all 0.3s ease;
-      background: #ffffff;
+      background: var(--surface);
     }
 
     .form-input::placeholder {
-      color: #9ca3af;
+      color: var(--text-muted);
       font-weight: 400;
       opacity: 1;
     }
 
     .form-input:focus {
       outline: none;
-      border-color: #667eea;
-      background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      border-color: var(--color-primary-light);
+      background: var(--surface);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary-light) 16%, transparent);
     }
 
     .form-input.input-error {
-      border-color: #ef4444;
-      background: #fef2f2;
+      border-color: var(--color-destructive);
+      background: var(--color-destructive-tint);
     }
 
     .form-input.input-error:focus {
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-destructive) 16%, transparent);
     }
 
     .form-input.input-success {
-      border-color: #10b981;
-      background: #f0fdf4;
+      border-color: var(--color-accent);
+      background: var(--color-accent-tint);
     }
 
     .form-input.input-success:focus {
-      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 16%, transparent);
     }
 
     .password-toggle {
@@ -342,7 +345,7 @@ import {
       cursor: pointer;
       padding: 0.25rem;
       transition: transform 0.2s ease;
-      color: #7c3aed;
+      color: var(--color-primary);
       display: flex;
       align-items: center;
     }
@@ -351,9 +354,15 @@ import {
       transform: scale(1.1);
     }
 
+    .password-toggle:focus-visible {
+      outline: 2px solid var(--color-primary-light);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
+
     .password-strength {
       height: 4px;
-      background: #e5e7eb;
+      background: var(--surface-sunken);
       border-radius: 2px;
       overflow: hidden;
       margin-top: 0.25rem;
@@ -367,17 +376,17 @@ import {
 
     .strength-weak {
       width: 33%;
-      background: #ef4444;
+      background: var(--color-destructive);
     }
 
     .strength-medium {
       width: 66%;
-      background: #f59e0b;
+      background: var(--color-warning);
     }
 
     .strength-strong {
       width: 100%;
-      background: #10b981;
+      background: var(--color-accent);
     }
 
     .validation-messages {
@@ -389,7 +398,7 @@ import {
     }
 
     .error-message {
-      color: #ef4444;
+      color: var(--color-destructive);
       margin: 0;
       display: flex;
       align-items: center;
@@ -402,7 +411,7 @@ import {
     }
 
     .success-message {
-      color: #10b981;
+      color: var(--color-accent);
       margin: 0;
       font-weight: 500;
     }
@@ -410,25 +419,30 @@ import {
     .submit-button {
       width: 100%;
       padding: 1rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+      color: var(--text-on-primary);
       border: none;
-      border-radius: 10px;
+      border-radius: var(--radius-sm);
       font-size: 1rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
       margin-top: 0.5rem;
-      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 4px 15px color-mix(in srgb, var(--color-primary) 40%, transparent);
     }
 
     .submit-button:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+      box-shadow: 0 6px 20px color-mix(in srgb, var(--color-primary) 50%, transparent);
     }
 
     .submit-button:active:not(:disabled) {
       transform: translateY(0);
+    }
+
+    .submit-button:focus-visible {
+      outline: 2px solid var(--color-primary-dark);
+      outline-offset: 3px;
     }
 
     .submit-button:disabled {
@@ -472,39 +486,39 @@ import {
     }
 
     .alert-error {
-      background: #fef2f2;
-      color: #ef4444;
-      border: 1px solid #fecaca;
+      background: var(--color-destructive-tint);
+      color: var(--color-destructive);
+      border: 1px solid color-mix(in srgb, var(--color-destructive) 30%, transparent);
     }
 
     .alert-success {
-      background: #f0fdf4;
-      color: #10b981;
-      border: 1px solid #bbf7d0;
+      background: var(--color-accent-tint);
+      color: var(--color-accent);
+      border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
     }
 
     .auth-footer {
       text-align: center;
       margin-top: 1rem;
       padding-top: 1.5rem;
-      border-top: 1px solid #e5e7eb;
+      border-top: 1px solid var(--border-subtle);
     }
 
     .auth-footer p {
-      color: #6b7280;
+      color: var(--text-secondary);
       font-size: 0.875rem;
       margin: 0;
     }
 
     .auth-link {
-      color: #667eea;
+      color: var(--color-primary);
       text-decoration: none;
       font-weight: 600;
       transition: color 0.2s ease;
     }
 
     .auth-link:hover {
-      color: #764ba2;
+      color: var(--color-primary-dark);
       text-decoration: underline;
     }
 
