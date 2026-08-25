@@ -43,6 +43,59 @@
   --font-heading: 'Lexend', 'Segoe UI', sans-serif;
   --font-body: 'Inter', 'Segoe UI', sans-serif;
   --font-brand: 'Lora', 'Georgia', serif;
+
+  /* Scrollbar */
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a1a1a1;
+
+  /* Tint mix base - the target color-mix() blends toward for pastel tints */
+  --tint-mix-base: #ffffff;
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  /* Brand */
+  --color-primary: #e2884f;
+  --color-primary-light: #f0a56e;
+  --color-primary-dark: #c1622d;
+  --color-primary-tint: #3a2717;
+  --color-info: #6bb3c7;
+  --color-info-tint: #17323b;
+  --color-accent: #7cb87f;
+  --color-accent-tint: #1c3220;
+  --color-warning: #e0ab53;
+  --color-warning-tint: #3b2e15;
+  --color-destructive: #e07a5c;
+  --color-destructive-tint: #3c2016;
+
+  /* Surfaces */
+  --surface: #221c16;
+  --surface-muted: #17130f;
+  --surface-sunken: #2c2419;
+  --border-subtle: #362d21;
+  --border-default: #46392a;
+
+  /* Text */
+  --text-primary: #f0e6da;
+  --text-secondary: #c2b6a3;
+  --text-muted: #8a7d6b;
+  --text-on-primary: #ffffff;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 20px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 20px 45px rgba(0, 0, 0, 0.6);
+
+  /* Scrollbar */
+  --scrollbar-track: #2c2419;
+  --scrollbar-thumb: #4a3c2a;
+  --scrollbar-thumb-hover: #5c4c36;
+
+  --tint-mix-base: #221c16;
+
+  color-scheme: dark;
 }
 
 * {
@@ -76,6 +129,10 @@ button {
 /* CDK Dialog Styles */
 .cdk-overlay-backdrop {
   background: rgba(15, 23, 42, 0.55);
+}
+
+:root[data-theme="dark"] .cdk-overlay-backdrop {
+  background: rgba(0, 0, 0, 0.65);
 }
 
 .custom-dialog-panel {

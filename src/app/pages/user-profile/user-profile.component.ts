@@ -111,11 +111,11 @@ import { Subscription } from 'rxjs';
       height: 120px;
       margin: 0 auto 1.5rem;
       border-radius: 50%;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+      box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary) 30%, transparent);
     }
 
     .avatar-icon {
@@ -126,12 +126,12 @@ import { Subscription } from 'rxjs';
     .profile-title {
       font-size: 2rem;
       font-weight: 700;
-      color: #1a1a1a;
+      color: var(--text-primary);
       margin: 0 0 0.5rem 0;
     }
 
     .profile-subtitle {
-      color: #6b7280;
+      color: var(--text-secondary);
       font-size: 1rem;
       margin: 0;
     }
@@ -143,23 +143,23 @@ import { Subscription } from 'rxjs';
     }
 
     .info-card {
-      background: white;
+      background: var(--surface);
       border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-md);
       overflow: hidden;
     }
 
     .card-header {
       padding: 1.5rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      border-bottom: 1px solid #e5e7eb;
+      background: linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 100%);
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     .card-header h2 {
       margin: 0;
       font-size: 1.25rem;
       font-weight: 600;
-      color: white;
+      color: var(--text-on-primary);
     }
 
     .card-body {
@@ -171,7 +171,7 @@ import { Subscription } from 'rxjs';
       justify-content: space-between;
       align-items: center;
       padding: 1rem 0;
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid var(--border-subtle);
     }
 
     .info-row:last-child {
@@ -183,7 +183,7 @@ import { Subscription } from 'rxjs';
       align-items: center;
       gap: 0.75rem;
       font-weight: 600;
-      color: #374151;
+      color: var(--text-primary);
       font-size: 0.95rem;
     }
 
@@ -195,7 +195,7 @@ import { Subscription } from 'rxjs';
     }
 
     .info-value {
-      color: #1f2937;
+      color: var(--text-primary);
       font-size: 0.95rem;
       font-weight: 500;
       display: flex;
@@ -211,7 +211,7 @@ import { Subscription } from 'rxjs';
 
     .password-note {
       font-size: 0.8rem;
-      color: #6b7280;
+      color: var(--text-secondary);
       font-weight: 400;
       font-style: italic;
     }
@@ -225,15 +225,15 @@ import { Subscription } from 'rxjs';
     }
 
     .badge-admin {
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fcd34d;
+      background: var(--color-warning-tint);
+      color: var(--color-warning);
+      border: 1px solid color-mix(in srgb, var(--color-warning) 45%, var(--tint-mix-base));
     }
 
     .badge-user {
-      background: #dbeafe;
-      color: #1e40af;
-      border: 1px solid #93c5fd;
+      background: var(--color-info-tint);
+      color: var(--color-info);
+      border: 1px solid color-mix(in srgb, var(--color-info) 45%, var(--tint-mix-base));
     }
 
     .profile-actions {
@@ -259,24 +259,24 @@ import { Subscription } from 'rxjs';
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+      color: var(--text-on-primary);
+      box-shadow: 0 4px 12px color-mix(in srgb, var(--color-primary) 30%, transparent);
     }
 
     .btn-primary:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+      box-shadow: 0 6px 16px color-mix(in srgb, var(--color-primary) 40%, transparent);
     }
 
     .btn-secondary {
-      background: white;
-      color: #667eea;
-      border: 2px solid #667eea;
+      background: var(--surface);
+      color: var(--color-primary);
+      border: 2px solid var(--color-primary);
     }
 
     .btn-secondary:hover:not(:disabled) {
-      background: #f3f4f6;
+      background: var(--surface-sunken);
       transform: translateY(-2px);
     }
 
@@ -293,7 +293,7 @@ import { Subscription } from 'rxjs';
     .no-data {
       text-align: center;
       padding: 3rem 1rem;
-      color: #6b7280;
+      color: var(--text-secondary);
     }
 
     @media (max-width: 768px) {

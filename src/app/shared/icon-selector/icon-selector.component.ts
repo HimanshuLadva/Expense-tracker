@@ -60,17 +60,17 @@ import { CommonModule } from '@angular/common';
         }
 
         &::-webkit-scrollbar-track {
-          background: var(--surface-muted);
+          background: var(--scrollbar-track);
           border-radius: 3px;
         }
 
         &::-webkit-scrollbar-thumb {
-          background: var(--border-default);
+          background: var(--scrollbar-thumb);
           border-radius: 3px;
         }
 
         &::-webkit-scrollbar-thumb:hover {
-          background: var(--text-muted);
+          background: var(--scrollbar-thumb-hover);
         }
 
         .icon-option {

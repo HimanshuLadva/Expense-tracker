@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } fro
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
 import { AuthService } from './services/auth.service';
+import { ThemeService } from './services/theme.service';
 import { User } from './models';
 
 @Component({
@@ -19,7 +20,8 @@ export class AppComponent {
 
   constructor(
     private router: Router,
-    public authService: AuthService
+    public authService: AuthService,
+    public themeService: ThemeService
   ) {
     // Hide sidebar on auth pages
     this.router.events.pipe(
@@ -41,6 +43,13 @@ export class AppComponent {
    */
   toggleSidebar(): void {
     this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+
+  /**
+   * Cycle theme preference: Light -> Dark -> System -> Light
+   */
+  cycleTheme(): void {
+    this.themeService.cycleTheme();
   }
 
   /**

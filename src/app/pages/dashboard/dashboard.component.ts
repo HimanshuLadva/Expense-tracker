@@ -2,11 +2,12 @@ import { Component, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef } fr
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { Subscription, combineLatest } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, skip } from 'rxjs/operators';
 import * as echarts from 'echarts';
 
 import { StorageService } from '../../services/storage.service';
 import { DateRangeService } from '../../services/date-range.service';
+import { ThemeService } from '../../services/theme.service';
 import { Transaction, TransactionType, Account, Category, CategoryType, Reminder, Budget, BudgetWithUsage } from '../../models';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { getIconBadgeColor } from '../../shared/icon-badge-color.util';
@@ -14,9 +15,6 @@ import { getIconBadgeColor } from '../../shared/icon-badge-color.util';
 const CHART_PALETTE = ['#C1622D', '#3B7A8C', '#4B7B4E', '#C58A2E', '#A8432E', '#8C6E4E', '#B5647A', '#6E8B6B'];
 
 const TOOLTIP_CSS = 'box-shadow: 0 8px 24px rgba(43,36,32,0.16); border-radius: 10px; padding: 10px 12px;';
-const AXIS_LABEL_STYLE = { color: '#9c9284', fontFamily: 'Inter', fontSize: 11 };
-const AXIS_LINE_STYLE = { lineStyle: { color: '#e6dfd2' } };
-const SPLIT_LINE_STYLE = { lineStyle: { color: 'rgba(43, 36, 32, 0.07)' } };
 
 interface DashboardStats {
   totalAccounts: number;
@@ -364,7 +362,7 @@ interface UpcomingReminder extends Reminder {
 
             &:focus {
               border-color: var(--color-primary-light);
-              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+              box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
             }
 
             &::-webkit-calendar-picker-indicator {
@@ -732,7 +730,7 @@ interface UpcomingReminder extends Reminder {
               display: flex;
               align-items: center;
               justify-content: center;
-              background: color-mix(in srgb, var(--color-primary-light) 14%, white);
+              background: color-mix(in srgb, var(--color-primary-light) 14%, var(--tint-mix-base));
               color: var(--color-primary-light);
               border-radius: var(--radius-md);
 
@@ -766,7 +764,7 @@ interface UpcomingReminder extends Reminder {
               font-weight: 600;
               padding: 0.375rem 0.75rem;
               border-radius: var(--radius-pill);
-              background-color: color-mix(in srgb, var(--color-primary) 12%, white);
+              background-color: color-mix(in srgb, var(--color-primary) 12%, var(--tint-mix-base));
               color: var(--color-primary);
               white-space: nowrap;
 
@@ -986,7 +984,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private storageService: StorageService,
     private fb: FormBuilder,
-    private dateRangeService: DateRangeService
+    private dateRangeService: DateRangeService,
+    private themeService: ThemeService
   ) {}
 
   ngOnInit(): void {
@@ -1051,6 +1050,12 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       this.charts.forEach(chart => chart.resize());
     });
     this.resizeObserver.observe(this.dashboardRoot.nativeElement);
+
+    // ECharts renders to canvas and can't read CSS variables, so charts must
+    // be rebuilt with theme-appropriate colors whenever the theme changes.
+    this.subscription.add(
+      this.themeService.effectiveTheme$.pipe(skip(1)).subscribe(() => this.createCharts())
+    );
   }
 
   ngOnDestroy(): void {
@@ -1193,15 +1198,37 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.createBudgetUtilizationChart();
   }
 
+  /**
+   * ECharts renders to canvas, so it can't consume the CSS custom properties
+   * used everywhere else - chart chrome colors are resolved per-theme here.
+   */
+  private chartChrome() {
+    const isDark = this.themeService.getEffectiveTheme() === 'dark';
+    return {
+      tooltipBg: isDark ? '#2c2419' : '#ffffff',
+      tooltipBorder: isDark ? '#46392a' : '#e6dfd2',
+      tooltipText: isDark ? '#f0e6da' : '#2b2420',
+      mutedText: isDark ? '#c2b6a3' : '#6b6259',
+      faintText: isDark ? '#8a7d6b' : '#9997b3',
+      strongText: isDark ? '#f0e6da' : '#2b2420',
+      axisLabel: { color: isDark ? '#8a7d6b' : '#9c9284', fontFamily: 'Inter', fontSize: 11 },
+      axisLine: { lineStyle: { color: isDark ? '#46392a' : '#e6dfd2' } },
+      splitLine: { lineStyle: { color: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(43, 36, 32, 0.07)' } },
+      segmentBorder: isDark ? '#221c16' : '#ffffff',
+      trackBar: isDark ? '#46392a' : '#e6dfd2'
+    };
+  }
+
   private groupedBarTooltip(): echarts.EChartsOption['tooltip'] {
+    const chrome = this.chartChrome();
     return {
       trigger: 'axis',
       axisPointer: { type: 'shadow' },
-      backgroundColor: '#ffffff',
-      borderColor: '#e6dfd2',
+      backgroundColor: chrome.tooltipBg,
+      borderColor: chrome.tooltipBorder,
       borderWidth: 1,
       extraCssText: TOOLTIP_CSS,
-      textStyle: { color: '#2b2420', fontFamily: 'Inter', fontSize: 12 },
+      textStyle: { color: chrome.tooltipText, fontFamily: 'Inter', fontSize: 12 },
       formatter: (params: any) => {
         let html = `<div style="font-weight:600;margin-bottom:4px;">${params[0].axisValue}</div>`;
         params.forEach((p: any) => {
@@ -1219,19 +1246,20 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     totalLabel: string,
     colors: string[] = CHART_PALETTE
   ): echarts.EChartsOption {
+    const chrome = this.chartChrome();
     return {
       color: colors,
       tooltip: {
         trigger: 'item',
-        backgroundColor: '#ffffff',
-        borderColor: '#e6dfd2',
+        backgroundColor: chrome.tooltipBg,
+        borderColor: chrome.tooltipBorder,
         borderWidth: 1,
         extraCssText: TOOLTIP_CSS,
-        textStyle: { color: '#2b2420', fontFamily: 'Inter', fontSize: 12 },
+        textStyle: { color: chrome.tooltipText, fontFamily: 'Inter', fontSize: 12 },
         formatter: (params: any) =>
           `<div style="display:flex;align-items:center;gap:6px;font-weight:600;">` +
           `<span style="width:8px;height:8px;border-radius:50%;background:${params.color};display:inline-block;"></span>${params.name}</div>` +
-          `<div style="margin-top:4px;color:#6b6259;">${this.formatCurrency(params.value)} (${params.percent}%)</div>`
+          `<div style="margin-top:4px;color:${chrome.mutedText};">${this.formatCurrency(params.value)} (${params.percent}%)</div>`
       },
       legend: {
         bottom: 4,
@@ -1239,7 +1267,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         itemWidth: 8,
         itemHeight: 8,
         itemGap: 18,
-        textStyle: { color: '#6b6259', fontFamily: 'Inter', fontSize: 12 }
+        textStyle: { color: chrome.mutedText, fontFamily: 'Inter', fontSize: 12 }
       },
       title: {
         text: 'Total',
@@ -1247,8 +1275,8 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         left: 'center',
         top: '40%',
         itemGap: 6,
-        textStyle: { fontSize: 11, fontWeight: 500, color: '#9997b3', fontFamily: 'Inter' },
-        subtextStyle: { fontSize: 19, fontWeight: 700, color: '#2b2420', fontFamily: 'Lexend' }
+        textStyle: { fontSize: 11, fontWeight: 500, color: chrome.faintText, fontFamily: 'Inter' },
+        subtextStyle: { fontSize: 19, fontWeight: 700, color: chrome.strongText, fontFamily: 'Lexend' }
       },
       series: [{
         type: 'pie',
@@ -1258,7 +1286,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         label: { show: false },
         labelLine: { show: false },
         itemStyle: {
-          borderColor: '#ffffff',
+          borderColor: chrome.segmentBorder,
           borderWidth: 3,
           borderRadius: 6
         },
@@ -1272,16 +1300,17 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private buildLineOption(labels: string[], data: number[], color: string): echarts.EChartsOption {
+    const chrome = this.chartChrome();
     return {
       color: [color],
       grid: { left: 46, right: 12, top: 24, bottom: 30, containLabel: false },
       tooltip: {
         trigger: 'axis',
-        backgroundColor: '#ffffff',
-        borderColor: '#e6dfd2',
+        backgroundColor: chrome.tooltipBg,
+        borderColor: chrome.tooltipBorder,
         borderWidth: 1,
         extraCssText: TOOLTIP_CSS,
-        textStyle: { color: '#2b2420', fontFamily: 'Inter', fontSize: 12 },
+        textStyle: { color: chrome.tooltipText, fontFamily: 'Inter', fontSize: 12 },
         formatter: (params: any) => {
           const p = params[0];
           return `<div style="font-weight:600;margin-bottom:2px;">${p.axisValue}</div>` +
@@ -1292,14 +1321,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         type: 'category',
         data: labels,
         boundaryGap: false,
-        axisLine: AXIS_LINE_STYLE,
+        axisLine: chrome.axisLine,
         axisTick: { show: false },
-        axisLabel: AXIS_LABEL_STYLE
+        axisLabel: chrome.axisLabel
       },
       yAxis: {
         type: 'value',
-        splitLine: SPLIT_LINE_STYLE,
-        axisLabel: { ...AXIS_LABEL_STYLE, formatter: (v: number) => this.formatCompactCurrency(v) }
+        splitLine: chrome.splitLine,
+        axisLabel: { ...chrome.axisLabel, formatter: (v: number) => this.formatCompactCurrency(v) }
       },
       series: [{
         type: 'line',
@@ -1308,7 +1337,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
         symbol: 'circle',
         symbolSize: 6,
         lineStyle: { width: 2.5 },
-        itemStyle: { color, borderColor: '#ffffff', borderWidth: 2 },
+        itemStyle: { color, borderColor: chrome.segmentBorder, borderWidth: 2 },
         areaStyle: {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: `${color}66` },
@@ -1395,6 +1424,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.hasAccountBarData = accountData.some(a => a.income > 0 || a.expenses > 0);
     if (!this.hasAccountBarData) return;
 
+    const chrome = this.chartChrome();
     const chart = echarts.init(this.accountBarChart.nativeElement);
     chart.setOption({
       color: ['#4b7b4e', '#c1462e'],
@@ -1404,14 +1434,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       xAxis: {
         type: 'category',
         data: accountData.map(a => a.name),
-        axisLine: AXIS_LINE_STYLE,
+        axisLine: chrome.axisLine,
         axisTick: { show: false },
-        axisLabel: AXIS_LABEL_STYLE
+        axisLabel: chrome.axisLabel
       },
       yAxis: {
         type: 'value',
-        splitLine: SPLIT_LINE_STYLE,
-        axisLabel: { ...AXIS_LABEL_STYLE, formatter: (v: number) => this.formatCompactCurrency(v) }
+        splitLine: chrome.splitLine,
+        axisLabel: { ...chrome.axisLabel, formatter: (v: number) => this.formatCompactCurrency(v) }
       },
       series: [
         {
@@ -1440,6 +1470,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
     this.hasComparisonData = income.data.some(v => v > 0) || expense.data.some(v => v > 0);
     if (!this.hasComparisonData) return;
 
+    const chrome = this.chartChrome();
     const chart = echarts.init(this.incomeExpenseComparisonChart.nativeElement);
     chart.setOption({
       color: ['#4b7b4e', '#c1462e'],
@@ -1449,14 +1480,14 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       xAxis: {
         type: 'category',
         data: income.labels,
-        axisLine: AXIS_LINE_STYLE,
+        axisLine: chrome.axisLine,
         axisTick: { show: false },
-        axisLabel: AXIS_LABEL_STYLE
+        axisLabel: chrome.axisLabel
       },
       yAxis: {
         type: 'value',
-        splitLine: SPLIT_LINE_STYLE,
-        axisLabel: { ...AXIS_LABEL_STYLE, formatter: (v: number) => this.formatCompactCurrency(v) }
+        splitLine: chrome.splitLine,
+        axisLabel: { ...chrome.axisLabel, formatter: (v: number) => this.formatCompactCurrency(v) }
       },
       series: [
         {
@@ -1539,36 +1570,37 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
       return '#4b7b4e';
     });
 
+    const chrome = this.chartChrome();
     const chart = echarts.init(this.budgetUtilizationChart.nativeElement);
     chart.setOption({
       grid: { left: 110, right: 60, top: 10, bottom: 10, containLabel: false },
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        backgroundColor: '#ffffff',
-        borderColor: '#e6dfd2',
+        backgroundColor: chrome.tooltipBg,
+        borderColor: chrome.tooltipBorder,
         borderWidth: 1,
         extraCssText: TOOLTIP_CSS,
-        textStyle: { color: '#2b2420', fontFamily: 'Inter', fontSize: 12 },
+        textStyle: { color: chrome.tooltipText, fontFamily: 'Inter', fontSize: 12 },
         formatter: (params: any) => {
           const budget = top[params[0].dataIndex];
           return `<div style="font-weight:600;margin-bottom:4px;">${budget.name}</div>` +
             `<div>Spent: ${this.formatCurrency(budget.spent)}</div>` +
             `<div>Limit: ${this.formatCurrency(budget.amount)}</div>` +
-            `<div style="color:${budget.percentageUsed >= 100 ? '#c1462e' : '#6b6259'};margin-top:2px;">${budget.percentageUsed.toFixed(0)}% used</div>`;
+            `<div style="color:${budget.percentageUsed >= 100 ? '#c1462e' : chrome.mutedText};margin-top:2px;">${budget.percentageUsed.toFixed(0)}% used</div>`;
         }
       },
       xAxis: {
         type: 'value',
-        splitLine: SPLIT_LINE_STYLE,
-        axisLabel: { ...AXIS_LABEL_STYLE, formatter: (v: number) => this.formatCompactCurrency(v) }
+        splitLine: chrome.splitLine,
+        axisLabel: { ...chrome.axisLabel, formatter: (v: number) => this.formatCompactCurrency(v) }
       },
       yAxis: {
         type: 'category',
         data: top.map(b => b.name),
         axisLine: { show: false },
         axisTick: { show: false },
-        axisLabel: { color: '#6b6259', fontFamily: 'Inter', fontSize: 12 }
+        axisLabel: { color: chrome.mutedText, fontFamily: 'Inter', fontSize: 12 }
       },
       series: [
         {
@@ -1576,7 +1608,7 @@ export class DashboardComponent implements OnInit, OnDestroy, AfterViewInit {
           type: 'bar',
           data: top.map(b => b.amount),
           barWidth: 14,
-          itemStyle: { color: '#e6dfd2', borderRadius: 7 },
+          itemStyle: { color: chrome.trackBar, borderRadius: 7 },
           silent: true,
           z: 1
         },

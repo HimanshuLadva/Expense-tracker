@@ -415,9 +415,9 @@ export interface TableColumn {
                   font-size: 0.72rem;
                   font-weight: 600;
                   text-transform: capitalize;
-                  color: var(--badge-color, #6b7280);
-                  background: color-mix(in srgb, var(--badge-color, #6b7280) 14%, white);
-                  border: 1px solid color-mix(in srgb, var(--badge-color, #6b7280) 28%, white);
+                  color: var(--badge-color, var(--text-muted));
+                  background: color-mix(in srgb, var(--badge-color, var(--text-muted)) 14%, var(--tint-mix-base));
+                  border: 1px solid color-mix(in srgb, var(--badge-color, var(--text-muted)) 28%, var(--tint-mix-base));
                   display: inline-flex;
                   align-items: center;
                   justify-content: center;
@@ -449,22 +449,22 @@ export interface TableColumn {
 
                     &.edit-btn {
                       background-color: var(--color-primary-tint);
-                      border-color: color-mix(in srgb, var(--color-primary-light) 35%, white);
+                      border-color: color-mix(in srgb, var(--color-primary-light) 35%, var(--tint-mix-base));
                       color: var(--color-primary);
 
                       &:hover {
-                        background-color: color-mix(in srgb, var(--color-primary-light) 22%, white);
+                        background-color: color-mix(in srgb, var(--color-primary-light) 22%, var(--tint-mix-base));
                         transform: translateY(-1px);
                       }
                     }
 
                     &.delete-btn {
                       background-color: var(--color-destructive-tint);
-                      border-color: color-mix(in srgb, var(--color-destructive) 35%, white);
+                      border-color: color-mix(in srgb, var(--color-destructive) 35%, var(--tint-mix-base));
                       color: var(--color-destructive);
 
                       &:hover {
-                        background-color: color-mix(in srgb, var(--color-destructive) 18%, white);
+                        background-color: color-mix(in srgb, var(--color-destructive) 18%, var(--tint-mix-base));
                         transform: translateY(-1px);
                       }
                     }
@@ -506,7 +506,7 @@ export interface TableColumn {
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(15, 23, 42, 0.08);
+        background: color-mix(in srgb, var(--text-primary) 8%, transparent);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -788,7 +788,7 @@ export class DataTableComponent implements OnInit, OnChanges {
     if (column.badgeColors && column.badgeColors[value]) {
       return column.badgeColors[value];
     }
-    return '#6b7280';
+    return 'var(--text-muted)';
   }
 
   iconBadgeColor(index: number): string {

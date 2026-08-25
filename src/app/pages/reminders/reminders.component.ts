@@ -126,7 +126,7 @@ import { DialogResult } from '../../shared/dialog/dialog-result.interface';
 
             &:focus {
               border-color: var(--color-primary-light);
-              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+              box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
             }
 
             &::-webkit-calendar-picker-indicator {

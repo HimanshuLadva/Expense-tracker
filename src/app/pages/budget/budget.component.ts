@@ -190,7 +190,7 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
 
             &:focus {
               border-color: var(--color-primary-light);
-              box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+              box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
             }
 
             &::-webkit-calendar-picker-indicator {
@@ -348,7 +348,7 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
 
             .edit-btn {
               background: var(--color-primary-tint);
-              border: 1px solid color-mix(in srgb, var(--color-primary-light) 35%, white);
+              border: 1px solid color-mix(in srgb, var(--color-primary-light) 35%, var(--tint-mix-base));
               color: var(--color-primary);
               border-radius: var(--radius-sm);
               width: 32px;
@@ -365,7 +365,7 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
               }
 
               &:hover {
-                background: color-mix(in srgb, var(--color-primary-light) 22%, white);
+                background: color-mix(in srgb, var(--color-primary-light) 22%, var(--tint-mix-base));
                 transform: translateY(-1px);
               }
             }
@@ -509,7 +509,7 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
             padding: 0.625rem;
             background: var(--color-destructive-tint);
             color: var(--color-destructive);
-            border: 1px solid color-mix(in srgb, var(--color-destructive) 30%, white);
+            border: 1px solid color-mix(in srgb, var(--color-destructive) 30%, var(--tint-mix-base));
             border-radius: var(--radius-sm);
             font-size: 0.875rem;
             font-weight: 600;
@@ -517,7 +517,7 @@ import { SetBudgetDialogComponent } from '../../shared/dialogs/set-budget-dialog
             transition: all 0.15s ease;
 
             &:hover {
-              background: color-mix(in srgb, var(--color-destructive) 18%, white);
+              background: color-mix(in srgb, var(--color-destructive) 18%, var(--tint-mix-base));
             }
 
             &:focus-visible {
