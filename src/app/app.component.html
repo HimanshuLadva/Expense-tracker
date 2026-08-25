@@ -1,5 +1,19 @@
 <div class="app-container" [class.auth-layout]="!showSidebar">
-  <nav class="sidebar" [class.collapsed]="sidebarCollapsed" *ngIf="showSidebar">
+  <div class="mobile-topbar" *ngIf="showSidebar">
+    <button type="button" class="hamburger-btn" (click)="toggleMobileMenu()" aria-label="Open menu" [attr.aria-expanded]="mobileMenuOpen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18M3 12h18M3 18h18"/>
+      </svg>
+    </button>
+    <a class="mobile-brand" routerLink="/dashboard">
+      <span class="brand-mark">E</span>
+      <span class="brand-text">Expense Tracker</span>
+    </a>
+  </div>
+
+  <div class="mobile-backdrop" *ngIf="mobileMenuOpen" (click)="closeMobileMenu()"></div>
+
+  <nav class="sidebar" [class.collapsed]="sidebarCollapsed" [class.mobile-open]="mobileMenuOpen" *ngIf="showSidebar">
     <div class="sidebar-top">
       <a class="brand" routerLink="/dashboard">
         <span class="brand-mark">E</span>
@@ -10,12 +24,17 @@
           <path d="M15 5l-7 7 7 7"/>
         </svg>
       </button>
+      <button type="button" class="mobile-close-btn" (click)="closeMobileMenu()" aria-label="Close menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 6l12 12M18 6L6 18"/>
+        </svg>
+      </button>
     </div>
 
     <div class="nav-scroll">
       <div class="nav-section">
         <span class="nav-section-label">Overview</span>
-        <ul class="nav-menu">
+        <ul class="nav-menu" (click)="closeMobileMenu()">
           <li>
             <a routerLink="/dashboard" routerLinkActive="active" [title]="sidebarCollapsed ? 'Dashboard' : null">
               <span class="icon">
@@ -34,7 +53,7 @@
 
       <div class="nav-section">
         <span class="nav-section-label">Manage Money</span>
-        <ul class="nav-menu">
+        <ul class="nav-menu" (click)="closeMobileMenu()">
           <li>
             <a routerLink="/accounts" routerLinkActive="active" [title]="sidebarCollapsed ? 'Accounts' : null">
               <span class="icon">
@@ -99,7 +118,7 @@
 
       <div class="nav-section" *ngIf="authService.isAdmin()">
         <span class="nav-section-label">Administration</span>
-        <ul class="nav-menu">
+        <ul class="nav-menu" (click)="closeMobileMenu()">
           <li>
             <a routerLink="/admin/usermanagement" routerLinkActive="active" [title]="sidebarCollapsed ? 'User Management' : null">
               <span class="icon">
@@ -118,7 +137,7 @@
 
       <div class="nav-section">
         <span class="nav-section-label">Account</span>
-        <ul class="nav-menu">
+        <ul class="nav-menu" (click)="closeMobileMenu()">
           <li>
             <a routerLink="/profile" routerLinkActive="active" [title]="sidebarCollapsed ? 'Profile' : null">
               <span class="icon">

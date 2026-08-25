@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, HostListener } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { filter } from 'rxjs/operators';
@@ -16,6 +16,7 @@ export class AppComponent {
   title = 'Expense-tracker';
   showSidebar = true;
   sidebarCollapsed = false;
+  mobileMenuOpen = false;
   currentUser: Omit<User, 'password'> | null = null;
 
   constructor(
@@ -31,6 +32,7 @@ export class AppComponent {
       // Extract the path without query parameters
       const urlPath = event.url.split('?')[0];
       this.showSidebar = !authRoutes.includes(urlPath);
+      this.closeMobileMenu();
     });
 
     this.authService.currentUser$.subscribe(user => {
@@ -43,6 +45,28 @@ export class AppComponent {
    */
   toggleSidebar(): void {
     this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+
+  /**
+   * Toggle the off-canvas mobile navigation drawer
+   */
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+    document.body.classList.toggle('no-scroll', this.mobileMenuOpen);
+  }
+
+  /**
+   * Close the off-canvas mobile navigation drawer
+   */
+  closeMobileMenu(): void {
+    if (!this.mobileMenuOpen) return;
+    this.mobileMenuOpen = false;
+    document.body.classList.remove('no-scroll');
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    this.closeMobileMenu();
   }
 
   /**

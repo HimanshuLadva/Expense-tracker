@@ -113,6 +113,10 @@ html, body {
   line-height: 1.6;
 }
 
+body.no-scroll {
+  overflow: hidden;
+}
+
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
