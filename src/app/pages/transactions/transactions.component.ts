@@ -6,6 +6,7 @@ import { debounceTime } from 'rxjs/operators';
 
 import { StorageService } from '../../services/storage.service';
 import { DateRangeService } from '../../services/date-range.service';
+import { PdfExportService, PdfExportTransaction } from '../../services/pdf-export.service';
 import { Transaction, TransactionType, Account, Category } from '../../models';
 import { PageHeaderComponent } from '../../shared/page-header/page-header.component';
 import { DataTableComponent, TableColumn } from '../../shared/data-table/data-table.component';
@@ -53,6 +54,24 @@ interface EnrichedTransaction extends Transaction {
             />
           </div>
         </form>
+        <button
+          type="button"
+          class="export-pdf-button"
+          [disabled]="isExporting"
+          (click)="exportToPdf()"
+        >
+          @if (isExporting) {
+            <span class="spinner"></span>
+            <span>Exporting...</span>
+          } @else {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v12"/>
+              <path d="M7 10l5 5 5-5"/>
+              <path d="M4 19h16"/>
+            </svg>
+            <span>Export PDF</span>
+          }
+        </button>
       </app-page-header>
 
       <div class="transactions-stats">
@@ -190,6 +209,59 @@ interface EnrichedTransaction extends Transaction {
         }
       }
 
+      .export-pdf-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1rem;
+        background: var(--surface);
+        border: 1px solid var(--border-default);
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+
+        svg {
+          width: 16px;
+          height: 16px;
+          flex-shrink: 0;
+        }
+
+        &:hover:not(:disabled) {
+          background: var(--surface-sunken);
+          color: var(--text-primary);
+          border-color: var(--color-primary-light);
+        }
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--color-primary-light);
+          outline-offset: 2px;
+        }
+
+        .spinner {
+          width: 14px;
+          height: 14px;
+          border: 2px solid var(--surface-sunken);
+          border-top-color: var(--color-primary);
+          border-radius: 50%;
+          animation: transactions-export-spin 1s linear infinite;
+          flex-shrink: 0;
+        }
+      }
+
+      @keyframes transactions-export-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+
       .transactions-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -310,6 +382,11 @@ interface EnrichedTransaction extends Transaction {
 
     @media (max-width: 768px) {
       .transactions-page {
+        .export-pdf-button {
+          width: 100%;
+          justify-content: center;
+        }
+
         .transaction-filters {
           margin-bottom: 1.5rem;
 
@@ -366,6 +443,7 @@ export class TransactionsComponent implements OnInit, OnDestroy {
   totalIncome = 0;
   totalExpenses = 0;
   dateRangeForm!: FormGroup;
+  isExporting = false;
 
   private subscription = new Subscription();
 
@@ -398,7 +476,8 @@ export class TransactionsComponent implements OnInit, OnDestroy {
     private storageService: StorageService,
     private dialogService: DialogService,
     private fb: FormBuilder,
-    private dateRangeService: DateRangeService
+    private dateRangeService: DateRangeService,
+    private pdfExportService: PdfExportService
   ) {}
 
   ngOnInit(): void {
@@ -573,6 +652,51 @@ export class TransactionsComponent implements OnInit, OnDestroy {
         }
       });
     }
+  }
+
+  async exportToPdf(): Promise<void> {
+    if (this.filteredTransactions.length === 0) {
+      alert('There are no transactions to export for the current filter and date range.');
+      return;
+    }
+
+    this.isExporting = true;
+    try {
+      const { fromDate, toDate } = this.dateRangeForm.value;
+      const rows: PdfExportTransaction[] = this.filteredTransactions.map(t => ({
+        date: t.date,
+        categoryName: t.categoryName,
+        type: t.type,
+        accountName: t.accountName,
+        toAccountName: t.toAccountName,
+        narration: t.narration,
+        amount: t.amount
+      }));
+
+      await this.pdfExportService.exportTransactions(rows, {
+        fromDate: fromDate || '',
+        toDate: toDate || '',
+        filterLabel: this.getActiveTabLabel(),
+        totalIncome: this.totalIncome,
+        totalExpenses: this.totalExpenses,
+        transactionCount: this.filteredTransactions.length
+      });
+    } catch (error) {
+      console.error('Failed to export transactions to PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    } finally {
+      this.isExporting = false;
+    }
+  }
+
+  private getActiveTabLabel(): string {
+    const labels: Record<'all' | 'income' | 'expense' | 'transfer', string> = {
+      all: 'All',
+      income: 'Income',
+      expense: 'Expense',
+      transfer: 'Transfer'
+    };
+    return labels[this.activeTab];
   }
 
   /**
