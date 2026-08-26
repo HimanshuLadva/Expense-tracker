@@ -44,23 +44,30 @@ interface UpcomingReminder extends Reminder {
         subtitle="Overview of your financial activity and analytics"
       >
         <form [formGroup]="dateRangeForm" class="date-range-filter">
-          <div class="date-field-wrapper">
-            <label for="fromDate" class="date-label">Fr:</label>
-            <input
-              type="date"
-              id="fromDate"
-              formControlName="fromDate"
-              class="date-input"
-            />
-          </div>
-          <div class="date-field-wrapper">
-            <label for="toDate" class="date-label">To:</label>
-            <input
-              type="date"
-              id="toDate"
-              formControlName="toDate"
-              class="date-input"
-            />
+          <div class="date-range-pill">
+            <div class="date-field-wrapper">
+              <label for="fromDate" class="date-label">Fr:</label>
+              <input
+                type="date"
+                id="fromDate"
+                formControlName="fromDate"
+                class="date-input"
+              />
+            </div>
+            <span class="date-range-divider">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+            </span>
+            <div class="date-field-wrapper">
+              <label for="toDate" class="date-label">To:</label>
+              <input
+                type="date"
+                id="toDate"
+                formControlName="toDate"
+                class="date-input"
+              />
+            </div>
           </div>
         </form>
       </app-page-header>
@@ -329,8 +336,38 @@ interface UpcomingReminder extends Reminder {
       .date-range-filter {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
         flex-wrap: wrap;
+
+        .date-range-pill {
+          display: inline-flex;
+          align-items: center;
+          height: 36px;
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-md);
+          background: var(--surface);
+          padding: 0 0.2rem;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+          &:focus-within {
+            border-color: var(--color-primary-light);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
+          }
+        }
+
+        .date-range-divider {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          width: 22px;
+          height: 22px;
+          color: var(--text-muted);
+
+          svg {
+            width: 13px;
+            height: 13px;
+          }
+        }
 
         .date-field-wrapper {
           position: relative;
@@ -345,25 +382,19 @@ interface UpcomingReminder extends Reminder {
             font-weight: 500;
             color: var(--text-primary);
             pointer-events: none;
-            background: var(--surface);
-            padding: 0 0.25rem;
           }
 
           .date-input {
-            padding: 0.5rem 0.5rem 0.5rem 2.7rem;
-            border: 1px solid var(--border-default);
-            border-radius: var(--radius-sm);
+            height: 100%;
+            //padding: 0 0.5rem 0 2.7rem;
+            padding: 0 0.5rem 0 2.3rem;
+            border: none;
+            border-radius: var(--radius-md);
             font-size: 0.875rem;
             color: var(--text-primary);
-            background: var(--surface);
-            width: 170px;
+            background: transparent;
+            width: 155px;
             outline: none;
-            transition: border-color 0.2s ease;
-
-            &:focus {
-              border-color: var(--color-primary-light);
-              box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 15%, transparent);
-            }
 
             &::-webkit-calendar-picker-indicator {
               cursor: pointer;
